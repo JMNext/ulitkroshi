@@ -1,0 +1,55 @@
+name: 'orion-github-agent'
+services:
+  orion-agent:
+    image: ${AGENT_IMAGE:-orion/agent:latest}
+    container_name: orion-app-dev
+    hostname: orion-app-dev-{{ ansible_hostname }}
+    restart: unless-stopped
+    
+    environment:
+      - AGENT_NAME=orion-app-dev
+      - AGENT_ID=orion-app-dev-{{ ansible_hostname }}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - API_ENDPOINT=${API_ENDPOINT:-https://dev-app.biolivestick.com}
+      - API_KEY=${API_KEY}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - MONITORING_INTERVAL=${MONITORING_INTERVAL:-30}
+    
+    volumes:
+      - /var/log/orion-agent:/var/log/app
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /opt/orion-agent/data:/data
+      - /etc/localtime:/etc/localtime:ro
+    
+    ports:
+      - "${AGENT_PORT:-9090}:9090"
+    
+    networks:
+      - {{ docker_network_name }}
+      - monitoring-network
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    labels:
+      - "com.docker.compose.project=orion-agent"
+      - "environment=development"
+      - "service=agent"
+
+networks:
+  cure-services-network:
+    external: true
+    name: cure-services-network
+  monitoring-network:
+    external: true
+    name: monitoring-network

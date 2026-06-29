@@ -1,0 +1,7 @@
+# Список публичных ключей для доступа к серверу
+# Каждый ключ на новой строке
+
+# Администратор
+#ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... developers@biolivestick.com
+
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDJD3pCLbn1Z4reoU7QfMqaOFFe0HAKpaFPGYvBe6jfn zuevus@gmail.com
