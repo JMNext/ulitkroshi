@@ -1,0 +1,148 @@
+---
+- name: Initial server setup for Ulitkroshi
+  hosts: development
+  become: yes
+  #gather_facts: no
+  vars:
+    user_name: "sysop"
+    ssh_port: 2022
+    admin_email: "developers@biolivestick.com"
+    docker_users: 
+      - "{{ user_name }}"
+      - "root"
+    docker_network_name: "cure-services-network"
+    agent_enabled: true
+    agent_image: "orion/agent:dev-latest"
+    apex_domain: "biolivestick.com"
+    agent_port: 9090
+    vhosts:
+      - name: dev
+        domain: "dev-app.biolivestick.com"
+        backend_port: 8088
+        health_check: true
+        has_api: false
+
+      - name: api
+        domain: "dev-api.biolivestick.com"
+        backend_port: 8080
+        health_check: true
+        has_api: false
+
+
+  tasks:
+    # - name: Check if Python is installed
+    #   raw: which python3 || echo "not found"
+    #   register: python_check
+    #   changed_when: false
+    #   ignore_errors: yes
+
+    # - name: Install Python3 and pip
+    #   raw: apt update && apt install -y python3 python3-apt python3-pip
+    #   when: "'not found' in python_check.stdout"
+    #   register: python_install
+
+    # - name: Create python symlink
+    #   raw: ln -sf /usr/bin/python3 /usr/bin/python
+    #   when: python_install is changed
+
+    # - name: Bootstrap - install Python and required packages
+    #   raw: apt update && apt install -y python3 python3-apt python3-six && ln -sf /usr/bin/python3 /usr/bin/python
+    #   register: bootstrap
+    #   changed_when: bootstrap.rc == 0
+      
+
+    # - name: Gather facts
+    #   setup:
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+    
+    - name: Install required system packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - python3-pip
+          - git
+          - ufw
+          - fail2ban
+          - htop
+          - mc
+          - net-tools
+          - jq
+          - mc
+          - wget
+        state: present
+    
+    - name: Include OS-specific variables
+      include_vars: "{{ ansible_os_family }}.yml"
+      ignore_errors: yes
+    
+    - name: Install Docker
+      include_tasks: tasks/docker-setup.yml
+    
+    - name: Setup system user
+      include_tasks: tasks/user-setup.yml
+    
+    - name: Setup firewall
+      include_tasks: tasks/firewall-setup.yml
+    
+    - name: Setup Nginx with SSL
+      include_tasks: tasks/nginx-setup.yml
+    
+    - name: Setup fail2ban
+      include_tasks: tasks/fail2ban-setup.yml
+
+    - name: Setup GitHub runner (agent)
+      include_tasks: tasks/agent-setup.yml
+      when: agent_enabled | default(false)
+    
+    - name: Create application directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ user_name }}"
+        group: "{{ user_name }}"
+        mode: '0755'
+      loop:
+        - /opt/ulitkroshi
+        - /opt/ulitkroshi/deployment
+        - /opt/ulitkroshi/scripts
+        - /var/log/ulitkroshi
+        - /var/backups/ulitkroshi
+    
+   
+    - name: Setup logrotate
+      template:
+        src: templates/logrotate.conf.j2
+        dest: /etc/logrotate.d/ulitkroshi
+        mode: '0644'
+    
+    - name: Setup systemd service for auto-deploy (optional)
+      template:
+        src: templates/auto-deploy.service.j2
+        dest: /etc/systemd/system/ulitkroshi-deploy.service
+        mode: '0644'
+      when: false  # Disabled by default
+    
+    - name: Show completion message
+      debug:
+        msg: |
+          ========================================
+          Server setup completed!
+          
+          Access URLs:
+          - Website: https://www.{{ apex_domain }}
+          - Website: https://dev-app.{{ apex_domain }}
+          
+          SSH: ssh -p {{ ssh_port }} {{ user_name }}@{{ apex_domain }}
+          
+          Next steps:
+          1. Deploy application: cd /opt/ulitkroshi && docker compose up -d
+          2. Check logs: docker compose logs -f
+          3. Monitor health: docker ps
+          ========================================

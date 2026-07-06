@@ -1,0 +1,170 @@
+---
+- name: Fail if no vhosts defined
+  fail:
+    msg: "vhosts variable is not defined or empty"
+  when: vhosts is not defined or vhosts | length == 0
+
+- name: Remove existing Nginx app config
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/nginx/sites-available/{{ apex_domain }}
+    - /etc/nginx/sites-enabled/{{ apex_domain }}
+
+# ── Сбрасываем ssl_domains в начале каждого прогона ──────────────────────────
+
+- name: Reset ssl_domains to empty at start
+  set_fact:
+    ssl_domains: []
+    already_had_certs: []
+    newly_certified: []
+    failed_domains: []
+
+- name: Install Nginx and certbot
+  apt:
+    name:
+      - nginx
+      - certbot
+      - python3-certbot-nginx
+    state: present
+
+- name: Ensure log directory exists
+  file:
+    path: /var/log/nginx
+    state: directory
+    mode: '0755'
+
+# ── Начальный HTTP-конфиг ─────────────────────────────────────────────────────
+
+- name: Deploy Nginx config (HTTP only - FORCE empty ssl_domains)
+  template:
+    src: templates/nginx-app.conf.j2
+    dest: /etc/nginx/sites-available/{{ apex_domain }}
+    mode: '0644'
+  vars:
+    ssl_domains: []  # Явно передаем пустой список
+
+- name: Enable site
+  file:
+    src: /etc/nginx/sites-available/{{ apex_domain }}
+    dest: /etc/nginx/sites-enabled/{{ apex_domain }}
+    state: link
+
+- name: Remove default nginx site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Create certbot webroot directory
+  file:
+    path: /var/www/certbot
+    state: directory
+    mode: '0755'
+
+- name: Test Nginx config (HTTP)
+  command: nginx -t
+  changed_when: false
+
+- name: Start Nginx
+  systemd:
+    name: nginx
+    state: restarted
+    enabled: yes
+
+# ── Сертификаты ───────────────────────────────────────────────────────────────
+
+- name: Wait for Nginx to be ready
+  wait_for:
+    port: 80
+    timeout: 30
+
+- name: Check existing certificates
+  stat:
+    path: "/etc/letsencrypt/live/{{ item }}/fullchain.pem"
+  register: cert_stats
+  loop: "{{ ([apex_domain] if apex_domain is defined else []) + vhosts | map(attribute='domain') | list }}"
+
+- name: Obtain missing certificates
+  command: >
+    certbot certonly --webroot
+    -w /var/www/certbot
+    -d {{ item.item }}
+    --non-interactive
+    --agree-tos
+    --email {{ admin_email }}
+    --keep-until-expiring
+  when: not item.stat.exists
+  loop: "{{ cert_stats.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  register: certbot_results
+  ignore_errors: yes
+
+# ── Собираем список доменов с сертификатом ────────────────────────────────────
+
+- name: Collect domains that already had certs
+  set_fact:
+    already_had_certs: "{{ cert_stats.results
+      | selectattr('stat.exists')
+      | map(attribute='item')
+      | list }}"
+
+- name: Collect domains where certbot succeeded (including changed)
+  set_fact:
+    newly_certified: "{{ certbot_results.results
+      | default([])
+      | selectattr('rc', 'defined')
+      | selectattr('rc', 'equalto', 0)
+      | map(attribute='item.item')
+      | list }}"
+
+- name: Collect failed domains
+  set_fact:
+    failed_domains: "{{ certbot_results.results
+      | default([])
+      | selectattr('rc', 'defined')
+      | selectattr('rc', 'ne', 0)
+      | map(attribute='item.item')
+      | list }}"
+
+- name: Build final ssl_domains list
+  set_fact:
+    ssl_domains: "{{ (already_had_certs + newly_certified) | unique }}"
+
+- name: Show SSL domains
+  debug:
+    msg: "SSL enabled for: {{ ssl_domains }}"
+
+- name: Warn about domains without SSL
+  debug:
+    msg: "ВНИМАНИЕ: сертификат не получен для {{ failed_domains }}. Домены будут работать по HTTP."
+  when: failed_domains | length > 0
+
+# ── Финальный конфиг с SSL только там, где есть сертификат ───────────────────
+
+- name: Deploy Nginx config (SSL where available)
+  template:
+    src: templates/nginx-app.conf.j2
+    dest: /etc/nginx/sites-available/{{ apex_domain }}
+    mode: '0644'
+  vars:
+    ssl_domains: "{{ ssl_domains }}"
+
+- name: Test Nginx config (SSL)
+  command: nginx -t
+  changed_when: false
+
+- name: Reload Nginx
+  systemd:
+    name: nginx
+    state: reloaded
+
+# ── Auto-renewal ──────────────────────────────────────────────────────────────
+
+- name: Setup certbot renewal cron
+  cron:
+    name: "Certbot auto-renewal"
+    special_time: daily
+    job: "certbot renew --quiet --webroot --post-hook 'systemctl reload nginx' --email {{ admin_email }}"
+    state: present

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>УЛИТКРОШИ</title>
+</head>
+<body class="bg-[#020617] overflow-hidden select-none">
+
+  <!-- Игровой контейнер Phaser -->
+  <div id="game-container" class="w-full h-full absolute inset-0"></div>
+
+  <!-- HTML-интерфейс (жестко скрыт через style="display: none;") -->
+  <div id="game-ui" 
+       style="display: none;" 
+       class="absolute inset-0 z-10 flex flex-col items-center justify-between py-16 opacity-0 pointer-events-none transition-opacity duration-700 ease-out select-none">
+    
+    <!-- Заголовок игры -->
+    <h1 class="text-5xl md:text-7xl font-extrabold text-amber-500 tracking-widest drop-shadow-[0_4px_6px_rgba(0,0,0,0.9)] uppercase italic mt-10">
+      Улиткроши
+    </h1>
+
+    <!-- Индикатор загрузки (Preloader) -->
+    <div id="ui-loader" class="flex flex-col items-center gap-3 w-64">
+      <div class="w-full bg-slate-800 rounded-full h-4 p-0.5 border border-slate-700 overflow-hidden">
+        <div id="ui-progress" class="bg-amber-500 h-full rounded-full w-0 transition-[width] duration-200"></div>
+      </div>
+      <span class="text-slate-400 font-medium tracking-wide animate-pulse">Загрузка улиток...</span>
+    </div>
+
+    <!-- Кнопка Начать игру (появится после загрузки) -->
+    <button id="ui-start-btn" class="hidden pointer-events-auto transform active:scale-95 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black text-2xl px-12 py-4 rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.3)] hover:shadow-[0_0_40px_rgba(245,158,11,0.5)] transition-all duration-200 uppercase tracking-wider mb-10">
+      Играть
+    </button>
+
+  </div>
+
+  <!-- Главный скрипт проекта -->
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

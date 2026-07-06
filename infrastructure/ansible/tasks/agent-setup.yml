@@ -1,0 +1,114 @@
+---
+- name: Create GitHub runner directory
+  file:
+    path: /opt/actions-runner
+    state: directory
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+    mode: '0755'
+
+- name: Check if runner is already configured
+  stat:
+    path: /opt/actions-runner/.runner
+  register: runner_configured
+
+- name: Download GitHub Actions runner (Linux x64)
+  get_url:
+    url: "https://github.com/actions/runner/releases/download/v2.334.0/actions-runner-linux-x64-2.334.0.tar.gz"
+    dest: /opt/actions-runner/runner.tar.gz
+    mode: '0755'
+  when: not runner_configured.stat.exists
+
+- name: Extract runner
+  unarchive:
+    src: /opt/actions-runner/runner.tar.gz
+    dest: /opt/actions-runner
+    remote_src: yes
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+  when: not runner_configured.stat.exists
+
+- name: Install runner dependencies
+  apt:
+    name:
+      - liblttng-ust1t64
+      - libcurl4t64
+      - libssl3t64
+      - libkrb5-3
+      - zlib1g
+    state: present
+  when: not runner_configured.stat.exists
+
+- name: Configure GitHub runner
+  command: >
+    /opt/actions-runner/config.sh
+    --url https://github.com/ulitkroshi/main-source
+    --token {{ github_runner_token }}
+    --labels {{ github_runner_labels | default('self-hosted,linux,x64,orion-agent') }}
+    --name {{ ansible_hostname }}-runner
+    --work _work
+    --unattended
+  become: yes
+  become_user: "{{ user_name }}"
+  when: not runner_configured.stat.exists and github_runner_token is defined
+  register: runner_config
+ # no_log: true
+
+- name: Check if runner service is installed
+  stat:
+    path: /opt/actions-runner/.service
+  register: runner_service_installed
+
+- name: Install runner as systemd service
+  command: /opt/actions-runner/svc.sh install
+  become: yes
+  when: not runner_configured.stat.exists
+  register: runner_service_install
+
+# исправляет кривой сервис-файл
+- name: Fix systemd service file
+  replace:
+    path: "/etc/systemd/system/actions.runner.*.service"
+    regexp: "^User=$"
+    replace: "User={{ user_name }}"
+  when: runner_service_install is changed
+
+# добавляет перезапуск при падении
+- name: Add restart policy to service
+  lineinfile:
+    path: "/etc/systemd/system/actions.runner.*.service"
+    insertafter: "^KillSignal=SIGTERM"
+    line: "Restart=always"
+  when: runner_service_install is changed
+
+- name: Create health check script
+  copy:
+    content: |
+      #!/bin/bash
+      if systemctl is-active --quiet actions-runner; then
+        echo "GitHub Runner is running"
+        exit 0
+      else
+        echo "GitHub Runner is not running"
+        exit 1
+      fi
+    dest: /usr/local/bin/check-runner.sh
+    mode: '0755'
+
+- name: Display runner deployment status
+  debug:
+    msg: |
+      ========================================
+      GitHub Actions Runner deployment completed!
+      
+      Runner directory: /opt/actions-runner
+      Runner name: {{ ansible_hostname }}-runner
+      Runner labels: {{ github_runner_labels | default('self-hosted,linux,x64,orion-agent') }}
+      
+      Commands:
+      - Check status: systemctl status actions-runner
+      - View logs: journalctl -u actions-runner -f
+      - Restart runner: systemctl restart actions-runner
+      - Stop runner: systemctl stop actions-runner
+      - Check health: /usr/local/bin/check-runner.sh
+      ========================================
