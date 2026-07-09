@@ -1,4 +1,4 @@
-/var/log/ulitkoshi/*.log {
+/var/log/ulitkroshi/*.log {
     daily
     rotate 7
     compress
@@ -8,7 +8,7 @@
     create 0640 {{ user_name }} {{ user_name }}
     sharedscripts
     postrotate
-        docker exec ao-api kill -HUP $(pidof dotnet) || true
+        docker ps --filter "name=orion" --format "{{.Names}}" | xargs -r docker kill -HUP || true
     endscript
 }
 

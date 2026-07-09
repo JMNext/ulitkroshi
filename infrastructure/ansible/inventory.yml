@@ -6,13 +6,12 @@ all:
           ansible_host: "dev-app.biolivestick.com"
           ansible_port: 2022
           ansible_user: root
-          ansible_password: "{{ lookup('env', 'DEV_APP_PASSWORD') }}"
-          ansible_ssh_private_key_file: ~/.ssh/deploy_key
           agent_host: "dev-app.biolivestick.com"
           agent_enabled: true
           github_runner_token: "AHFAOZIPBCY3AJCKFGOEKMTKIJH4Y"
           github_runner_labels: "self-hosted,linux,x64,orion-agent,development"
           docker_network_name: "ao-network-debug"
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
           
   vars:
-    ansible_python_interpreter: /usr/bin/python3
+    ansible_python_interpreter: auto_silent #/usr/bin/python3

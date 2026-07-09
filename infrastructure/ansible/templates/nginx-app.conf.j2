@@ -1,7 +1,7 @@
 # Upstream definitions
 {% for vhost in vhosts %}
 upstream {{ vhost.name }} {
-    server 127.0.0.1:{{ vhost.backend_port }};
+    server 127.0.0.1:{{ vhost.port }};
     keepalive 32;
 }
 {% endfor %}

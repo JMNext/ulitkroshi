@@ -3,11 +3,6 @@
 ## Схема редиректа nginx
 
 ```text
-мой-домен.com:80   ──► 301 → https://www.мой-домен.com
-мой-домен.com:443  ──► 301 → https://www.мой-домен.com
-
-www.мой-домен.com:80  ──► 301 → https://www.мой-домен.com
-www.мой-домен.com:443 ──► :8098
 
 dev-app.мой-домен.com:80  ──► 301 → https://dev-app.мой-домен.com
 dev-app.мой-домен.com:443 ──► :8088
@@ -22,6 +17,24 @@ pip3 install ansible
 echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc
 source ~/.bashrc
 ansible --version
+```
+
+ansible-playbook -i inventory.yml setup-server.yml -v --ask-pass
+
+# Только Reverse Proxy
+ansible-playbook -i inventory.yml setup-server.yml -v --limit proxy --ask-pass
+
+# Только конкретная среда (например dev)
+ansible-playbook -i inventory.yml setup-server.yml -v --limit apps
+
+# С запросом пароля (если не используется SSH ключ)
+ansible-playbook -i inventory.yml setup-server.yml -v --ask-pass
+
+# С запросом sudo пароля
+ansible-playbook -i inventory.yml setup-server.yml -v --ask-become-pass
+
+# Проверка без изменений (dry-run)
+ansible-playbook -i inventory.yml setup-server.yml --check -v
 ```
 
 2. Проверка статуса

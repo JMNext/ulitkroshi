@@ -1,10 +1,11 @@
 ---
+#Debian 13+ Docker installation playbook
 - name: Update apt cache
   apt:
     update_cache: yes
     cache_valid_time: 3600
 
-- name: Install required packages for Docker
+- name: Install prerequisites for Docker
   apt:
     name:
       - ca-certificates
@@ -19,25 +20,33 @@
     state: directory
     mode: '0755'
 
-- name: Download Docker's official GPG key
+- name: Download Docker's official GPG key for Debian
   get_url:
-    url: "https://download.docker.com/linux/ubuntu/gpg"
+    url: "https://download.docker.com/linux/debian/gpg"
     dest: "/etc/apt/keyrings/docker.asc"
     mode: '0644'
+  register: gpg_download
+  until: gpg_download is succeeded
+  retries: 5
+  delay: 5
 
-- name: Determine architecture for Docker repository
-  set_fact:
-    docker_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' if ansible_architecture == 'aarch64' else 'armhf' if ansible_architecture == 'armv7l' else ansible_architecture }}"
-
-- name: Add Docker repository with signed-by
-  apt_repository:
-    repo: "deb [arch={{ docker_arch }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
-    state: present
-    filename: docker
+- name: Add Docker repository (new .sources format for Debian 13+)
+  copy:
+    dest: /etc/apt/sources.list.d/docker.sources
+    content: |
+      Types: deb
+      URIs: https://download.docker.com/linux/debian
+      Suites: {{ ansible_facts['distribution_release'] }}
+      Components: stable
+      Architectures: {{ ansible_facts['architecture'] | replace('x86_64', 'amd64') | replace('aarch64', 'arm64') }}
+      Signed-By: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+  when: ansible_facts['distribution_version'] | float >= 13
 
 - name: Update apt cache after adding Docker repo
   apt:
     update_cache: yes
+  when: ansible_facts['distribution_version'] | float >= 13
 
 - name: Install Docker packages
   apt:
@@ -48,6 +57,7 @@
       - docker-buildx-plugin
       - docker-compose-plugin
     state: present
+    update_cache: yes
 
 - name: Create docker group if it doesn't exist
   group:
@@ -70,6 +80,13 @@
     state: started
     enabled: yes
 
+- name: Wait for Docker to be ready
+  command: docker info
+  register: docker_info
+  until: docker_info.rc == 0
+  retries: 10
+  delay: 5
+
 - name: Verify Docker installation
   command: docker --version
   register: docker_version
@@ -86,9 +103,9 @@
       - "Docker version: {{ docker_version.stdout }}"
       - "Docker Compose version: {{ compose_version.stdout }}"
 
-- name: Create Docker network for cure services
+- name: Create Docker network for services
   docker_network:
-    name: cure-services-network
+    name: "{{ docker_network_name | default('cure-services-network') }}"
     driver: bridge
     state: present
   register: network_creation
@@ -102,5 +119,5 @@
 
 - name: Display network creation status
   debug:
-    msg: "Docker network 'cure-services-network' is ready"
+    msg: "Docker network '{{ docker_network_name | default('cure-services-network') }}' is ready"
   when: network_creation.changed

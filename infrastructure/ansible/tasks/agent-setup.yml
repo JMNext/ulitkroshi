@@ -31,11 +31,12 @@
 - name: Install runner dependencies
   apt:
     name:
-      - liblttng-ust1t64
-      - libcurl4t64
-      - libssl3t64
+      - liblttng-ust1     
+      - libcurl4
+      - libssl3
       - libkrb5-3
       - zlib1g
+      - libicu72    
     state: present
   when: not runner_configured.stat.exists
 
@@ -64,6 +65,13 @@
   become: yes
   when: not runner_configured.stat.exists
   register: runner_service_install
+
+- name: Add cgroup v2 support for Debian 13
+  lineinfile:
+    path: "/etc/systemd/system/actions.runner.*.service"
+    insertafter: "^KillSignal=SIGTERM"
+    line: "Delegate=yes"
+  when: runner_service_install is changed
 
 # исправляет кривой сервис-файл
 - name: Fix systemd service file

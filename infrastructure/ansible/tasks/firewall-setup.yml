@@ -1,4 +1,16 @@
 ---
+- name: Check if UFW is installed
+  command: which ufw
+  register: ufw_exists
+  ignore_errors: yes
+  changed_when: false
+
+- name: Install UFW if missing
+  apt:
+    name: ufw
+    state: present
+  when: ufw_exists.rc != 0
+  
 - name: Reset UFW to default policies
   ufw:
     state: reset
@@ -22,27 +34,6 @@
     rule: allow
     port: '443'
     proto: tcp
-
-- name: Allow FreeSwitch SIP ports
-  ufw:
-    rule: allow
-    port: "{{ item }}"
-    proto: udp
-  loop:
-    - 5060
-    - 5061
-
-- name: Allow FreeSwitch Event Socket
-  ufw:
-    rule: allow
-    port: '8021'
-    proto: tcp
-
-- name: Allow FreeSwitch RTP ports range
-  ufw:
-    rule: allow
-    port: '16384:16484'
-    proto: udp
 
 - name: Allow Seq port (internal)
   ufw:
