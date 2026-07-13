@@ -92,14 +92,14 @@ const RegistrationUIComponent2 = ({ scene, onComplete }: { scene: any; onComplet
   };
 
   return (
-    <div style={centerBlockStyle} className="absolute top-[48%] left-1/2 pointer-events-none flex flex-col items-center w-[360px] gap-4 z-20 font-sans select-none text-center">
-      <div className="w-full bg-white/95 backdrop-blur-sm rounded-[32px] px-6 py-4 shadow-xl relative z-20 border border-slate-100/50 mb-[10px]">
+    <div style={centerBlockStyle} className="absolute top-[48%] left-1/2 pointer-events-none flex flex-col items-center w-[380px] gap-4 z-20 font-sans select-none text-center">
+      <div className="w-full bg-white/95 backdrop-blur-sm rounded-[32px] px-4 py-5 shadow-xl relative z-20 border border-slate-100/50 mb-[10px]">
         {mode !== 'code' ? (
-          <div className="text-[20px] font-black text-slate-700 leading-snug tracking-wide">Набери свой номер телефона!</div>
+          <div className="text-[26px] font-black text-slate-700 leading-snug tracking-wide">Набери свой номер телефона!</div>
         ) : (
-          <div>
-            <div className="text-[20px] font-black text-slate-700 leading-snug tracking-wide">Введи номер из смс!</div>
-            <button disabled={secs > 0} onClick={() => logicRef.current?.resend()} className={`text-xs font-bold mt-1 block mx-auto underline transition-colors ${secs > 0 ? 'text-gray-400 cursor-default' : 'text-emerald-600 cursor-pointer'}`}>
+          <div className="flex flex-col items-center w-full">
+            <div className="text-[26px] font-black text-slate-700 leading-snug tracking-wide">Введи номер из смс!</div>
+            <button disabled={secs > 0} onClick={() => logicRef.current?.resend()} className={`text-[17px] font-black mt-2 block w-[350px] text-center underline tracking-tight whitespace-nowrap transition-colors ${secs > 0 ? 'text-slate-500 cursor-default' : 'text-emerald-600 cursor-pointer'}`}>
               {secs > 0 ? `Отправить повторно через ${secs} сек` : 'Отправить повторно'}
             </button>
           </div>
@@ -108,17 +108,17 @@ const RegistrationUIComponent2 = ({ scene, onComplete }: { scene: any; onComplet
       </div>
 
       {mode !== 'code' ? (
-        <div className="w-[360px] h-[64px] bg-white flex items-center justify-center text-[26px] font-black rounded-full shadow-lg border border-slate-50 text-slate-700 tracking-wide mb-[10px]">
+        <div className="w-[380px] h-[76px] bg-white flex items-center justify-center text-[24px] font-black rounded-full shadow-lg border border-slate-50 text-slate-700 tracking-wide mb-[10px]">
           {phone}
         </div>
       ) : (
-        <div className="w-[160px] h-[64px] bg-white flex items-center justify-center text-[26px] font-black rounded-full shadow-lg border border-slate-50 text-slate-700 tracking-[6px] pl-[6px] mb-[10px]">
+        <div className="w-[240px] h-[80px] bg-white flex items-center justify-center text-[38px] font-black rounded-full shadow-lg border border-slate-50 text-slate-700 tracking-[10px] pl-[10px] mb-[10px]">
           {code || '    '}
         </div>
       )}
 
       {mode === 'phone' && (
-        <button onClick={() => logicRef.current?.sendPhone()} disabled={!isReady} className={`w-[360px] h-[54px] text-white font-black text-2xl rounded-full border-b-4 shadow-md transition-all mb-[15px] ${isReady ? 'pointer-events-auto border-[#366901] bg-gradient-to-b from-[#81c714] to-[#4c9203] cursor-pointer active:translate-y-[2px] active:border-b-2 opacity-100' : 'pointer-events-none bg-slate-300 border-slate-400 opacity-60'}`}>
+        <button onClick={() => logicRef.current?.sendPhone()} disabled={!isReady} className={`w-[380px] h-[58px] text-white font-black text-2xl rounded-full border-b-4 shadow-md transition-all mb-[15px] ${isReady ? 'pointer-events-auto border-[#366901] bg-gradient-to-b from-[#81c714] to-[#4c9203] cursor-pointer active:translate-y-[2px] active:border-b-2 opacity-100' : 'pointer-events-none bg-slate-300 border-slate-400 opacity-60'}`}>
           Отправить
         </button>
       )}
@@ -126,9 +126,9 @@ const RegistrationUIComponent2 = ({ scene, onComplete }: { scene: any; onComplet
       <div className="w-full relative flex justify-center">
         <PinPad isDisabled={mode === 'sent'} onKeyClick={(k: string) => logicRef.current?.handleKeyPress(k)} />
         {mode === 'sent' && (
-          <div className="absolute inset-x-0 top-2 bg-white border border-slate-100 rounded-[32px] shadow-2xl p-5 flex flex-col items-center gap-4 text-center z-30 pointer-events-auto">
-            <div className="text-[20px] font-black text-gray-700 leading-snug px-2">Отправили смс<br />на твой номер!</div>
-            <button onClick={() => logicRef.current?.goCode()} className="w-32 h-10 text-white font-black text-lg rounded-full border-b-4 border-[#366901] bg-gradient-to-b from-[#81c714] to-[#4c9203] shadow-md cursor-pointer active:translate-y-[2px] active:border-b-2">
+          <div className="absolute inset-x-4 top-2 bg-white border border-slate-100 rounded-[32px] shadow-2xl p-5 flex flex-col items-center gap-4 text-center z-30 pointer-events-auto">
+            <div className="text-[20px] font-black text-gray-700 leading-snug px-1">Отправили смс<br />на твой номер!</div>
+            <button onClick={() => logicRef.current?.goCode()} className="w-32 h-11 text-white font-black text-lg rounded-full border-b-4 border-[#366901] bg-gradient-to-b from-[#81c714] to-[#4c9203] shadow-md cursor-pointer active:translate-y-[2px] active:border-b-2">
               Ок!
             </button>
           </div>

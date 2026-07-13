@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { RegistrationLogic_Step1 } from './RegistrationLogic_Step1';
 import { _internalRegBridge, destroyRegistrationUI_Step1 } from './RegistrationUI_Step1';
 import { SpeechMicButton } from './SpeechMicButton';
+import { setGlobalPetName } from '../../MainScene/PetHealthBar';
 
 interface Props {
   scene: any;
@@ -19,7 +20,7 @@ export const RegistrationUIComponent: React.FC<Props> = ({ scene, onComplete }) 
 
   useEffect(() => {
     logicRef.current = new RegistrationLogic_Step1(scene);
-    _internalRegBridge.register(setStage, setName, () => {}); // Нам больше не нужно передавать setIsListening наружу
+    _internalRegBridge.register(setStage, setName);
 
     const handleResize = () => {
       setDimensions({ width: window.innerWidth, height: window.innerHeight });
@@ -38,19 +39,24 @@ export const RegistrationUIComponent: React.FC<Props> = ({ scene, onComplete }) 
 
   useEffect(() => {
     if ((stage === 1 || stage === 3) && inputRef.current) {
-      const timer = setTimeout(() => inputRef.current?.focus(), 100);
+      const timer = setTimeout(() => {
+        try {
+          inputRef.current?.focus();
+        } catch (e) {
+          console.warn('Автофокус недоступен');
+        }
+      }, 60);
       return () => clearTimeout(timer);
     }
   }, [stage]);
 
-  // Обработчики для "умной" кнопки микрофона
   const handleSpeechResult = (recognizedName: string) => {
     setInputValue('');
     logicRef.current?.handleInputSubmit(recognizedName);
   };
 
   const handleSpeechError = () => {
-    logicRef.current?.handleConfirmNo(); // Переключаем на стадию 3 (не расслышал) через логику
+    logicRef.current?.handleConfirmNo();
   };
 
   const isPortrait = dimensions.width < dimensions.height;
@@ -59,12 +65,17 @@ export const RegistrationUIComponent: React.FC<Props> = ({ scene, onComplete }) 
   const styleConfig = {
     bubble: { transform: `scale(${uiScale})`, transformOrigin: 'top center' },
     petVideo: { transform: `translate(-50%, -50%) scale(${uiScale})`, transformOrigin: 'center center' },
-    bottomControls: { transform: `translateX(-50%) scale(${uiScale})`, transformOrigin: 'bottom center' }
+    bottomControls: { 
+      position: 'absolute' as const,
+      left: '50%',
+      transform: `translateX(-50%) scale(${uiScale})`, 
+      transformOrigin: 'bottom center',
+      bottom: isPortrait ? 'calc(50px + env(safe-area-inset-bottom, 0px))' : '40px',
+    }
   };
 
   return (
     <div className="fixed inset-0 pointer-events-none w-full h-[100vh] z-30 flex justify-center overflow-hidden">
-      {/* Текстовое облачко с диалогом */}
       <div 
         style={styleConfig.bubble} 
         className="absolute top-[4%] pointer-events-auto bg-white/95 backdrop-blur-sm rounded-[32px] px-10 py-5 text-center shadow-xl max-w-lg w-[45vw] min-w-[320px] z-20 box-border"
@@ -95,17 +106,14 @@ export const RegistrationUIComponent: React.FC<Props> = ({ scene, onComplete }) 
         <div className="absolute bottom-[-12px] left-[45%] w-0 h-0 border-x-[12px] border-x-transparent border-t-[12px] border-t-white/95" />
       </div>
 
-      {/* Анимация питомца */}
       <div style={styleConfig.petVideo} className="absolute top-[42%] left-1/2 w-[644px] h-[644px] pointer-events-none z-10">
         <video src="/assets/resources/1stpet-animation/prostoi-converted.webm" muted playsInline autoPlay loop className="w-full h-full object-contain drop-shadow-md" />
       </div>
 
-      {/* Панель управления */}
-      <div style={styleConfig.bottomControls} className="absolute bottom-[40px] left-1/2 flex flex-col items-center z-25">
+      <div style={styleConfig.bottomControls} className="z-25 flex flex-col items-center">
         
-        {/* СТАДИЯ 1 ИЛИ 3: Ввод имени */}
         {(stage === 1 || stage === 3) && (
-          <div className="flex flex-col items-center gap-[12px] w-full max-w-sm">
+          <div className="flex flex-col items-center gap-[16px] w-full max-w-sm">
             <input
               ref={inputRef}
               type="text"
@@ -121,15 +129,14 @@ export const RegistrationUIComponent: React.FC<Props> = ({ scene, onComplete }) 
               className="pointer-events-auto w-[360px] h-[64px] bg-white text-center text-2xl font-bold rounded-full shadow-lg border border-slate-100 outline-none text-emerald-800 placeholder-slate-400 focus:border-emerald-500 transition-colors"
             />
             
-            {/* Автономная кнопка микрофона со встроенной логикой */}
             <SpeechMicButton 
+              scene={scene}
               onSpeechResult={handleSpeechResult} 
               onSpeechError={handleSpeechError} 
             />
           </div>
         )}
 
-        {/* СТАДИЯ 2: Подтверждение выбора */}
         {stage === 2 && (
           <div className="pointer-events-auto bg-white rounded-[24px] p-2 flex gap-4 shadow-lg w-[420px] h-[76px] border-2 border-[#81c714] items-center justify-between box-border">
             <button 
@@ -139,7 +146,10 @@ export const RegistrationUIComponent: React.FC<Props> = ({ scene, onComplete }) 
               Нет
             </button>
             <button 
-              onClick={() => logicRef.current?.handleConfirmYes()} 
+              onClick={() => {
+                setGlobalPetName(name);
+                logicRef.current?.handleConfirmYes();
+              }} 
               className="flex-1 h-full bg-gradient-to-b from-[#81c714] to-[#60aa05] hover:from-[#92d623] hover:to-[#60aa05] active:scale-95 font-black text-white text-2xl rounded-[18px] shadow-sm transition-transform cursor-pointer flex items-center justify-center select-none"
             >
               Да!
@@ -147,7 +157,6 @@ export const RegistrationUIComponent: React.FC<Props> = ({ scene, onComplete }) 
           </div>
         )}
 
-        {/* СТАДИЯ 4: Успешное завершение */}
         {stage === 4 && (
           <button 
             onClick={() => { destroyRegistrationUI_Step1(); onComplete(); }} 

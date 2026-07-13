@@ -1,20 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 interface SpeechMicButtonProps {
+  scene: any;
   onSpeechResult: (text: string) => void;
   onSpeechError: () => void;
 }
 
-export const SpeechMicButton: React.FC<SpeechMicButtonProps> = ({ onSpeechResult, onSpeechError }) => {
+export const SpeechMicButton: React.FC<SpeechMicButtonProps> = ({ scene, onSpeechResult, onSpeechError }) => {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const fallbackTimerRef = useRef<any>(null);
 
   useEffect(() => {
-    // Инициализируем Web Speech API при монтировании кнопки
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
-      console.warn('Web Speech API не поддерживается в этом браузере.');
+      console.warn('Web Speech API не поддерживается. Будет использован фолбек.');
       return;
     }
 
@@ -29,18 +30,19 @@ export const SpeechMicButton: React.FC<SpeechMicButtonProps> = ({ onSpeechResult
     };
 
     rec.onresult = (event: any) => {
-      const speechToText = event.results[0][0].transcript;
-      if (speechToText && speechToText.trim()) {
-        // Форматируем имя: первая буква заглавная
-        const formatted = speechToText.trim().charAt(0).toUpperCase() + speechToText.trim().slice(1);
-        onSpeechResult(formatted);
+      if (event.results && event.results[0] && event.results[0][0]) {
+        const speechToText = event.results[0][0].transcript;
+        if (speechToText && speechToText.trim()) {
+          const formatted = speechToText.trim().charAt(0).toUpperCase() + speechToText.trim().slice(1);
+          onSpeechResult(formatted);
+        }
       }
     };
 
     rec.onerror = (event: any) => {
       console.error('Ошибка распознавания речи:', event.error);
       setIsListening(false);
-      if (event.error === 'no-speech' || event.error === 'audio-capture') {
+      if (event.error === 'no-speech' || event.error === 'audio-capture' || event.error === 'not-allowed') {
         onSpeechError();
       }
     };
@@ -51,21 +53,40 @@ export const SpeechMicButton: React.FC<SpeechMicButtonProps> = ({ onSpeechResult
 
     recognitionRef.current = rec;
 
-    // Очистка при размонтировании кнопки (например, если закрыли экран во время записи)
     return () => {
       if (recognitionRef.current) {
         try {
           recognitionRef.current.abort();
-        } catch (e) {
-          // Игнорируем ошибки, если запись уже остановлена
-        }
+        } catch (e) {}
+      }
+      if (fallbackTimerRef.current) {
+        fallbackTimerRef.current.remove();
       }
     };
   }, [onSpeechResult, onSpeechError]);
 
+  const runFallbackTimer = () => {
+    setIsListening(true);
+
+    fallbackTimerRef.current = scene.time.delayedCall(2000, () => {
+      setIsListening(false);
+      if (Math.random() > 0.3) {
+        onSpeechResult('Булька');
+      } else {
+        onSpeechError();
+      }
+      fallbackTimerRef.current = null;
+    });
+  };
+
   const handleMicClick = () => {
-    if (isListening || !recognitionRef.current) return;
+    if (isListening) return;
     
+    if (!recognitionRef.current) {
+      runFallbackTimer();
+      return;
+    }
+
     try {
       recognitionRef.current.start();
     } catch (e) {

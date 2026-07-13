@@ -100,7 +100,7 @@ const RegistrationUIComponent3 = ({ logic }: { logic: RegistrationLogic_Step3 })
   };
 
   return (
-    <div style={centerBlockStyle} className={`absolute top-[48%] left-1/2 flex flex-col items-center w-[360px] h-[680px] z-20 pointer-events-none font-sans select-none text-center ${shake ? 'animate-shake' : ''}`}>
+    <div style={centerBlockStyle} className={`absolute top-[48%] left-1/2 flex flex-col items-center w-[400px] h-[720px] z-20 pointer-events-none font-sans select-none text-center ${shake ? 'animate-shake' : ''}`}>
       <style>{`
         @keyframes delicate-shake {
           0%, 100% { transform: translate(-50%, -50%) scale(${uiScale}) translateX(0); }
@@ -110,20 +110,20 @@ const RegistrationUIComponent3 = ({ logic }: { logic: RegistrationLogic_Step3 })
         .animate-shake { animation: delicate-shake 0.4s ease-in-out; }
       `}</style>
 
-      <div className="w-full bg-white/95 backdrop-blur-sm rounded-[38px] px-6 pt-5 shadow-xl relative z-30 border border-slate-100/50 pointer-events-auto h-[200px]">
-        <div className="w-full h-[60px] flex items-center justify-center text-[22px] font-black text-slate-700 leading-tight tracking-wide mb-5" dangerouslySetInnerHTML={{ __html: titles[mode] || titles.select }} />
-        <div className="flex gap-4 justify-center">
+      <div className="w-full bg-white/95 backdrop-blur-sm rounded-[38px] px-6 pt-12 shadow-xl relative z-30 border border-slate-100/50 pointer-events-auto h-[230px] flex flex-col items-center justify-between pb-6">
+        <div className="w-full h-[65px] flex items-center justify-center text-[24px] font-black text-slate-700 leading-tight tracking-wide" dangerouslySetInnerHTML={{ __html: titles[mode] || titles.select }} />
+        <div className="flex gap-4 justify-center translate-y-2">
           {Array.from({ length: 4 }).map((_, i) => {
             const activeArray = isConfirm ? correct : selected;
             const fruitIdx = i < activeArray.length ? activeArray[i] : null;
             if (fruitIdx !== null) {
               return (
-                <div key={i} className="w-14 h-14 rounded-full bg-gray-50 flex items-center justify-center p-1 shadow-inner border border-gray-100">
+                <div key={i} className="w-[68px] h-[68px] rounded-full bg-gray-50 flex items-center justify-center p-3 shadow-inner border border-gray-100/80">
                   <img src={`/assets/fruits/fruits_${ID_MAP[fruitIdx]}.png`} className="w-full h-full object-contain pointer-events-none" alt="slot" />
                 </div>
               );
             }
-            return <div key={i} className="w-14 h-14 rounded-full bg-[#f4f1ee] border border-solid border-gray-200/60 shadow-inner" />;
+            return <div key={i} className="w-[68px] h-[68px] rounded-full bg-[#f4f1ee] border border-solid border-gray-200/60 shadow-inner" />;
           })}
         </div>
         <div className="absolute bottom-[-12px] left-1/2 -translate-x-1/2 w-0 h-0 border-x-[12px] border-transparent border-t-[12px] border-t-white/95" />

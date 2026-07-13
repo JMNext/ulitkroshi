@@ -5,7 +5,6 @@ import { RegistrationUIComponent } from './RegistrationUIComponent';
 let regUiRoot: Root | null = null;
 let globalSetStage: ((stage: number) => void) | null = null;
 let globalSetName: ((name: string) => void) | null = null;
-let globalSetListening: ((listening: boolean) => void) | null = null;
 
 export const renderRegistrationUI_Step1 = (scene: any, onComplete: () => void): void => {
   destroyRegistrationUI_Step1();
@@ -33,7 +32,6 @@ export const destroyRegistrationUI_Step1 = (): void => {
   document.getElementById('game-container')?.classList.remove('in-registration');
   globalSetStage = null;
   globalSetName = null;
-  globalSetListening = null;
 };
 
 export const setRegistrationStageUI = (stage: number): void => { 
@@ -44,19 +42,13 @@ export const setRegistrationNameUI = (name: string): void => {
   if (globalSetName) globalSetName(name); 
 };
 
-export const setRegistrationListeningUI = (listening: boolean): void => { 
-  if (globalSetListening) globalSetListening(listening); 
-};
-
 export const _internalRegBridge = {
-  register: (setStage: any, setName: any, setListening: any) => {
+  register: (setStage: any, setName: any) => {
     globalSetStage = setStage;
     globalSetName = setName;
-    globalSetListening = setListening;
   },
   unregister: () => {
     globalSetStage = null;
     globalSetName = null;
-    globalSetListening = null;
   }
 };

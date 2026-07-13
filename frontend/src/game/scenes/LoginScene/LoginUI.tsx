@@ -82,7 +82,7 @@ const LoginUIComponent = ({ onStart }: { onStart: () => void }) => {
         <button
           onClick={onStart}
           style={bottomControlsStyle}
-          className="absolute bottom-[12%] portrait:bottom-[110px] left-1/2 pointer-events-auto w-[50vw] h-[20vw] max-w-[200px] max-h-[80px] leading-[20vw] sm:leading-[80px] text-[6vw] sm:text-[22px] text-center font-black text-white uppercase tracking-wider cursor-pointer rounded-[10vw] sm:rounded-[40px] border-t-2 border-b-0 border-x-0 border-[#a6f034] bg-gradient-to-b from-[#81c714] to-[#4c9203] shadow-[0_5px_0_0_#366901,0_8px_12px_rgba(0,0,0,0.4)] active:translate-y-[3px] active:shadow-[0_2px_0_0_#366901,0_4px_6px_rgba(0,0,0,0.4)] transition-all duration-75 select-none"
+          className="absolute bottom-[calc(14%-30px)] portrait:bottom-[100px] left-1/2 pointer-events-auto w-[280px] h-[76px] flex items-center justify-center text-[28px] font-black text-white uppercase tracking-wider cursor-pointer rounded-[38px] border-t-2 border-b-0 border-x-0 border-[#a6f034] bg-gradient-to-b from-[#81c714] to-[#4c9203] shadow-[0_6px_0_0_#366901,0_10px_16px_rgba(0,0,0,0.45)] active:translate-y-[3px] active:shadow-[0_2px_0_0_#366901,0_4px_6px_rgba(0,0,0,0.4)] transition-all duration-75 select-none"
         >
           ВОЙТИ
         </button>
@@ -91,7 +91,7 @@ const LoginUIComponent = ({ onStart }: { onStart: () => void }) => {
       {step === 'loading' && (
         <div 
           style={bottomControlsStyle}
-          className="absolute bottom-[12%] portrait:bottom-[110px] left-1/2 w-[80vw] max-w-[400px] h-[40px] bg-white/95 rounded-full p-1 border border-slate-200/30 shadow-xl flex items-center pointer-events-auto select-none box-border"
+          className="absolute bottom-[calc(14%-30px)] portrait:bottom-[100px] left-1/2 w-[80vw] max-w-[400px] h-[40px] bg-white/95 rounded-full p-1 border border-slate-200/30 shadow-xl flex items-center pointer-events-auto select-none box-border"
         >
           <div className="w-full h-full bg-[#ede9e6] rounded-full p-[3px] relative overflow-visible flex items-center">
             <div

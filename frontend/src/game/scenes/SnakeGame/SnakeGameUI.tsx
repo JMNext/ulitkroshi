@@ -21,8 +21,8 @@ export const destroySnakeUI = (): void => {
   trigAnim = null; updScore = null;
 };
 
-const MemoryUI = ({ onBack, scene }: { onBack: () => void; scene: any }) => {
-  const [score, setScore] = useState(0);
+const SnakeUI = ({ onBack, scene }: { onBack: () => void; scene: any }) => {
+  const [score, setScore] = useState(scene?.score || 0);
   const [isWash, setIsWash] = useState(false);
   const [dims, setDims] = useState({ w: window.innerWidth, h: window.innerHeight });
   const vIdle = useRef<HTMLVideoElement | null>(null);
@@ -38,23 +38,22 @@ const MemoryUI = ({ onBack, scene }: { onBack: () => void; scene: any }) => {
 
   const isPort = dims.w < dims.h;
   const size = Math.max(20, Math.min(32, Math.floor((dims.w * 0.85) / 12)));
-  const gridOffsetY = Math.floor((dims.h - (12 * size)) / 2) - (isPort ? 35 : 0);
-  const petSize = isPort ? Math.max(100, Math.min(180, Math.floor(gridOffsetY * 0.55))) : 240;
+  const gridOffsetY = Math.floor((dims.h - (12 * size)) / 2);
+  const petSize = isPort ? Math.max(100, Math.min(160, Math.floor(gridOffsetY * 0.55))) : 220;
 
   const petStyle: React.CSSProperties = isPort 
-    ? { position: 'absolute', insetInline: 0, bottom: `${dims.h - gridOffsetY + 10}px`, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', zIndex: 40 }
-    : { position: 'absolute', left: 'calc(20vw - 100px)', bottom: '50px', display: 'flex', alignItems: 'flex-end', zIndex: 40 };
+    ? { position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: `${dims.h - gridOffsetY + 15}px`, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', zIndex: 40 }
+    : { position: 'absolute', left: 'calc(15vw - 50px)', bottom: '60px', display: 'flex', alignItems: 'flex-end', zIndex: 40 };
 
   const ctrlStyle: React.CSSProperties = isPort
-    ? { position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: '30px', zIndex: 50 }
-    : { position: 'fixed', right: '80px', bottom: '40px', zIndex: 50 };
+    ? { position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 'calc(40px + env(safe-area-inset-bottom, 0px))', zIndex: 50 }
+    : { position: 'fixed', right: '10%', bottom: '60px', zIndex: 50 };
 
   return (
     <>
       <GameHeaderUI score={score} onBack={onBack} />
       <div style={petStyle} className="pointer-events-auto">
-        <div className="relative object-contain" style={isPort ? { width: `${petSize}px`, height: `${petSize}px` } : undefined}>
-          {!isPort && <div className="relative w-[30vw] h-[30vw] min-w-[200px] max-w-[280px]" />}
+        <div className="relative object-contain" style={{ width: `${petSize}px`, height: `${petSize}px` }}>
           <video ref={vIdle} src="/assets/resources/1stpet-animation/prostoi-converted.webm" muted playsInline autoPlay loop className="absolute inset-0 w-full h-full object-contain" style={{ display: isWash ? 'none' : 'block' }} />
           <video ref={vPlay} src="/assets/resources/1stpet-animation/play-converted.webm" muted playsInline onEnded={() => { setIsWash(false); vIdle.current?.play().catch(() => {}); }} className="absolute inset-0 w-full h-full object-contain" style={{ display: isWash ? 'block' : 'none' }} />
         </div>
@@ -73,7 +72,7 @@ export const renderSnakeUI = (scene: any, onBackClick: () => void): void => {
   el.className = 'absolute inset-0 pointer-events-none z-30';
   document.getElementById('game-container')?.appendChild(el);
   root = createRoot(el);
-  root.render(<MemoryUI onBack={onBackClick} scene={scene} />);
+  root.render(<SnakeUI onBack={onBackClick} scene={scene} />);
 };
 
 export const playPetGamerMatchAnim = (): void => trigAnim?.();
@@ -96,7 +95,7 @@ export const drawHeartsUI = (scene: any): void => {
 export const calculateGridMetricsUI = (scene: Phaser.Scene): SnakeUiMetrics => {
   const w = window.innerWidth, h = window.innerHeight, isPort = w < h;
   const size = isPort ? Math.max(20, Math.min(32, Math.floor((w * 0.85) / 12))) : Math.max(24, Math.min(60, Math.floor((w * 0.6) / 12), Math.floor((h * 0.75) / 12)));
-  return { gridSize: size, offsetX: Math.floor((w - 12 * size) / 2), offsetY: Math.floor((h - (12 * size)) / 2) - (isPort ? 35 : 0) };
+  return { gridSize: size, offsetX: Math.floor((w - 12 * size) / 2), offsetY: Math.floor((h - (12 * size)) / 2) };
 };
 
 export const buildPlayGridUI = (scene: Phaser.Scene, minX: number, maxX: number, minY: number, maxY: number, metrics: SnakeUiMetrics): void => {

@@ -70,7 +70,7 @@ export class BackgroundManager {
     container.style.backgroundRepeat = 'no-repeat';
     container.style.backgroundPosition = 'center center';
     container.style.backgroundSize = '100% 100%';
-    container.style.backgroundColor = '#74c843';
+    container.style.backgroundColor = 'transparent';
   };
 
   public clearBackground = (): void => {

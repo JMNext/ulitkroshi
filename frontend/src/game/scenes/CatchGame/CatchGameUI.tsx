@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import * as Phaser from 'phaser';
 import { GameHeaderUI } from '../../../ui/components/GameHeaderUI';
-import { MobileControlsUI } from '../../../ui/components/MobileControls';
 // @ts-ignore
 import { animateCoinExplosion, createBaseGameOverModal } from '../../../ui/components/GameOverModalUI';
 
@@ -23,7 +22,7 @@ export const destroyCatchUI = (): void => {
 };
 
 const CatchUIComponent = ({ scene, onBack }: { scene: any; onBack: () => void }) => {
-  const [score, setScore] = useState(0);
+  const [score, setScore] = useState(scene?.score || 0);
   
   useEffect(() => { 
     updData = (s) => setScore(s); 
@@ -33,26 +32,8 @@ const CatchUIComponent = ({ scene, onBack }: { scene: any; onBack: () => void })
   }, []);
 
   return (
-    <div className="absolute inset-0 pointer-events-none">
+    <div className="fixed inset-0 pointer-events-none w-full h-[100vh] z-30 overflow-hidden flex flex-col justify-between">
       <GameHeaderUI score={score} onBack={onBack} />
-      <div className="pointer-events-auto">
-        <MobileControlsUI 
-          type="horizontal" 
-          onChangeDir={(dir) => {
-            if (!scene?.sys?.active) return;
-            if (dir === 'LEFT') {
-              scene.isPressingUiButton = true;
-              scene.moveDirection = -1;
-            } else if (dir === 'RIGHT') {
-              scene.isPressingUiButton = true;
-              scene.moveDirection = 1;
-            } else {
-              scene.isPressingUiButton = false;
-              scene.moveDirection = 0;
-            }
-          }} 
-        />
-      </div>
     </div>
   );
 };
@@ -85,18 +66,27 @@ export const calculateCatchMetricsUI = (scene: Phaser.Scene): CatchUiMetrics => 
   const { width: w, height: h } = scene.scale;
   const isPort = w < h;
   return { 
-    playerScale: isPort ? 110 / 644 : 180 / 644, 
-    playerY: isPort ? h - 190 : h - 230, 
-    fruitSize: isPort ? 55 : 75, 
-    catchRadius: isPort ? 55 : 90 
+    playerScale: isPort ? (w * 0.32) / 1080 : (w * 0.16) / 1080, 
+    playerY: isPort ? h - 165 - envSafeBottomOffset() : h - 150, 
+    fruitSize: isPort ? Math.max(45, Math.min(60, w * 0.12)) : Math.max(55, Math.min(75, h * 0.1)), 
+    catchRadius: isPort ? Math.max(50, Math.min(65, w * 0.14)) : Math.max(70, Math.min(90, h * 0.14)) 
   };
 };
 
+const envSafeBottomOffset = (): number => {
+  const div = document.createElement('div');
+  div.style.paddingBottom = 'env(safe-area-inset-bottom, 0px)';
+  document.body.appendChild(div);
+  const s = parseInt(window.getComputedStyle(div).paddingBottom) || 0;
+  document.body.removeChild(div);
+  return s;
+};
+
 export const createPlayerUI = (scene: Phaser.Scene, metrics: CatchUiMetrics): Phaser.GameObjects.Video => {
-  const v = scene.add.video(scene.scale.width / 2, metrics.playerY, 'prostoi1').setOrigin(0.5).setScale(metrics.playerScale).setDepth(5).setMute(true).setAlpha(0).setSize(1080, 1080).updateDisplayOrigin();
+  const v = scene.add.video(scene.scale.width / 2, metrics.playerY, 'prostoi1').setOrigin(0.5, 0.5).setScale(metrics.playerScale).setDepth(5).setMute(true).setAlpha(0);
   const nv = v.video || (v.videoTexture && v.videoTexture.source) as HTMLVideoElement | null;
   if (nv) { 
-    nv.style.objectFit = 'fill'; 
+    nv.style.objectFit = 'contain'; 
     nv.style.transform = 'translateZ(0)'; 
   }
   v.play(true);

@@ -19,6 +19,8 @@ window.addEventListener('DOMContentLoaded', () => {
     type: AUTO,
     parent: 'game-container',
     transparent: true,
+    backgroundColor: undefined,
+    clearBeforeRender: true,
     scale: {
       mode: Scale.RESIZE,
       autoCenter: Scale.CENTER_BOTH,

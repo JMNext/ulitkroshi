@@ -2,13 +2,20 @@ import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 
 let healthRoot: Root | null = null;
+let savedPetName: string = 'Булька';
+
 const HEALTH_CONFIG = {
   containerId: 'main-health-ui-overlay',
-  petName: 'Булька',
   gapClass: 'gap-2.5',
   widthClass: 'w-[240px]',
   barHeightClass: 'h-2.5',
   bgProgress: '#61aa05',
+};
+
+export const setGlobalPetName = (name: string): void => {
+  if (name && name.trim()) {
+    savedPetName = name.trim();
+  }
 };
 
 const PetHealthBar = ({ name, topOffset, uiScale, washState, hp }: { name: string; topOffset: number; uiScale: number; washState: 'idle' | 'hidden' | 'glowing'; hp: number }) => {
@@ -56,7 +63,7 @@ export const renderMainHealthUI = (topOffset: number, uiScale: number, washState
   if (!healthRoot && el) {
     healthRoot = createRoot(el);
   }
-  healthRoot?.render(<PetHealthBar name={HEALTH_CONFIG.petName} topOffset={topOffset} uiScale={uiScale} washState={washState} hp={currentHp} />);
+  healthRoot?.render(<PetHealthBar name={savedPetName} topOffset={topOffset} uiScale={uiScale} washState={washState} hp={currentHp} />);
 };
 
 export const destroyMainHealthUI = (): void => {

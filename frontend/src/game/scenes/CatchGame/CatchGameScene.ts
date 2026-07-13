@@ -33,7 +33,6 @@ export class CatchGameScene extends Phaser.Scene {
   public spawnTimer!: Phaser.Time.TimerEvent; 
   public uiMetrics!: CatchUiMetrics;
   public healHeartTimer!: Phaser.Time.TimerEvent;
-  public isPressingUiButton = false;
 
   constructor() { 
     super('CatchGameScene'); 
@@ -47,7 +46,6 @@ export class CatchGameScene extends Phaser.Scene {
     this.fruitsGroup = []; 
     this.heartsGroup = []; 
     this.moveDirection = 0;
-    this.isPressingUiButton = false;
     const cfgs = ({ easy: { s: 5, d: 1600 }, medium: { s: 8, d: 1200 }, hard: { s: 11, d: 800 } } as Record<string, { s: number, d: number }>)[this.difficulty] || { s: 8, d: 1200 };
     this.fruitSpeed = cfgs.s; 
     this.spawnDelay = cfgs.d;
@@ -70,8 +68,8 @@ export class CatchGameScene extends Phaser.Scene {
     
     this.player = createPlayerUI(this, this.uiMetrics);
     this.player.x = w / 2;
-    this.player.y = isPort ? h - 190 : h - 230;
-    this.playerSpeed = isPort ? Math.max(8, Math.floor(w * 0.025)) : 16;
+    this.player.y = this.uiMetrics.playerY;
+    this.playerSpeed = isPort ? Math.max(9, Math.floor(w * 0.028)) : 18;
     drawHeartsUI(this);
 
     const nativeVid = this.player.video || (this.player.videoTexture && this.player.videoTexture.source) as HTMLVideoElement | null;
@@ -84,13 +82,16 @@ export class CatchGameScene extends Phaser.Scene {
       nativeVid.addEventListener('playing', forceScale);
     }
 
-    const onPointerMove = (p: Phaser.Input.Pointer) => {
-      if (this.isGameOver || !this.player || this.isPressingUiButton) return;
-      if (p.wasTouch) return;
+    const processPointerInput = (p: Phaser.Input.Pointer) => {
+      if (this.isGameOver || !this.player) return;
       const hw = (this.player.displayWidth || 100) / 2;
-      this.player.x = Phaser.Math.Clamp(p.x, hw, w - hw);
+      if (p.isDown || !p.wasTouch) {
+        this.player.x = Phaser.Math.Clamp(p.x, hw, this.scale.width - hw);
+      }
     };
-    this.input.on('pointermove', onPointerMove);
+
+    this.input.on('pointermove', processPointerInput);
+    this.input.on('pointerdown', processPointerInput);
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (['ArrowLeft', 'a', 'A'].includes(e.key)) this.moveDirection = -1;
@@ -108,8 +109,11 @@ export class CatchGameScene extends Phaser.Scene {
     this.spawnTimer = this.time.addEvent({ delay: this.spawnDelay, loop: true, callback: () => spawnCatchFruitUI(this, this.uiMetrics) });
     this.healHeartTimer = this.time.addEvent({ delay: 30000, loop: true, callback: () => this.spawnHealHeart() });
     
+    this.scale.on('resize', this.handleResize, this);
     this.events.once('shutdown', () => { 
-      this.input.off('pointermove', onPointerMove);
+      this.scale.off('resize', this.handleResize, this);
+      this.input.off('pointermove', processPointerInput);
+      this.input.off('pointerdown', processPointerInput);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       if (nativeVid && forceScale) nativeVid.removeEventListener('playing', forceScale);
@@ -117,6 +121,34 @@ export class CatchGameScene extends Phaser.Scene {
       this.healHeartTimer?.remove(); 
       destroyCatchUI(); 
     }, this);
+  };
+
+  private handleResize = (): void => {
+    if (!this.scene.isActive(this.scene.key)) return;
+    const { width: w, height: h } = this.scale;
+    BackgroundManager.getInstance().applyBackground(this.scene.key);
+    this.uiMetrics = calculateCatchMetricsUI(this);
+    
+    destroyCatchUI();
+    renderCatchUI(this, () => { 
+      destroyCatchUI(); 
+      this.scene.start('MainScene'); 
+    });
+    updateCatchUIData(this.score, this.hp);
+    drawHeartsUI(this);
+
+    if (this.player) {
+      this.player.setPosition(w / 2, this.uiMetrics.playerY);
+      this.player.setScale(this.uiMetrics.playerScale);
+      this.playerSpeed = w < h ? Math.max(10, Math.floor(w * 0.032)) : 18;
+    }
+
+    this.fruitsGroup.forEach((f) => {
+      if (f && f.active) {
+        f.setDisplaySize(this.uiMetrics.fruitSize, this.uiMetrics.fruitSize);
+        f.x = Phaser.Math.Clamp(f.x, this.uiMetrics.fruitSize, w - this.uiMetrics.fruitSize);
+      }
+    });
   };
 
   private spawnHealHeart = (): void => {
@@ -139,7 +171,12 @@ export class CatchGameScene extends Phaser.Scene {
 
     this.fruitsGroup = this.fruitsGroup.filter((f: CatchItemImage) => {
       if (!f.active) return false;
-      f.y += Math.max(4, this.fruitSpeed * (h / 1080));
+      
+      const adaptiveFruitSpeed = w < h 
+        ? this.fruitSpeed * (h / 1920) * 1.6 
+        : this.fruitSpeed * (h / 1080);
+      
+      f.y += Math.max(4, adaptiveFruitSpeed);
       
       if (checkFruitCaughtLogic(f.x, f.y, this.player.x, this.player.y, this.uiMetrics.catchRadius)) {
         f.destroy();

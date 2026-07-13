@@ -51,18 +51,17 @@ const MainBottomMenuComponent = ({ scene }: { scene: MainScene }) => {
   ];
 
   const isPortrait = dims.width < dims.height;
-  const menuScale = isPortrait ? Math.max(0.42, dims.width / 800) : Math.min(1.0, dims.width / 1400);
+  const menuScale = isPortrait ? Math.max(0.42, dims.width / 750) : Math.min(1.0, dims.width / 1400);
 
   const mainWrapperStyle: React.CSSProperties = {
     position: 'fixed',
-    left: '0',
-    right: '0',
+    left: '50%',
     bottom: '0',
-    width: '100%',
+    width: '1920px',
     height: '260px',
     zIndex: 10,
-    overflow: 'hidden',
-    zoom: menuScale,
+    transform: `translateX(-50%) scale(${menuScale})`,
+    transformOrigin: 'bottom center',
   };
 
   const bgImageStyle: React.CSSProperties = {
@@ -86,12 +85,11 @@ const MainBottomMenuComponent = ({ scene }: { scene: MainScene }) => {
     transform: 'translateX(-50%)',
     zIndex: 10,
     display: 'flex',
-    width: isPortrait ? '580px' : '100%',
-    maxWidth: isPortrait ? '580px' : '1200px',
+    width: isPortrait ? '560px' : '1200px',
     justifyContent: 'center',
     alignItems: 'end',
-    gap: '24px',
-    paddingBottom: '35px',
+    gap: isPortrait ? '20px' : '36px',
+    paddingBottom: '40px',
   };
 
   return (
@@ -110,7 +108,7 @@ const MainBottomMenuComponent = ({ scene }: { scene: MainScene }) => {
                 <img src="/assets/buttom_menu-icons/button.svg" className="absolute inset-0 w-full h-full" alt="btn-bg" />
                 <img src={item.icon} className="relative w-[75px] h-[75px] z-10" alt={item.text} />
               </div>
-              <span className="text-[24px] font-bold text-[#424242] mt-1 leading-none tracking-wide select-none">{item.text}</span>
+              <span className="text-[24px] font-bold text-[#424242] mt-1 leading-none tracking-wide select-none block text-center w-full">{item.text}</span>
             </div>
           ))}
         </div>
