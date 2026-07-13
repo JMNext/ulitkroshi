@@ -33,7 +33,5 @@ export class RegistrationScene_Step1 extends Scene {
   private handleResize = (): void => {
     if (!this.scene.isActive(this.scene.key)) return;
     BackgroundManager.getInstance().applyBackground(this.scene.key);
-    destroyRegistrationUI_Step1();
-    this.buildUI();
   };
 }
