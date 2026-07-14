@@ -7,6 +7,9 @@ import { checkCardsMatchLogic, generateDeckLogic } from './MemoryGameLogic';
 import { MemoryUiContainer, IMemoryGameScene } from './components/MemoryUiContainer';
 import { buildCardsGridUI, animateCardFlipUI, animateMassShuffleUI } from './utils/MemoryPhaserRenderer';
 
+// ИСПРАВЛЕНО: Импортируем рубашку карт через сборщик, чтобы избежать ошибки 404 на деплое
+import cardBackSvg from '/src/assets/buttom_menu-icons/sleep.svg?url';
+
 export interface MemoryConfig { rows: number; cols: number; pairs: number; shuffleCount: number; }
 export interface MemoryCardContainer extends Phaser.GameObjects.Container { fruitKey: string; fruitImg: Phaser.GameObjects.Image; shirtImg: Phaser.GameObjects.Image; isFaceUp: boolean; }
 
@@ -24,7 +27,8 @@ export class MemoryGameScene extends Phaser.Scene implements IMemoryGameScene {
   public init = (data: { difficulty?: string }) => { this.difficulty = data.difficulty || 'easy'; this.selectedCards = []; this.canClick = false; this.matchesFound = 0; this.cardsList = []; this.stepsTaken = 0; this.isDestroyed = false; };
 
   public preload = () => {
-    this.load.image('card-back', '/src/assets/buttom_menu-icons/sleep.svg');
+    // ИСПРАВЛЕНО: Передаем сгенерированный сборщиком хэшированный URL
+    this.load.image('card-back', cardBackSvg);
     FRUITS.forEach(id => { const p = `/src/assets/fruits/fruits_${id}.png`; fImgs[p]?.default && this.load.image(`fruit-${id}`, fImgs[p].default); });
   };
 
@@ -74,6 +78,21 @@ export class MemoryGameScene extends Phaser.Scene implements IMemoryGameScene {
     }
   }
 
-  private handleResize = () => { if (!this.scene.isActive(this.scene.key) || this.isDestroyed) return; BackgroundManager.getInstance().applyBackground(this.scene.key); this.destroyUI(); this.setupUI(); this.updateUiScore?.(this.matchesFound); const active = this.cardsList.map(c => c.fruitKey); this.cardsList.forEach(c => c.destroy()); this.mTimer?.remove(); this.pTimer?.remove(); this.buildGrid(active); };
+  private handleResize = () => { 
+    if (!this.scene.isActive(this.scene.key) || this.isDestroyed) return; 
+    BackgroundManager.getInstance().applyBackground(this.scene.key); 
+    this.destroyUI(); 
+    this.setupUI(); 
+    this.updateUiScore?.(this.matchesFound); 
+    
+    const active = this.cardsList.map(c => c.fruitKey); 
+    this.cardsList.forEach(c => c.destroy()); 
+    this.selectedCards = []; // ИСПРАВЛЕНО: Сбрасываем выбранные карты при ресайзе, чтобы избежать утечек зависших ссылок
+    
+    this.mTimer?.remove(); 
+    this.pTimer?.remove(); 
+    this.buildGrid(active); 
+  };
+  
   private exitGame = () => { this.isDestroyed = true; this.mTimer?.remove(); this.pTimer?.remove(); this.destroyUI(); this.scene.start('MainScene'); };
 }

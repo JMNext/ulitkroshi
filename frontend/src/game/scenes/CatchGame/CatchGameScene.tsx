@@ -9,6 +9,10 @@ import { spawnItem, updateItemsPhysics } from './utils/CatchPhysicsEngine';
 import { animateCoinExplosion, createBaseGameOverModal } from '../../../ui/components/GameOverModalUI';
 import { CatchUiMetrics, FRUITS, calculateCatchMetricsUI, createPlayerUI, drawHeartsUI, ICatchGameScene } from './utils/CatchPhaserRender';
 
+// ИСПРАВЛЕНО: Импортируем все статические файлы через сборщик для защиты от 404 на деплое
+import iconLifeSvg from '/src/assets/interface-icons/life.svg?url';
+import petVideoUrl from '/src/assets/resources/1stpet-animation/prostoi-converted.webm';
+
 interface GameInitData {
   difficulty?: 'easy' | 'medium' | 'hard';
 }
@@ -18,6 +22,9 @@ const DIFFICULTY_CONFIGS: Record<string, { s: number; d: number }> = {
   medium: { s: 8, d: 1200 },
   hard: { s: 11, d: 800 }
 };
+
+// Динамически подгружаем фрукты через мета-глоб Vite
+const fruitImgs = import.meta.glob('/src/assets/fruits/fruits_*.png', { eager: true, query: '?url' }) as Record<string, { default: string }>;
 
 export class CatchGameScene extends Scene implements ICatchGameScene {
   public difficulty = 'medium';
@@ -40,6 +47,10 @@ export class CatchGameScene extends Scene implements ICatchGameScene {
   private updateUI?: (score: number, hp: number) => void;
   private onPointerMoveRef!: (p: Phaser.Input.Pointer) => void;
 
+  // ИСПРАВЛЕНО: Храним ссылки на функции ввода, чтобы полностью стирать их из памяти
+  private onKeyDownRef!: (e: KeyboardEvent) => void;
+  private onKeyUpRef!: (e: KeyboardEvent) => void;
+
   constructor() { 
     super('CatchGameScene'); 
   }
@@ -59,9 +70,19 @@ export class CatchGameScene extends Scene implements ICatchGameScene {
   };
 
   public preload = (): void => {
-    this.load.image('icon-life', '/src/assets/interface-icons/life.svg');
-    this.load.video('prostoi1', '/src/assets/resources/1stpet-animation/prostoi-converted.webm');
-    FRUITS.forEach(id => this.load.image(`f-${id}`, `/src/assets/fruits/fruits_${id}.png`));
+    // ИСПРАВЛЕНО: Безопасный деплой путей
+    this.load.image('icon-life', iconLifeSvg);
+    
+    if (!this.cache.video.exists('prostoi1')) {
+      this.load.video('prostoi1', petVideoUrl);
+    }
+    
+    FRUITS.forEach(id => {
+      const fullPath = `/src/assets/fruits/fruits_${id}.png`;
+      if (fruitImgs[fullPath]?.default) {
+        this.load.image(`f-${id}`, fruitImgs[fullPath].default);
+      }
+    });
   };
 
   public create = (): void => {
@@ -82,15 +103,17 @@ export class CatchGameScene extends Scene implements ICatchGameScene {
     };
     this.input.on('pointermove', this.onPointerMoveRef).on('pointerdown', this.onPointerMoveRef);
 
-    const kd = (e: KeyboardEvent) => {
+    // ИСПРАВЛЕНО: Именованные функции убрали дублирование слушателей
+    this.onKeyDownRef = (e: KeyboardEvent) => {
       if (['ArrowLeft', 'a', 'A'].includes(e.key)) this.moveDirection = -1;
       if (['ArrowRight', 'd', 'D'].includes(e.key)) this.moveDirection = 1;
     };
-    const ku = (e: KeyboardEvent) => {
+    this.onKeyUpRef = (e: KeyboardEvent) => {
       if (['ArrowLeft', 'a', 'A', 'ArrowRight', 'd', 'D'].includes(e.key)) this.moveDirection = 0;
     };
-    window.addEventListener('keydown', kd);
-    window.addEventListener('keyup', ku);
+    
+    window.addEventListener('keydown', this.onKeyDownRef);
+    window.addEventListener('keyup', this.onKeyUpRef);
 
     this.spawnTimer = this.time.addEvent({ 
       delay: this.spawnDelay, 
@@ -109,8 +132,8 @@ export class CatchGameScene extends Scene implements ICatchGameScene {
     this.events.once('shutdown', () => { 
       this.scale.off('resize', this.handleResize, this); 
       this.input.off('pointermove', this.onPointerMoveRef).off('pointerdown', this.onPointerMoveRef);
-      window.removeEventListener('keydown', kd);
-      window.removeEventListener('keyup', ku);
+      window.removeEventListener('keydown', this.onKeyDownRef);
+      window.removeEventListener('keyup', this.onKeyUpRef);
       this.destroyUI(); 
     }, this);
   };
@@ -144,8 +167,10 @@ export class CatchGameScene extends Scene implements ICatchGameScene {
   }
 
   private destroyUI(): void { 
-    this.regUiRoot?.unmount(); 
-    this.regUiRoot = null; 
+    if (this.regUiRoot) {
+      this.regUiRoot.unmount(); 
+      this.regUiRoot = null; 
+    }
     document.getElementById('catch-ui-overlay')?.remove(); 
   }
 
@@ -174,8 +199,18 @@ export class CatchGameScene extends Scene implements ICatchGameScene {
       score: this.score, 
       buttonText: 'В МЕНЮ', 
       isWin, 
-      onBack: () => { this.isDestroyed = true; this.scene.start('MainScene'); }, 
-      onRestart: () => { this.isDestroyed = true; this.scene.restart(); } 
+      onBack: () => { 
+        this.isDestroyed = true; 
+        window.removeEventListener('keydown', this.onKeyDownRef);
+        window.removeEventListener('keyup', this.onKeyUpRef);
+        this.scene.start('MainScene'); 
+      }, 
+      onRestart: () => { 
+        this.isDestroyed = true; 
+        window.removeEventListener('keydown', this.onKeyDownRef);
+        window.removeEventListener('keyup', this.onKeyUpRef);
+        this.scene.restart(); 
+      } 
     }));
   }
 }

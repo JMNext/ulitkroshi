@@ -7,6 +7,9 @@ import { processSnakeStepLogic, SnakeState } from './SnakeGameLogic';
 import { SnakeUiContainer, ISnakeGameScene } from './components/SnakeUiContainer';
 import { buildGridGfx, drawSegmentGfx } from './utils/SnakePhaserRenderer';
 
+// ИСПРАВЛЕНО: Импортируем иконку жизни через сборщик, чтобы избежать ошибки 404 на деплое
+import iconLifeSvg from '/src/assets/interface-icons/life.svg?url';
+
 interface GameInitData {
   difficulty?: 'easy' | 'medium' | 'hard';
 }
@@ -48,15 +51,30 @@ export class SnakeGameScene extends Phaser.Scene implements ISnakeGameScene {
   };
 
   public preload = (): void => {
-    this.load.image('icon-life', '/src/assets/interface-icons/life.svg');
+    // ИСПРАВЛЕНО: Передаем сгенерированный сборщиком хэшированный URL
+    this.load.image('icon-life', iconLifeSvg);
     FRUITS.forEach(id => { const p = `/src/assets/fruits/fruits_${id}.png`; fImgs[p]?.default && this.load.image(`f-${id}`, fImgs[p].default); });
   };
 
   public create = (): void => {
     this.calcMetrics(); BackgroundManager.getInstance().applyBackground(this.scene.key); this.setupUI(); this.buildGrid();
-    window.addEventListener('keydown', e => e && DIR_MAP[e.key] && this.changeDirection(DIR_MAP[e.key]));
+    
+    // ИСПРАВЛЕНО: Вынесли функцию в именованную переменную для точного удаления из памяти
+    window.addEventListener('keydown', this.handleKeyDown);
+    
     this.scale.on('resize', this.handleResize, this);
-    this.events.once('shutdown', () => { this.scale.off('resize', this.handleResize, this); window.removeEventListener('keydown', e => e && DIR_MAP[e.key] && this.changeDirection(DIR_MAP[e.key])); this.destroyUI(); }, this);
+    this.events.once('shutdown', () => { 
+      this.scale.off('resize', this.handleResize, this); 
+      window.removeEventListener('keydown', this.handleKeyDown); 
+      this.destroyUI(); 
+    }, this);
+  };
+
+  // ИСПРАВЛЕНО: Обособленный метод для безопасного управления слушателем событий
+  private handleKeyDown = (e: KeyboardEvent): void => {
+    if (e && DIR_MAP[e.key]) {
+      this.changeDirection(DIR_MAP[e.key]);
+    }
   };
 
   public update = (time: number): void => { if (!this.sState.isPause && !this.sState.isOver && time >= this.moveTimer) { this.step(); this.moveTimer = time + this.interval; } };
@@ -128,6 +146,6 @@ export class SnakeGameScene extends Phaser.Scene implements ISnakeGameScene {
 
   private endGame(isWin = false) {
     if (this.isDestroyed) return; this.sState.isOver = true; this.destroyUI(); if (isWin) animateCoinExplosion(this, 20);
-    this.time.delayedCall(isWin ? 1200 : 0, () => createBaseGameOverModal(this, { title: isWin ? 'ПОБЕДА!' : 'ИГРА ОКОНЧЕНА', resultLabel: 'СЧЕТ', score: this.sState.score, buttonText: 'В МЕНЮ', isWin, onBack: () => { this.isDestroyed = true; this.scene.start('MainScene'); }, onRestart: () => { this.isDestroyed = true; this.scene.restart(); } }));
+    this.time.delayedCall(isWin ? 1200 : 0, () => createBaseGameOverModal(this, { title: isWin ? 'ПОБЕДА!' : 'ИГРА ОКОНЧЕНА', resultLabel: 'СЧЕТ', score: this.sState.score, buttonText: 'В МЕНЮ', isWin, onBack: () => { this.isDestroyed = true; window.removeEventListener('keydown', this.handleKeyDown); this.scene.start('MainScene'); }, onRestart: () => { this.isDestroyed = true; window.removeEventListener('keydown', this.handleKeyDown); this.scene.restart(); } }));
   }
 }
