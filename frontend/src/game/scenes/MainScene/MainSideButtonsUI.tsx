@@ -1,94 +1,143 @@
-import React, { useState, useEffect } from 'react';
+import Phaser from 'phaser';
+import { useEffect, useState } from 'react';
 import { createRoot, Root } from 'react-dom/client';
-import { showMinigameModal } from '../../../ui/components/MinigameModal'; 
-import { showShopModal } from './ShopModal';
-import { showPetsModal } from './PetsModal';
-import { takeScreenshot } from './takeScreenshot';
+import buttonBg from '../../../assets/interface-icons/button.svg';
+import fotoIcon from '../../../assets/interface-icons/foto.svg';
+import minigameIcon from '../../../assets/interface-icons/mini-game.svg';
+import mypetsIcon from '../../../assets/interface-icons/my-pets.svg';
+import shopIcon from '../../../assets/interface-icons/shop.svg';
+import { ActionPetCharacter } from './animations/ActionPetCharacter';
+import { BasePetCharacter } from './animations/BasePetCharacter';
+
+interface IMainGameScene extends Phaser.Scene {
+  actionCharacter?: ActionPetCharacter | null;
+  baseCharacter?: BasePetCharacter | null;
+}
+interface GroupButton {
+  icon: string;
+  src: string;
+  event: string;
+}
 
 let sideRoot: Root | null = null;
 const CONTAINER_ID = 'main-side-ui-overlay';
 
-export function renderMainSideButtonsUI(scene: any): void {
-  let container = document.getElementById(CONTAINER_ID) || document.createElement('div');
-  if (!container.id) {
-    container.id = CONTAINER_ID;
-    document.getElementById('game-container')?.appendChild(container);
+export function renderMainSideButtonsUI(scene: IMainGameScene): void {
+  let c = document.getElementById(CONTAINER_ID);
+  if (!c) {
+    c = document.createElement('div');
+    c.id = CONTAINER_ID;
+    document.getElementById('game-container')?.appendChild(c);
   }
-  if (!sideRoot) sideRoot = createRoot(container);
-  sideRoot.render(<MainSideButtonsComponent scene={scene} />);
+  c.className = 'absolute top-0 left-0 w-full h-full pointer-events-none z-20';
+  if (!sideRoot && c) sideRoot = createRoot(c);
+  sideRoot?.render(<MainSideButtonsComponent scene={scene} />);
 }
 
 export function destroyMainSideButtonsUI(): void {
-  if (sideRoot) { sideRoot.unmount(); sideRoot = null; }
+  if (sideRoot) {
+    sideRoot.unmount();
+    sideRoot = null;
+  }
   document.getElementById(CONTAINER_ID)?.remove();
 }
 
-function MainSideButtonsComponent({ scene }: { scene: any }) {
-  const [dims, setDims] = useState({ width: window.innerWidth, height: window.innerHeight });
+function MainSideButtonsComponent({ scene }: { scene: IMainGameScene }) {
+  const [dims, setDims] = useState({
+    width: scene.sys.game.canvas.width / (window.devicePixelRatio || 1),
+    height: scene.sys.game.canvas.height / (window.devicePixelRatio || 1),
+  });
 
   useEffect(() => {
-    const handleResize = () => setDims({ width: window.innerWidth, height: window.innerHeight });
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const handleAction = (action: () => void) => {
-    if (!scene.krosh?.isTransitioning && !scene.krosh?.isSleeping) action();
-  };
-
-  const leftButtons = [
-    { icon: 'shop', click: () => showShopModal() },
-    { icon: 'foto', click: () => takeScreenshot(scene) }
-  ];
-
-  const rightButtons = [
-    { icon: 'mini-game', click: () => showMinigameModal(scene) },
-    { icon: 'my-pets', click: () => showPetsModal() }
-  ];
-
-  const isPortrait = dims.width < dims.height;
-  const isMobilePhone = dims.width < 550;
-  const uiScale = isMobilePhone ? 0.5 : 1.0;
-
-  // Точный расчет игрового поля Phaser
-  const gridW = isPortrait ? dims.width * 0.92 : dims.width * 0.6;
-  const gridOffsetX = Math.floor((dims.width - gridW) / 2);
-
-  // ИСПРАВЛЕНО: Прямой расчет координат в пикселях от края экрана.
-  // Для телефонов — 16px от краев экрана.
-  // Для планшетов (iPad) и десктопа — встает ровно к боковым рамкам игрового поля (gridOffsetX).
-  const leftPos = isMobilePhone ? 16 : Math.max(16, gridOffsetX + 10);
-  const rightPos = isMobilePhone ? 16 : Math.max(16, gridOffsetX + 10);
-
-  const renderGroup = (buttons: typeof leftButtons, isLeft: boolean) => {
-    const groupStyle: React.CSSProperties = {
-      position: 'absolute',
-      top: '50%',
-      transform: `translateY(-50%) scale(${uiScale})`,
-      // ИСПРАВЛЕНО: Используем жесткие left и right для 100% срабатывания позиции
-      left: isLeft ? `${leftPos}px` : 'unset',
-      right: !isLeft ? `${rightPos}px` : 'unset',
-      transformOrigin: isLeft ? 'left center' : 'right center',
+    const up = () => {
+      const canvas = scene.sys.game.canvas;
+      if (canvas) setDims({ width: canvas.clientWidth, height: canvas.clientHeight });
     };
+    scene.scale.on('resize', up);
+    window.addEventListener('resize', up, { passive: true });
+    up();
+    return () => {
+      scene.scale.off('resize', up);
+      window.removeEventListener('resize', up);
+    };
+  }, [scene]);
 
-    return (
-      <div style={groupStyle} className="flex flex-col gap-[36px] portrait:gap-6 pointer-events-auto w-[120px]">
-        {buttons.map((btn, idx) => (
-          <div key={idx} className="relative w-[120px] h-[120px] cursor-pointer transition-transform active:scale-95" onClick={() => handleAction(btn.click)}>
-            <img src="/assets/interface-icons/button.svg" className="absolute inset-0 w-full h-full" alt="bg" />
-            <div className="relative w-full h-full p-[15px] z-10 flex items-center justify-center">
-              <img src={`/assets/interface-icons/${btn.icon}.svg`} className="w-[90px] h-[90px] object-contain" alt={btn.icon} />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
+  const act = (key: string) => {
+    if (!scene.actionCharacter?.currentAnim && !scene.baseCharacter?.isSleeping)
+      scene.events.emit(key);
   };
+  const isPort = dims.width < dims.height,
+    isMob = dims.width < 767,
+    isLandMob = !isPort && dims.height < 700,
+    isFold = isPort && dims.width / dims.height < 0.5;
+  const scale = isFold ? 0.38 : isMob ? 0.45 : isLandMob ? 0.65 : 0.85;
+  const sidePos = isFold
+    ? 8
+    : isMob
+      ? 30
+      : Math.floor((dims.width - dims.width * (isPort ? 0.88 : 0.6)) / 2);
+
+  const renderGroup = (btns: GroupButton[], isLeft: boolean) => (
+    <div
+      style={{
+        position: 'absolute',
+        top: '50%',
+        transform: `translateY(-50%) scale(${scale})`,
+        left: isLeft ? `${sidePos}px` : 'unset',
+        right: !isLeft ? `${sidePos}px` : 'unset',
+        transformOrigin: isLeft ? 'left center' : 'right center',
+      }}
+      className="pointer-events-auto flex w-[160px] flex-col gap-8 portrait:gap-4">
+      {btns.map((btn, i) => (
+        <div
+          key={i}
+          className="relative h-[160px] w-[160px] cursor-pointer transition-transform active:scale-95"
+          onClick={() => act(btn.event)}>
+          <img
+            src={buttonBg}
+            className="absolute inset-0 h-full w-full"
+            alt="bg"
+          />
+          <div className="relative z-10 flex h-full w-full items-center justify-center p-6">
+            <img
+              src={btn.src}
+              className="h-full w-full object-contain"
+              alt={btn.icon}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-20">
-      {renderGroup(leftButtons, true)}
-      {renderGroup(rightButtons, false)}
+    <div className="pointer-events-none absolute top-0 left-0 z-20 h-full w-full">
+      <div
+        style={{
+          position: 'absolute',
+          left: '50%',
+          top: 0,
+          width: dims.width,
+          height: dims.height,
+          transform: 'translateX(-50%)',
+          zIndex: 20,
+          pointerEvents: 'none',
+        }}>
+        {renderGroup(
+          [
+            { icon: 'shop', src: shopIcon, event: 'ui_open_shop' },
+            { icon: 'foto', src: fotoIcon, event: 'ui_take_screenshot' },
+          ],
+          true
+        )}
+        {renderGroup(
+          [
+            { icon: 'minigame', src: minigameIcon, event: 'ui_open_minigame' },
+            { icon: 'mypets', src: mypetsIcon, event: 'ui_open_pets' },
+          ],
+          false
+        )}
+      </div>
     </div>
   );
 }

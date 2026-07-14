@@ -1,105 +1,170 @@
 import Phaser from 'phaser';
-import { MainScene } from './MainScene';
+import { ActionPetCharacter } from './animations/ActionPetCharacter';
+import { BasePetCharacter } from './animations/BasePetCharacter';
+import { MainPetPosition } from './MainPetPosition';
 
-const DRAG_CONFIG = {
-  feed: { texture: 'icon-eat', anim: 'eat', duration: 0, yOffset: -295, size: 80, radius: 230 },
-  play: { texture: 'icon-play', anim: 'play', duration: 1100, yOffset: -295, size: 80, radius: 230 },
-  wash: { texture: 'icon-wash', anim: 'wash', duration: 0, yOffset: -295, size: 80, radius: 230 },
+import eatIconUrl from '../../../assets/buttom_menu-icons/eat.svg';
+import playIconUrl from '../../../assets/buttom_menu-icons/play.svg';
+import washIconUrl from '../../../assets/buttom_menu-icons/wash.svg';
+
+interface DragItemConfig {
+  texture: string;
+  url: string;
+  anim: string;
+  duration: number;
+  radius: number;
+}
+
+const DRAG_CONFIG: Record<string, DragItemConfig> = {
+  feed: { texture: 'icon-eat', url: eatIconUrl, anim: 'eat', duration: 0, radius: 180 },
+  play: { texture: 'icon-play', url: playIconUrl, anim: 'play', duration: 1100, radius: 180 },
+  wash: { texture: 'icon-wash', url: washIconUrl, anim: 'wash', duration: 4000, radius: 180 },
 };
 
-const checkOverlapWithPet = (scene: MainScene, obj: Phaser.GameObjects.Image, overlapRadius: number): boolean => {
-  if (!scene.krosh) return false;
-  const isPort = window.innerWidth < window.innerHeight;
-  const uiScale = isPort ? 0.7 : 1.0;
-  const verticalOffset = isPort ? 295 : 322;
-  return Phaser.Math.Distance.Between(obj.x, obj.y, scene.krosh.x, scene.krosh.y - (verticalOffset * uiScale)) < (overlapRadius * uiScale);
+const LOADING_TEXTURES: Record<string, boolean> = {};
+
+const checkOverlapWithPet = (pet: BasePetCharacter, obj: Phaser.GameObjects.Image, maxDistance: number): boolean => {
+  if (!pet?.video?.active) return false;
+  const bounds = pet.video.getBounds();
+  if (!bounds || bounds.width === 0 || bounds.height === 0) return false;
+  return Phaser.Math.Distance.Between(obj.x, obj.y, bounds.centerX, bounds.centerY) <= maxDistance;
 };
 
-const createCareDrag = (scene: MainScene, nativeEvent: any, config: typeof DRAG_CONFIG.feed): void => {
-  if (!scene.krosh || scene.krosh.isSleeping || scene.krosh.isTransitioning) return;
-  scene.input.setDefaultCursor('default');
-
-  const isPort = window.innerWidth < window.innerHeight;
-  const uiScale = isPort ? 0.7 : 1.0;
-  const adaptiveSize = config.size * uiScale;
-  const isTouch = !!(nativeEvent.touches && nativeEvent.touches.length > 0);
-  const clientX = isTouch ? nativeEvent.touches[0].clientX : nativeEvent.clientX;
-  const clientY = isTouch ? nativeEvent.touches[0].clientY : nativeEvent.clientY;
-
-  const cam = scene.cameras.main;
-  const phaserPoint = cam.getWorldPoint(clientX, clientY);
-  const item = scene.add.image(phaserPoint.x, phaserPoint.y, config.texture).setDisplaySize(adaptiveSize, adaptiveSize).setDepth(9999).setOrigin(0.5);
-
-  scene.input.activePointer.x = phaserPoint.x;
-  scene.input.activePointer.y = phaserPoint.y;
-  scene.input.activePointer.isDown = true;
-
-  const onPointerMove = (p: Phaser.Input.Pointer) => {
-    if (item.active) {
-      item.x = p.x;
-      item.y = p.y;
-    }
+const getCanvasRelativeCoords = (scene: Phaser.Scene, clientX: number, clientY: number): { x: number; y: number } => {
+  const canvas = scene.sys.game.canvas;
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (clientX - rect.left) * (canvas.width / rect.width),
+    y: (clientY - rect.top) * (canvas.height / rect.height)
   };
+};
 
-  const onNativeTouchMove = (e: TouchEvent) => {
-    if (item.active && e.touches && e.touches.length > 0) {
-      const p = cam.getWorldPoint(e.touches[0].clientX, e.touches[0].clientY);
-      item.x = p.x;
-      item.y = p.y;
-    }
-  };
+const createCareDrag = (scene: Phaser.Scene, pet: BasePetCharacter, actionChar: ActionPetCharacter, nativeEvent: any, config: DragItemConfig): void => {
+  const mainScene = scene as any;
+  const washChar = mainScene.washCharacter;
 
-  const onNativeMouseMove = (e: MouseEvent) => {
-    if (item.active) {
-      const p = cam.getWorldPoint(e.clientX, e.clientY);
-      item.x = p.x;
-      item.y = p.y;
-    }
-  };
+  if (!pet || pet.isSleeping || actionChar?.currentAnim || washChar?.isActiveAnim || !scene?.sys?.isActive()) return;
 
-  const cleanupListeners = () => {
-    scene.input.off('pointermove', onPointerMove);
-    scene.input.off('pointerup', onPointerUp);
-    window.removeEventListener('mousemove', onNativeMouseMove);
-    window.removeEventListener('touchmove', onNativeTouchMove);
-    window.removeEventListener('mouseup', onPointerUp);
-    window.removeEventListener('touchend', onPointerUp);
-  };
+  const touch = nativeEvent.touches?.[0] || nativeEvent.changedTouches?.[0] || nativeEvent;
+  if (!touch || typeof touch.clientX !== 'number') return;
 
-  const onPointerUp = () => {
-    cleanupListeners();
+  const snd = scene.sound as any;
+  if (snd && snd.context && snd.context.state === 'suspended') {
+    snd.context.resume();
+  }
 
-    if (!item.active || !scene.krosh) return;
+  if (pet && typeof pet.resetIdleTimer === 'function') pet.resetIdleTimer();
 
-    if (checkOverlapWithPet(scene, item, config.radius)) {
-      if (config.anim === 'wash') scene.playWashSequence();
-      else if (config.anim === 'play') scene.playPlaySequence();
-      else if (scene.krosh.playAnim) scene.krosh.playAnim(config.anim, false);
+  const t = MainPetPosition.getInstance().getTransform();
+  const currentScale = t?.uiScale ?? 1.0;
+  const startCoords = getCanvasRelativeCoords(scene, touch.clientX, touch.clientY);
 
-      if (config.duration === 0) {
-        scene.tweens.add({ targets: item, y: item.y - 40, alpha: 0, duration: 350, ease: 'Cubic.easeOut', onComplete: () => item.active && item.destroy() });
-      } else {
-        const targetYOffset = isPort ? -295 : -322;
-        scene.tweens.add({ targets: item, scale: 0.1, alpha: 0, x: scene.krosh.x, y: scene.krosh.y + (targetYOffset * uiScale), duration: config.duration, ease: 'Cubic.easeOut', onComplete: () => item.active && item.destroy() });
+  const initItemImage = () => {
+    if (!scene?.sys?.isActive() || !pet?.video?.active) return;
+
+    const baseItemSize = 110 * currentScale;
+    const dynamicRadius = config.radius * currentScale;
+
+    const item = scene.add.image(startCoords.x, startCoords.y, config.texture).setDisplaySize(baseItemSize, baseItemSize).setDepth(9999).setOrigin(0.5);
+
+    const onGlobalMove = (e: any) => {
+      if (!item?.scene || !item.active || !scene?.sys?.isActive()) return;
+      const m = e.touches?.[0] || e.changedTouches?.[0] || e;
+      if (!m || typeof m.clientX !== 'number') return;
+      const coords = getCanvasRelativeCoords(scene, m.clientX, m.clientY);
+      item.x = coords.x;
+      item.y = coords.y;
+    };
+
+    const onGlobalUp = () => {
+      cleanup();
+      if (!item?.scene || !item.active || !scene?.sys?.isActive() || !pet?.video?.active) {
+        if (item?.active) item.destroy();
+        return;
       }
-    } else {
-      scene.tweens.add({ targets: item, scale: 0, alpha: 0, duration: 200, onComplete: () => item.active && item.destroy() });
-    }
+
+      if (checkOverlapWithPet(pet, item, dynamicRadius)) {
+        if (config.anim === 'wash') {
+          scene.events.emit('care_trigger_wash');
+        } else if (config.anim === 'play') {
+          scene.events.emit('care_trigger_play');
+        } else {
+          actionChar?.play(config.anim);
+        }
+
+        if (config.duration === 0) {
+          scene.tweens.add({
+            targets: item,
+            y: item.y - 60 * currentScale,
+            alpha: 0,
+            duration: 350,
+            ease: 'Cubic.easeOut',
+            onComplete: () => { if (item?.active) item.destroy(); }
+          });
+        } else {
+          scene.tweens.add({
+            targets: item,
+            scale: 0.05,
+            alpha: 0,
+            x: pet.video.x,
+            y: pet.video.y - 120 * currentScale,
+            duration: config.duration,
+            ease: 'Cubic.easeOut',
+            onComplete: () => { if (item?.active) item.destroy(); }
+          });
+        }
+      } else {
+        scene.tweens.add({
+          targets: item,
+          scale: 0,
+          alpha: 0,
+          duration: 200,
+          onComplete: () => { if (item?.active) item.destroy(); }
+        });
+      }
+    };
+
+    const cleanup = () => {
+      window.removeEventListener('mousemove', onGlobalMove);
+      window.removeEventListener('mouseup', onGlobalUp);
+      window.removeEventListener('touchmove', onGlobalMove);
+      window.removeEventListener('touchend', onGlobalUp);
+      window.removeEventListener('touchcancel', onGlobalUp);
+    };
+
+    window.addEventListener('mousemove', onGlobalMove, { passive: true });
+    window.addEventListener('mouseup', onGlobalUp, { passive: true });
+    window.addEventListener('touchmove', onGlobalMove, { passive: true });
+    window.addEventListener('touchend', onGlobalUp, { passive: true });
+    window.addEventListener('touchcancel', onGlobalUp, { passive: true });
+
+    scene.events.once('shutdown', () => {
+      cleanup();
+      if (item?.active) item.destroy();
+    });
   };
 
-  scene.input.on('pointermove', onPointerMove);
-  scene.input.on('pointerup', onPointerUp);
-  window.addEventListener('mousemove', onNativeMouseMove);
-  window.addEventListener('touchmove', onNativeTouchMove, { passive: true });
-  window.addEventListener('mouseup', onPointerUp, { once: true });
-  window.addEventListener('touchend', onPointerUp, { once: true });
+  if (scene.textures.exists(config.texture)) {
+    initItemImage();
+    return;
+  }
 
-  scene.events.once('shutdown', () => {
-    cleanupListeners();
-    if (item.active) item.destroy();
-  });
+  if (LOADING_TEXTURES[config.texture]) return;
+  LOADING_TEXTURES[config.texture] = true;
+
+  const img = new Image();
+  img.src = config.url;
+  img.onload = () => {
+    LOADING_TEXTURES[config.texture] = false;
+    if (scene?.textures && scene.sys?.isActive()) {
+      if (!scene.textures.exists(config.texture)) scene.textures.addImage(config.texture, img);
+      initItemImage();
+    }
+  };
+  img.onerror = () => { LOADING_TEXTURES[config.texture] = false; };
 };
 
-export const startFeedingDrag = (s: MainScene, e: any) => createCareDrag(s, e, DRAG_CONFIG.feed);
-export const startPlayingDrag = (s: MainScene, e: any) => createCareDrag(s, e, DRAG_CONFIG.play);
-export const startWashingDrag = (s: MainScene, e: any) => createCareDrag(s, e, DRAG_CONFIG.wash);
+export const startFeedingDrag = (scene: Phaser.Scene, pet: BasePetCharacter, actionChar: ActionPetCharacter, e: TouchEvent | MouseEvent) => createCareDrag(scene, pet, actionChar, e, DRAG_CONFIG.feed);
+export const startPlayingDrag = (scene: Phaser.Scene, pet: BasePetCharacter, actionChar: ActionPetCharacter, e: TouchEvent | MouseEvent) => createCareDrag(scene, pet, actionChar, e, DRAG_CONFIG.play);
+export const startVendorDrag = startPlayingDrag;
+export const startWashingDrag = (scene: Phaser.Scene, pet: BasePetCharacter, actionChar: ActionPetCharacter, e: TouchEvent | MouseEvent) => createCareDrag(scene, pet, actionChar, e, DRAG_CONFIG.wash);

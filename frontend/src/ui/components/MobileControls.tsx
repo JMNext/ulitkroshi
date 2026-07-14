@@ -2,19 +2,21 @@ import React from 'react';
 
 interface MobileControlsProps { 
   type: 'horizontal' | 'cross'; 
-  onChangeDir: (dir: any) => void; 
+  onChangeDir: (dir: string | number) => void; 
 }
 
 const BTN_STYLE = 'w-[52px] h-[52px] xs:w-[60px] xs:h-[60px] sm:w-[80px] sm:h-[80px] bg-gradient-to-b from-white to-slate-100 border border-slate-300 shadow-[0_4px_10px_rgba(0,0,0,0.15)] font-black flex items-center justify-center select-none rounded-full transition-all cursor-pointer pointer-events-auto active:scale-90 touch-none';
 
 export const MobileControlsUI = ({ type, onChangeDir }: MobileControlsProps) => {
-  const start = (dir: any) => (e: React.SyntheticEvent) => { 
+  const start = (dir: string | number) => (e: React.SyntheticEvent) => { 
     e.stopPropagation();
+    e.preventDefault();
     onChangeDir(dir); 
   };
 
   const end = () => (e: React.SyntheticEvent) => { 
     e.stopPropagation();
+    e.preventDefault();
     if (type === 'horizontal') onChangeDir(0);
   };
 
@@ -32,7 +34,7 @@ export const MobileControlsUI = ({ type, onChangeDir }: MobileControlsProps) => 
   }
 
   return (
-    <div className="absolute right-4 bottom-4 md:right-8 md:bottom-8 portrait:right-1/2 portrait:translate-x-1/2 portrait:bottom-2 pointer-events-none z-30 env-safe-bottom">
+    <div className="relative pointer-events-none z-30 flex items-center justify-center">
       <div className="relative w-[145px] h-[135px] xs:w-[170px] xs:h-[160px] sm:w-[220px] sm:h-[200px] flex items-center justify-center pointer-events-none">
         <button onTouchStart={start('UP')} onMouseDown={start('UP')} className={`absolute top-0 left-1/2 -translate-x-1/2 ${BTN_STYLE}`}>
           <div className="pointer-events-none w-0 h-0 border-l-[8px] xs:border-l-[10px] sm:border-l-[12px] border-l-transparent border-r-[8px] xs:border-r-[10px] sm:border-r-[12px] border-r-transparent border-b-[12px] xs:border-b-[15px] sm:border-b-[18px] border-b-slate-700 mb-0.5" />

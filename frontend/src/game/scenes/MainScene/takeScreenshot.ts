@@ -1,11 +1,16 @@
 import { toPng } from 'html-to-image';
 
-export function takeScreenshot(scene: any): void {
+interface IScreenshotScene extends Phaser.Scene {
+  game: Phaser.Game;
+}
+
+export function takeScreenshot(scene: IScreenshotScene): void {
   if (!scene?.game?.renderer) return;
 
-  scene.game.renderer.snapshot(async (phaserImage: HTMLImageElement) => {
+  scene.game.renderer.snapshot(async (phaserImage: unknown) => {
+    const phaserImg = phaserImage as HTMLImageElement | null;
     const node = document.getElementById('game-container');
-    if (!node || !phaserImage?.src) return;
+    if (!node || !phaserImg?.src) return;
 
     try {
       const phaserCanvas = node.querySelector('canvas');
@@ -14,7 +19,7 @@ export function takeScreenshot(scene: any): void {
       const originalVisibility = phaserCanvas.style.visibility;
       
       const tempImg = document.createElement('img');
-      tempImg.src = phaserImage.src;
+      tempImg.src = phaserImg.src;
       tempImg.style.position = 'absolute';
       tempImg.style.inset = '0';
       tempImg.style.width = '100%';
@@ -29,18 +34,30 @@ export function takeScreenshot(scene: any): void {
       if (bottomMenuOverlay) {
         tempBottomCopy = bottomMenuOverlay.cloneNode(true) as HTMLElement;
         tempBottomCopy.id = 'main-bottom-ui-overlay-screenshot-temp';
+        
+        const originalMainWrapper = bottomMenuOverlay.firstElementChild as HTMLElement | null;
+        const copiedMainWrapper = tempBottomCopy.firstElementChild as HTMLElement | null;
+        if (originalMainWrapper && copiedMainWrapper) {
+          copiedMainWrapper.style.cssText = originalMainWrapper.style.cssText;
+          const originalButtonsGroup = originalMainWrapper.lastElementChild as HTMLElement | null;
+          const copiedButtonsGroup = copiedMainWrapper.lastElementChild as HTMLElement | null;
+          if (originalButtonsGroup && copiedButtonsGroup) {
+            copiedButtonsGroup.style.cssText = originalButtonsGroup.style.cssText;
+          }
+        }
+        
         node.appendChild(tempBottomCopy);
         bottomMenuOverlay.style.opacity = '0';
       }
 
-      // Ускорение: Уменьшили задержку до 20мс для мгновенного слепка кадра
-      await new Promise((resolve) => setTimeout(resolve, 20));
+      await new Promise((resolve) => window.setTimeout(resolve, 20));
 
-      // Ускорение: Включен skipFonts для отключения тяжелого парсинга шрифтов
       const dataUrl = await toPng(node, {
         cacheBust: true,
         pixelRatio: window.devicePixelRatio || 1,
-        skipFonts: true, 
+        skipFonts: true,
+        width: node.clientWidth,
+        height: node.clientHeight,
       });
 
       phaserCanvas.style.visibility = originalVisibility;

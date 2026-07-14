@@ -1,44 +1,43 @@
 import { Scene } from 'phaser';
 import { renderLoginUI, destroyLoginUI, startLoadingAnimation } from './LoginUI';
 import { BackgroundManager } from '../../../BackgroundManager';
+import begemotUrl from '../../../assets/login_assets/begemot.png?url';
 
 export class LoginScene extends Scene {
   constructor() {
     super('LoginScene');
   }
 
-  public preload = (): void => {
-    this.load.image('player-begemot', '/assets/login_assets/begemot.png');
+  preload = (): void => {
+    this.load.image('player-begemot', begemotUrl);
   };
 
-  public create = (): void => {
+  create = (): void => {
     this.cameras.main.fadeIn(400, 0, 0, 0);
     BackgroundManager.getInstance().applyBackground(this.scene.key);
-
     this.buildUI();
 
-    window.addEventListener('resize', this.handleResizeBound);
+    this.scale.on('resize', this.handleResizeBound, this);
 
     this.events.once('shutdown', () => {
-      window.removeEventListener('resize', this.handleResizeBound);
+      this.scale.off('resize', this.handleResizeBound, this);
       destroyLoginUI();
       BackgroundManager.getInstance().clearBackground();
     }, this);
   };
 
-  private handleResizeBound = (): void => {
-    if (!this.scene.isActive(this.scene.key)) return;
+  handleResizeBound = (): void => {
+    if (!this.sys.isActive()) return;
     BackgroundManager.getInstance().applyBackground(this.scene.key);
-    destroyLoginUI();
-    this.buildUI();
   };
 
-  private buildUI = (): void => {
+  buildUI = (): void => {
     renderLoginUI(this, () => this.handleStartFlow());
   };
 
-  private handleStartFlow = (): void => {
+  handleStartFlow = (): void => {
     startLoadingAnimation(() => {
+      if (!this.sys.isActive()) return;
       this.cameras.main.fadeOut(500, 0, 0, 0).once('camerafadeoutcomplete', () => {
         this.scene.start('RegistrationScene_Step1');
       });

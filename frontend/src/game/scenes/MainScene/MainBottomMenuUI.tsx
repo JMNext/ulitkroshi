@@ -1,22 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import Phaser from 'phaser';
+import React, { useEffect, useRef, useState } from 'react';
 import { createRoot, Root } from 'react-dom/client';
-import { MainScene } from './MainScene';
+import menuBgDesktop from '../../../assets/background/bottom-menu-desktop.svg';
+import menuBgMobile from '../../../assets/background/bottom-menu-mobile.svg';
+import buttonBgUrl from '../../../assets/buttom_menu-icons/button.svg';
+import eatIcon from '../../../assets/buttom_menu-icons/eat.svg';
+import playIcon from '../../../assets/buttom_menu-icons/play.svg';
+import sleepIcon from '../../../assets/buttom_menu-icons/sleep.svg';
+import washIcon from '../../../assets/buttom_menu-icons/wash.svg';
+import { ActionPetCharacter } from './animations/ActionPetCharacter';
+import { BasePetCharacter } from './animations/BasePetCharacter';
 import { startFeedingDrag, startPlayingDrag, startWashingDrag } from './PetCareActions';
 
-let bottomRoot: Root | null = null;
-const MENU_CONFIG = {
-  containerId: 'main-bottom-ui-overlay',
-  maxWidth: 'max-w-[1200px]',
-};
+interface IMainGameScene extends Phaser.Scene {
+  actionCharacter?: ActionPetCharacter | null;
+  baseCharacter?: BasePetCharacter | null;
+}
+interface MenuItem {
+  text: string;
+  icon: string;
+  action: (e: TouchEvent | MouseEvent) => void;
+}
 
-export const renderMainBottomMenuUI = (scene: MainScene): void => {
-  let container = document.getElementById(MENU_CONFIG.containerId);
-  if (!container) {
-    container = document.createElement('div');
-    container.id = MENU_CONFIG.containerId;
-    document.getElementById('game-container')?.appendChild(container);
+let bottomRoot: Root | null = null;
+const CONTAINER_ID = 'main-bottom-ui-overlay';
+
+export const renderMainBottomMenuUI = (scene: IMainGameScene): void => {
+  let c = document.getElementById(CONTAINER_ID);
+  if (!c) {
+    c = document.createElement('div');
+    c.id = CONTAINER_ID;
+    document.getElementById('game-container')?.appendChild(c);
   }
-  if (!bottomRoot && container) bottomRoot = createRoot(container);
+  c.className = 'absolute top-0 left-0 w-full h-full pointer-events-none z-10';
+  if (!bottomRoot && c) bottomRoot = createRoot(c);
   bottomRoot?.render(<MainBottomMenuComponent scene={scene} />);
 };
 
@@ -25,90 +42,183 @@ export const destroyMainBottomMenuUI = (): void => {
     bottomRoot.unmount();
     bottomRoot = null;
   }
-  document.getElementById(MENU_CONFIG.containerId)?.remove();
+  document.getElementById(CONTAINER_ID)?.remove();
 };
 
-const MainBottomMenuComponent = ({ scene }: { scene: MainScene }) => {
-  const [dims, setDims] = useState({ width: window.innerWidth, height: window.innerHeight });
+const MainBottomMenuComponent = ({ scene }: { scene: IMainGameScene }) => {
+  const [dims, setDims] = useState({
+    width: scene.sys.game.canvas.width / (window.devicePixelRatio || 1),
+    height: scene.sys.game.canvas.height / (window.devicePixelRatio || 1),
+  });
+  const bRef = useRef<Map<string, HTMLDivElement>>(new Map());
 
   useEffect(() => {
-    const handleResize = () => setDims({ width: window.innerWidth, height: window.innerHeight });
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    let tId: number;
+    const up = () => {
+      window.cancelAnimationFrame(tId);
+      tId = window.requestAnimationFrame(() => {
+        const cv = scene.sys.game.canvas;
+        if (cv) setDims({ width: cv.clientWidth, height: cv.clientHeight });
+      });
+    };
+    scene.scale.on('resize', up);
+    window.addEventListener('resize', up, { passive: true });
+    up();
+    return () => {
+      scene.scale.off('resize', up);
+      window.cancelAnimationFrame(tId);
+      window.removeEventListener('resize', up);
+    };
+  }, [scene]);
 
-  const handleAction = (text: string, action: () => void) => {
-    if (scene.krosh?.isTransitioning) return;
-    if (scene.krosh?.isSleeping && text !== 'Спать') return;
-    action();
+  const act = (txt: string, cb: () => void) => {
+    if (
+      !scene.actionCharacter?.currentAnim &&
+      !(scene.baseCharacter?.isSleeping && txt !== 'Спать')
+    )
+      cb();
   };
-
-  const menuItems = [
-    { text: 'Кормить', icon: '/assets/buttom_menu-icons/eat.svg', action: (e: any) => startFeedingDrag(scene, e) },
-    { text: 'Мыть', icon: '/assets/buttom_menu-icons/wash.svg', action: (e: any) => startWashingDrag(scene, e) },
-    { text: 'Играть', icon: '/assets/buttom_menu-icons/play.svg', action: (e: any) => startPlayingDrag(scene, e) },
-    { text: 'Спать', icon: '/assets/buttom_menu-icons/sleep.svg', action: () => scene.krosh?.playAnim('sleep', true) },
+  const items: MenuItem[] = [
+    {
+      text: 'Кормить',
+      icon: eatIcon,
+      action: (e) => {
+        if (scene.baseCharacter && scene.actionCharacter)
+          startFeedingDrag(scene, scene.baseCharacter, scene.actionCharacter, e);
+      },
+    },
+    {
+      text: 'Мыть',
+      icon: washIcon,
+      action: (e) => {
+        if (scene.baseCharacter && scene.actionCharacter)
+          startWashingDrag(scene, scene.baseCharacter, scene.actionCharacter, e);
+      },
+    },
+    {
+      text: 'Играть',
+      icon: playIcon,
+      action: (e) => {
+        if (scene.baseCharacter && scene.actionCharacter)
+          startPlayingDrag(scene, scene.baseCharacter, scene.actionCharacter, e);
+      },
+    },
+    { text: 'Спать', icon: sleepIcon, action: () => scene.baseCharacter?.toggleSleep() },
   ];
 
-  const isPortrait = dims.width < dims.height;
-  const menuScale = isPortrait ? Math.max(0.42, dims.width / 750) : Math.min(1.0, dims.width / 1400);
+  useEffect(() => {
+    const ups: (() => void)[] = [];
+    items.forEach((item) => {
+      const el = bRef.current.get(item.text);
+      if (!el) return;
+      const ts = (e: TouchEvent) => {
+        e.preventDefault();
+        act(item.text, () => item.action(e));
+      };
+      el.addEventListener('touchstart', ts, { passive: false });
+      ups.push(() => el.removeEventListener('touchstart', ts));
+    });
+    return () => ups.forEach((c) => c());
+  }, [scene.baseCharacter, scene.actionCharacter, dims]);
 
-  const mainWrapperStyle: React.CSSProperties = {
-    position: 'fixed',
-    left: '50%',
-    bottom: '0',
-    width: '1920px',
-    height: '260px',
-    zIndex: 10,
-    transform: `translateX(-50%) scale(${menuScale})`,
-    transformOrigin: 'bottom center',
-  };
-
-  const bgImageStyle: React.CSSProperties = {
-    position: 'absolute',
-    bottom: '0',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    width: '1920px',
-    height: '260px',
-    objectFit: 'none',
-    objectPosition: 'bottom center',
-    pointerEvents: 'none',
-    userSelect: 'none',
-    zIndex: 0,
-  };
-
-  const buttonsWrapperStyle: React.CSSProperties = {
-    position: 'absolute',
-    bottom: 0,
-    left: '50%',
-    transform: 'translateX(-50%)',
-    zIndex: 10,
-    display: 'flex',
-    width: isPortrait ? '560px' : '1200px',
-    justifyContent: 'center',
-    alignItems: 'end',
-    gap: isPortrait ? '20px' : '36px',
-    paddingBottom: '40px',
-  };
+  const isPort = dims.width < dims.height,
+    isMob = dims.width < 767,
+    isTab = !isPort && dims.width / dims.height < 1.72,
+    useMob = isMob || (isPort && dims.width / dims.height < 1.65 && dims.width < 550);
+  const bg = useMob ? menuBgMobile : menuBgDesktop;
+  const wrapStyle: React.CSSProperties = useMob
+    ? {
+        position: 'absolute',
+        left: '50%',
+        bottom: '0',
+        width: dims.width,
+        height: '180px',
+        transform: 'translateX(-50%)',
+        zIndex: 10,
+      }
+    : {
+        position: 'absolute',
+        left: '50%',
+        bottom: '0',
+        width: `${dims.width}px`,
+        height: isPort ? '210px' : isTab ? '140px' : '185px',
+        zIndex: 10,
+        transform: 'translateX(-50%)',
+      };
+  const scale = useMob
+    ? Math.min(dims.width / 390, 1.0)
+    : isPort
+      ? 0.85
+      : isTab
+        ? 0.68
+        : Math.min((dims.width / 1920) * 0.85, 1.1);
+  const padBot = useMob ? `${28 * scale}px` : isTab ? '8px' : '32px';
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden">
-      <div style={mainWrapperStyle} className="pointer-events-auto">
-        <img src="/assets/background/bottom-menu-desktop.svg" style={bgImageStyle} alt="menu-bg" />
-        <div style={buttonsWrapperStyle}>
-          {menuItems.map((item) => (
+    <div className="pointer-events-none absolute top-0 left-0 z-10 h-full w-full">
+      <div
+        style={wrapStyle}
+        className="pointer-events-auto">
+        <img
+          src={bg}
+          style={{
+            position: 'absolute',
+            bottom: '0',
+            left: '0',
+            width: '100%',
+            height: '100%',
+            objectFit: 'fill',
+            pointerEvents: 'none',
+            userSelect: 'none',
+            zIndex: 0,
+          }}
+          alt="menu-bg"
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: '50%',
+            transform: `translateX(-50%) scale(${scale})`,
+            transformOrigin: 'bottom center',
+            width: '100%',
+            zIndex: 10,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'end',
+            gap: useMob ? '16px' : '36px',
+            paddingBottom: padBot,
+          }}>
+          {items.map((item) => (
             <div
               key={item.text}
-              onMouseDown={(e) => { e.preventDefault(); handleAction(item.text, () => item.action(e)); }}
-              onTouchStart={(e) => handleAction(item.text, () => item.action(e))}
-              className="flex flex-col items-center cursor-pointer transition-transform duration-75 active:scale-95 w-[115px]"
-            >
-              <div className="relative w-[115px] h-[115px] flex items-center justify-center">
-                <img src="/assets/buttom_menu-icons/button.svg" className="absolute inset-0 w-full h-full" alt="btn-bg" />
-                <img src={item.icon} className="relative w-[75px] h-[75px] z-10" alt={item.text} />
+              ref={(n) => {
+                if (n) bRef.current.set(item.text, n);
+                else bRef.current.delete(item.text);
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                act(item.text, () => item.action(e.nativeEvent));
+              }}
+              style={{ touchAction: 'manipulation', width: useMob ? '78px' : '100px' }}
+              className="flex cursor-pointer flex-col items-center transition-transform duration-75 active:scale-95">
+              <div
+                className={`relative ${useMob ? 'h-[78px] w-[78px]' : 'h-[100px] w-[100px]'} flex items-center justify-center`}>
+                <img
+                  src={buttonBgUrl}
+                  className="absolute inset-0 h-full w-full"
+                  alt="btn-bg"
+                />
+                <img
+                  src={item.icon}
+                  className={`relative ${useMob ? 'h-[50px] w-[50px]' : 'h-[64px] w-[64px]'} z-10`}
+                  alt={item.text}
+                />
               </div>
-              <span className="text-[24px] font-bold text-[#424242] mt-1 leading-none tracking-wide select-none block text-center w-full">{item.text}</span>
+              <span
+                className={`${useMob ? 'text-[14px]' : 'text-[18px]'} mt-1.5 block w-full text-center leading-none font-bold tracking-wide text-[#424242] select-none`}>
+                {item.text}
+              </span>
             </div>
           ))}
         </div>

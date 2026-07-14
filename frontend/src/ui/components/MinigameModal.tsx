@@ -16,35 +16,51 @@ const ICONS = {
 const close = (scene: SceneWithModal, backdrop: HTMLDivElement, modal: HTMLDivElement): void => {
   scene.minigameModalInstance = null;
   backdrop.classList.add('opacity-0');
-  modal.classList.add('translate-y-12', 'opacity-0');
-  setTimeout(() => backdrop.remove(), 300);
+  modal.style.transform = `${modal.style.transform.split(' translate')[0]} translateY(12px)`;
+  modal.classList.add('opacity-0');
+  scene.time.delayedCall(300, () => backdrop.remove());
 };
 
 export const showMinigameModal = (scene: SceneWithModal): void => {
   if (scene.minigameModalInstance) return;
 
+  const w = scene.scale.width;
+  const h = scene.scale.height;
+  const isPort = w < h;
+  const isLandscapeTablet = !isPort && (w / h) < 1.72;
+  const isUltraNarrow = isPort && (w / h) < 0.5;
+
+  let modalScale = 1.0;
+  if (isUltraNarrow) {
+    modalScale = Math.min(w / 380, 0.85);
+  } else if (isLandscapeTablet) {
+    modalScale = h < 650 ? 0.72 : 0.85;
+  }
+
   const backdrop = document.createElement('div');
   backdrop.className = "fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[999] opacity-0 transition-opacity duration-300 pointer-events-auto p-4 box-border";
 
   const modal = document.createElement('div');
-  modal.className = "bg-white px-5 py-6 sm:px-6 sm:py-8 rounded-[28px] sm:rounded-[32px] shadow-2xl relative transform translate-y-12 opacity-0 transition-all duration-300 ease-out box-border flex flex-col items-center w-full max-w-[420px] select-none";
+  modal.className = "bg-white px-5 py-5 sm:px-6 sm:py-6 rounded-[32px] shadow-2xl relative opacity-0 transition-all duration-300 ease-out box-border flex flex-col items-center w-full max-w-[380px] sm:max-w-[400px] select-none";
+  modal.style.transform = `scale(${modalScale}) translateY(12px)`;
+  modal.style.transformOrigin = 'center center';
 
   const backBtn = document.createElement('button');
   backBtn.type = 'button';
   backBtn.innerText = '←';
-  backBtn.className = "absolute left-5 top-5 sm:left-6 sm:top-6 text-xl sm:text-2xl text-gray-400 hover:text-gray-600 bg-transparent border-none font-black cursor-pointer transition-colors duration-200 hidden focus:outline-none p-1 pointer-events-auto";
+  backBtn.className = "absolute left-5 top-4 sm:left-6 sm:top-5 text-xl sm:text-2xl text-gray-400 hover:text-gray-600 bg-transparent border-none font-black cursor-pointer transition-colors duration-200 hidden focus:outline-none p-1 pointer-events-auto";
 
   const closeBtn = document.createElement('button');
   closeBtn.type = 'button';
   closeBtn.innerText = '✕';
-  closeBtn.className = "absolute right-5 top-5 sm:right-6 sm:top-6 text-xl sm:text-2xl text-gray-400 hover:text-gray-600 bg-transparent border-none font-black cursor-pointer transition-colors duration-200 focus:outline-none p-1 pointer-events-auto";
+  closeBtn.className = "absolute right-5 top-4 sm:right-6 sm:top-5 text-xl sm:text-2xl text-gray-400 hover:text-gray-600 bg-transparent border-none font-black cursor-pointer transition-colors duration-200 focus:outline-none p-1 pointer-events-auto";
   closeBtn.addEventListener('click', () => close(scene, backdrop, modal));
 
   const titleEl = document.createElement('h2');
-  titleEl.className = "text-[#1a3d1c] font-black text-xl sm:text-2xl md:text-3xl tracking-wide text-center uppercase mt-3 mb-4 sm:mb-6 select-none max-w-[75%]";
+  titleEl.className = "text-[#1a3d1c] font-black text-xl sm:text-2xl tracking-wide text-center uppercase mt-2 mb-4 sm:mb-5 select-none max-w-[70%] leading-none";
 
   const contentContainer = document.createElement('div');
-  contentContainer.className = "w-full flex flex-col items-center gap-3 sm:gap-4 box-border mt-auto mb-auto";
+  contentContainer.className = "w-full flex flex-col items-center gap-2.5 sm:gap-3.5 box-border mt-auto mb-auto";
 
   modal.append(backBtn, closeBtn, titleEl, contentContainer);
   backdrop.appendChild(modal);
@@ -52,24 +68,31 @@ export const showMinigameModal = (scene: SceneWithModal): void => {
   
   scene.minigameModalInstance = modal;
 
+  scene.events.once('shutdown', () => {
+    backdrop.remove();
+    scene.minigameModalInstance = null;
+  });
+
   requestAnimationFrame(() => {
     backdrop.classList.remove('opacity-0');
-    modal.classList.remove('translate-y-12', 'opacity-0');
+    modal.classList.remove('opacity-0');
+    modal.style.transform = `scale(${modalScale}) translateY(0px)`;
   });
 
   const renderMenuButton = (text: string, colorClass: string, icon: keyof typeof ICONS | null, onClick: () => void) => {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = `${colorClass} text-white font-black border-none cursor-pointer flex items-center justify-center relative shadow-md transition-all duration-100 uppercase select-none hover:brightness-105 active:scale-[0.97] box-border w-full max-w-[360px] h-12 sm:h-14 rounded-full text-sm sm:text-base md:text-lg px-10 pointer-events-auto`;
+    btn.className = `${colorClass} text-white font-black border-none cursor-pointer flex items-center justify-center relative shadow-md transition-all duration-100 uppercase select-none hover:brightness-105 active:scale-[0.97] box-border w-full max-w-[340px] h-11 sm:h-13 rounded-full text-xs sm:text-sm md:text-base px-6 pointer-events-auto`;
     
     if (icon) {
       const iconWrapper = document.createElement('div');
-      iconWrapper.className = "absolute left-4 sm:left-5 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center";
+      iconWrapper.className = "absolute left-4 sm:left-5 w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center";
       iconWrapper.innerHTML = ICONS[icon];
       btn.appendChild(iconWrapper);
     }
 
     const textSpan = document.createElement('span');
+    textSpan.className = "w-full text-center block px-4";
     textSpan.innerText = text;
     
     btn.appendChild(textSpan);
