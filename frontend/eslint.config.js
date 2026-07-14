@@ -15,8 +15,9 @@ export default [
       },
     },
     rules: {
-      'no-unused-vars': 'warn',
-      'no-console': 'off',
+      'no-unused-vars': 'off', // Вырубили предупреждения, чтобы не спамило желтыми линиями
+      'no-console': 'off',     // Разрешаем console.log в коде
+      'no-undef': 'error',     // Включаем строгую ошибку, чтобы работали автоимпорты через ПКМ
     },
   },
 ];

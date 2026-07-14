@@ -2,55 +2,13 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>УЛИТКРОШИ</title>
-  <style>
-    /* Гарантируем, что браузер не будет обрезать или сдвигать холст игры */
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background-color: #000000; /* Чистый черный фон за пределами игры */
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-    #game-container {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    canvas {
-      display: block;
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain; /* Сохраняет пропорции игры 1080x1920 без искажений */
-    }
-  </style>
 </head>
 <body>
 
-  <!-- Игровой контейнер Phaser -->
+  <!-- Игровой контейнер Phaser (HTML элементы будут создаваться динамически внутри него) -->
   <div id="game-container"></div>
-
-  <!-- HTML-интерфейс поверх игры (оставляем для кастомных окон, если понадобятся) -->
-  <div id="game-ui" 
-       style="display: none;" 
-       class="absolute inset-0 z-10 flex flex-col items-center justify-end pb-32 opacity-0 pointer-events-none transition-opacity duration-500 select-none">
-    
-    <button 
-      id="ui-start-btn" 
-      style="width: 320px; height: 95px; line-height: 95px;"
-      class="hidden pointer-events-auto text-center font-black text-white p-0 text-3xl rounded-[48px] bg-gradient-to-b from-[#81c714] to-[#4c9203] shadow-[0_6px_0_0_#366901,0_10px_15px_rgba(0,0,0,0.4)] border-t-2 border-[#a6f034] active:translate-y-1 active:shadow-[0_2px_0_0_#366901,0_4px_8px_rgba(0,0,0,0.4)] transition-all duration-75 tracking-wide cursor-pointer uppercase"
-    >
-      Войти
-    </button>
-
-  </div>
 
   <!-- Главный скрипт проекта -->
   <script type="module" src="./src/main.js"></script>
