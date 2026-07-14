@@ -2,6 +2,9 @@ import { Scene } from 'phaser';
 import { RegistrationLogic_Step1 } from './RegistrationLogic_Step1';
 import { BackgroundManager } from '../../../../BackgroundManager';
 
+// Импортируем видео через сборщик, чтобы путь не ломался при деплое
+import petVideoUrl from '/src/assets/resources/1stpet-animation/prostoi-converted.webm';
+
 const SHADER = `
   precision mediump float;
   uniform sampler2D uMainSampler;
@@ -32,7 +35,8 @@ export class RegistrationScene_Step1 extends Scene {
 
   public preload = (): void => {
     if (!this.cache.video.exists('prostoi1')) {
-      this.load.video('prostoi1', '/src/assets/resources/1stpet-animation/prostoi-converted.webm');
+      // Используем корректный хэшированный путь от сборщика
+      this.load.video('prostoi1', petVideoUrl);
     }
   };
 

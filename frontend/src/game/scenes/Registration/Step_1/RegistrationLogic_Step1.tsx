@@ -19,12 +19,19 @@ export class RegistrationLogic_Step1 {
   }
 
   private renderUI(): void {
-    const c = document.createElement('div');
-    c.id = 'registration-ui-overlay';
+    // Проверяем, вдруг контейнер уже существует, чтобы не дублировать
+    let c = document.getElementById('registration-ui-overlay');
+    if (!c) {
+      c = document.createElement('div');
+      c.id = 'registration-ui-overlay';
+      document.getElementById('game-container')?.appendChild(c);
+    }
+    
     c.className =
       'absolute inset-0 pointer-events-none z-30 overflow-hidden w-full h-[100vh] font-sans select-none';
-    document.getElementById('game-container')?.appendChild(c);
+    
     document.getElementById('game-container')?.classList.add('in-registration');
+    
     this.regUiRoot = createRoot(c);
     this.regUiRoot.render(
       <Container
@@ -37,11 +44,24 @@ export class RegistrationLogic_Step1 {
   public destroy = (triggerCallback = false): void => {
     if (this.isDestroyed) return;
     this.isDestroyed = true;
-    this.regUiRoot?.unmount();
-    this.regUiRoot = null;
-    document.getElementById('registration-ui-overlay')?.remove();
+
+    // Сначала безопасно размонтируем дерево React компонентов
+    if (this.regUiRoot) {
+      this.regUiRoot.unmount();
+      this.regUiRoot = null;
+    }
+
+    // Только после этого удаляем физический DOM-элемент
+    const overlay = document.getElementById('registration-ui-overlay');
+    if (overlay) {
+      overlay.remove();
+    }
+
     document.getElementById('game-container')?.classList.remove('in-registration');
-    if (triggerCallback) this.onComplete();
+    
+    if (triggerCallback) {
+      this.onComplete();
+    }
   };
 }
 
@@ -61,9 +81,12 @@ const Container = ({ scene, onDone }: { scene: Scene; onDone: () => void }) => {
 
   useEffect(() => {
     if (stage !== 1 && stage !== 3) {
-      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-      if ('virtualKeyboard' in navigator)
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      if ('virtualKeyboard' in navigator) {
         (navigator as unknown as { virtualKeyboard: { hide: () => void } }).virtualKeyboard.hide();
+      }
     }
   }, [stage]);
 
@@ -71,6 +94,7 @@ const Container = ({ scene, onDone }: { scene: Scene; onDone: () => void }) => {
     setName(v.trim() || 'Булька');
     setStage(2);
   };
+
   const isPort = w < h,
     isTab = !isPort && w / h < 1.72,
     isFold = isPort && w / h < 0.5;

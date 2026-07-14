@@ -2,6 +2,9 @@ import { Scene } from 'phaser';
 import { RegistrationLogic_Step4 } from './RegistrationLogic_Step4';
 import { BackgroundManager } from '../../../../BackgroundManager';
 
+// Импортируем видеофайл через сборщик, чтобы он попал в финальную сборку (dist)
+import happyVideoUrl from '/src/assets/resources/1stpet-animation/happy.webm';
+
 const SHADER = `
   precision mediump float;
   uniform sampler2D uMainSampler;
@@ -27,7 +30,8 @@ export class RegistrationScene_Step4 extends Scene {
 
   public preload = (): void => {
     if (!this.cache.video.exists('happy')) {
-      this.load.video('happy', '/src/assets/resources/1stpet-animation/happy.webm');
+      // ИСПРАВЛЕНО: передаем динамический URL от сборщика вместо жесткой строки
+      this.load.video('happy', happyVideoUrl);
     }
   };
 

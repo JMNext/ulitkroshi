@@ -9,10 +9,17 @@ export class RegistrationLogic_Step4 {
   private isDestroyed = false;
 
   constructor(private scene: Scene, private onComplete: () => void) {
-    const c = document.createElement('div');
-    c.id = 'registration-final-overlay';
+    let c = document.getElementById('registration-final-overlay');
+    if (!c) {
+      c = document.createElement('div');
+      c.id = 'registration-final-overlay';
+      document.getElementById('game-container')?.appendChild(c);
+    }
+
     c.className = 'absolute inset-0 pointer-events-none z-30 flex justify-center';
-    document.getElementById('game-container')?.appendChild(c)?.classList.add('in-registration');
+    
+    // ИСПРАВЛЕНО: класс добавляется именно на контейнер игры, как в предыдущих шагах
+    document.getElementById('game-container')?.classList.add('in-registration');
 
     this.regUiRoot = createRoot(c);
     this.regUiRoot.render(<Container onPlay={() => this.destroy(true)} />);
@@ -21,10 +28,23 @@ export class RegistrationLogic_Step4 {
   public destroy = (call = false): void => {
     if (this.isDestroyed) return;
     this.isDestroyed = true;
-    this.regUiRoot?.unmount();
-    document.getElementById('registration-final-overlay')?.remove();
+
+    // ИСПРАВЛЕНО: сначала безопасно демонтируем React, затем удаляем DOM-ноду
+    if (this.regUiRoot) {
+      this.regUiRoot.unmount();
+      this.regUiRoot = null;
+    }
+
+    const overlay = document.getElementById('registration-final-overlay');
+    if (overlay) {
+      overlay.remove();
+    }
+
     document.getElementById('game-container')?.classList.remove('in-registration');
-    if (call) this.onComplete();
+    
+    if (call) {
+      this.onComplete();
+    }
   };
 }
 
@@ -34,7 +54,7 @@ const Container = ({ onPlay }: { onPlay: () => void }) => {
 
   useEffect(() => {
     const res = () => setW(window.innerWidth);
-    window.addEventListener('resize', res);
+    window.addEventListener('resize', res, { passive: true });
     return () => window.removeEventListener('resize', res);
   }, []);
 
