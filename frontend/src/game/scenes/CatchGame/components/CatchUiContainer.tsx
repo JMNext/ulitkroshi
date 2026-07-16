@@ -1,22 +1,56 @@
-import React, { useState, useEffect } from 'react';
-import { GameHeaderUI } from '../../../../ui/components/GameHeaderUI';
+import React, { useEffect } from 'react';
+import { GameHeaderUI } from '../../../../ui/components/GameHeader/GameHeaderUI';
+
+import { useCatchGameStore } from '../useCatchGameStore';
+import './CatchGame.css';
+import { GameOverModalUI } from '../../../../ui/components/GameOverModal/GameOverModalUI';
 
 interface CatchUiContainerProps {
-  scene?: { score?: number };
   onBack: () => void;
-  bind: (callback: (score: number, hp: number) => void) => void;
+  onRestart: () => void;
 }
 
-export const CatchUiContainer = ({ scene, onBack, bind }: CatchUiContainerProps) => {
-  const [score, setScore] = useState(scene?.score ?? 0);
+export const CatchUiContainer = ({ onBack, onRestart }: CatchUiContainerProps) => {
+  const score = useCatchGameStore((state) => state.score);
+  const isGameOver = useCatchGameStore((state) => state.isGameOver);
+  const resetStore = useCatchGameStore((state) => state.resetStore);
 
   useEffect(() => {
-    bind((currentScore) => setScore(currentScore));
-  }, [bind]);
+    return () => resetStore();
+  }, [resetStore]);
+
+  const isWin = score >= 20;
+
+  const handleExit = () => {
+    resetStore();
+    onBack();
+  };
+
+  const handleRestart = () => {
+    resetStore();
+    onRestart();
+  };
 
   return (
-    <div className="fixed inset-0 pointer-events-none h-screen z-30 flex flex-col justify-between">
-      <GameHeaderUI score={score} onBack={onBack} />
-    </div>
+    <>
+      <div className="catch-ui-layout">
+        <div className="catch-ui-interactive-wrap">
+          <GameHeaderUI
+            score={score}
+            onBack={handleExit}
+          />
+        </div>
+      </div>
+
+      {/* ИСПРАВЛЕНО: Заменили старый хардкод разметки на красивую модалку финала */}
+      {isGameOver && (
+        <GameOverModalUI
+          score={score}
+          isWin={isWin}
+          onRestart={handleRestart}
+          onBack={handleExit}
+        />
+      )}
+    </>
   );
 };

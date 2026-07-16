@@ -1,46 +1,46 @@
-import { RefObject } from 'react';
-import { Scene } from 'phaser';
-import { SpeechMicButton } from './SpeechMicButton';
+import React from 'react';
+import { useRegistrationStep1Store } from '../useRegistrationStep1Store';
 
-interface SpeechInputFieldProps {
-  scene: Scene;
-  inputValue: string;
-  inputRef: RefObject<HTMLInputElement | null>;
-  onValueChange: (val: string) => void;
-  onSpeechResult: (recognizedName: string) => void;
-  onSpeechError: () => void;
-  onSubmit: (val: string) => void;
-}
+export const SpeechInputField = () => {
+  const input = useRegistrationStep1Store((state) => state.input);
+  const setInput = useRegistrationStep1Store((state) => state.setInput);
+  const submit = useRegistrationStep1Store((state) => state.submit);
+  
+  const nameStatus = useRegistrationStep1Store((state) => state.nameStatus);
+  const nameSuggestions = useRegistrationStep1Store((state) => state.nameSuggestions);
+  const isNameChecking = useRegistrationStep1Store((state) => state.isNameChecking);
 
-export const SpeechInputField = ({
-  scene,
-  inputValue,
-  inputRef,
-  onValueChange,
-  onSpeechResult,
-  onSpeechError,
-  onSubmit
-}: SpeechInputFieldProps) => {
   return (
-    <div className="flex flex-col-reverse items-center gap-6 w-full px-4 box-border mt-4">
-      <SpeechMicButton 
-        scene={scene}
-        onSpeechResult={onSpeechResult} 
-        onSpeechError={onSpeechError} 
-      />
+    <div className="speech-input-wrapper">
+      
+      {/* ТЗ: Если имя занято — рендерим ТОЛЬКО кнопки вариантов СТРОГО НАД ИНПУТОМ */}
+      {nameStatus === 'taken' && nameSuggestions.length > 0 && (
+        <div className="name-suggestions-container">
+          {nameSuggestions.map((suggestion) => (
+            <button
+              key={suggestion}
+              type="button"
+              onClick={() => setInput(suggestion)} // Запишет вариант в инпут и запустит повторный дебаунс-чек
+              className="name-suggestion-btn"
+            >
+              {suggestion}
+            </button>
+          ))}
+        </div>
+      )}
+
       <input
-        ref={inputRef}
         type="text"
         placeholder="Как меня зовут?"
-        value={inputValue}
-        onChange={(e) => onValueChange(e.target.value)}
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
         onKeyDown={(e) => { 
-          if (e.key === 'Enter') {
-            inputRef.current?.blur();
-            onSubmit(inputValue); 
+          if (e.key === 'Enter' && nameStatus === 'available' && !isNameChecking) {
+            e.currentTarget.blur();
+            submit(input); 
           }
         }}
-        className="pointer-events-auto w-full max-w-[360px] h-[64px] bg-white text-center text-2xl font-bold rounded-full shadow-lg border border-slate-100 outline-none text-emerald-800 placeholder-slate-400 focus:border-emerald-500 transition-colors box-border"
+        className="speech-input-field"
       />
     </div>
   );

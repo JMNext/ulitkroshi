@@ -1,17 +1,28 @@
+import React from 'react';
 import nextButtonImg from '/src/assets/registration/next_button.png';
+import { useRegistrationStep1Store } from '../useRegistrationStep1Store';
 
 interface NextButtonProps {
   onClick: () => void;
 }
 
 export const NextButton = ({ onClick }: NextButtonProps) => {
+  // Подписываемся на статусы проверки имени из локального стора
+  const nameStatus = useRegistrationStep1Store((state) => state.nameStatus);
+  const isNameChecking = useRegistrationStep1Store((state) => state.isNameChecking);
+
+  // ТЗ: Кнопка «Далее» активна только при свободном имени
+  const isDisabled = nameStatus !== 'available' || isNameChecking;
+
   return (
     <button 
+      type="button" 
       onClick={onClick} 
-      className="pointer-events-auto active:scale-90 transition-transform cursor-pointer flex items-center justify-center w-[180px] h-[180px] border-none bg-transparent mt-4"
+      disabled={isDisabled}
+      className={`next-step-btn ${isDisabled ? 'next-step-btn-disabled opacity-50 cursor-not-allowed pointer-events-none' : ''}`} 
+      aria-label="Далее"
     >
-      {/* ИСПРАВЛЕНО: Переменная вместо строки пути */}
-      <img src={nextButtonImg} className="w-full h-full object-contain" alt="далее" />
+      <img src={nextButtonImg} className="w-full h-full object-contain" alt="" />
     </button>
   );
 };

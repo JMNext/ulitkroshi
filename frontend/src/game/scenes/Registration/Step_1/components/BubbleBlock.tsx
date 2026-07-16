@@ -1,46 +1,60 @@
-interface BubbleBlockProps {
-  stage: number;
-  name: string;
-  isLandscapeTablet: boolean;
-  bubbleScale: number;
-}
+import React from 'react';
+import { useRegistrationStep1Store } from '../useRegistrationStep1Store';
 
-export const BubbleBlock = ({ stage, name, isLandscapeTablet, bubbleScale }: BubbleBlockProps) => {
-  const bubbleStyle: React.CSSProperties = {
-    transform: `scale(${bubbleScale})`,
-    transformOrigin: 'top center',
-    top: isLandscapeTablet ? '2%' : '4%'
-  };
+export const BubbleBlock = () => {
+  const stage = useRegistrationStep1Store((state) => state.stage);
+  const name = useRegistrationStep1Store((state) => state.name);
+
+  // Подписываемся на статусы проверки имени улитки
+  const nameStatus = useRegistrationStep1Store((state) => state.nameStatus);
+  const isNameChecking = useRegistrationStep1Store((state) => state.isNameChecking);
 
   return (
-    <div 
-      style={bubbleStyle} 
-      className="absolute pointer-events-auto bg-white/95 backdrop-blur-sm rounded-[32px] px-8 py-5 text-center shadow-xl max-w-lg portrait:w-[90vw] landscape:w-[50vw] min-w-[280px] z-20 box-border"
-    >
+    <div className="bubble-block-container">
       {stage === 1 && (
-        <div className="text-[17px] portrait:text-[15px] font-bold text-slate-800 leading-snug tracking-wide">
-          Привет, друг! Я — твой Улиткрош! Придумай мне имя, а затем введи его на клавиатуре или нажми на большую красную кнопку и скажи мне его. Громко и чётче!
+        <div className="flex flex-col items-center">
+          {/* Стандартный текст, если имя свободно или еще не вводилось */}
+          {nameStatus !== 'taken' && !isNameChecking && (
+            <p className="bubble-text-intro">
+              Привет, друг! Я — твой Улиткрош! Придумай мне имя, а затем введи его на клавиатуре или нажми на большую красную кнопку и скажи мне его. Громко и чётче!
+            </p>
+          )}
+
+          {/* Текст во время проверки */}
+          {isNameChecking && (
+            <p className="bubble-text-intro text-gray-500 animate-pulse">
+              Проверяю имя...
+            </p>
+          )}
+
+          {/* ТЗ: Если имя занято — Улиткрош выводит фразу в облаке */}
+          {nameStatus === 'taken' && (
+            <p className="bubble-text-intro text-red-600 font-bold">
+              Это имя уже занято, выбери вариант:
+            </p>
+          )}
         </div>
       )}
+      
       {stage === 2 && (
-        <div className="text-2xl font-bold text-slate-700 leading-normal">
-          <p className="text-lg text-slate-500 font-medium">Меня зовут</p>
-          <p className="text-4xl font-black text-emerald-800 mt-0.5">{name}?</p>
-        </div>
+        <section className="bubble-text-stage">
+          <p className="bubble-text-label">Меня зовут</p>
+          <p className="bubble-text-name">{name}?</p>
+        </section>
       )}
       {stage === 3 && (
-        <div className="text-xl font-bold text-slate-800 leading-snug space-y-1">
+        <section className="bubble-text-error">
           <p>Ой, я не расслышал!</p>
           <p>Давай ещё разок, громче и чётче!</p>
-        </div>
+        </section>
       )}
       {stage === 4 && (
-        <div className="text-2xl font-bold text-slate-700 leading-normal">
-          <p className="text-lg text-slate-500 font-medium">Здорово, теперь меня зовут</p>
-          <p className="text-4xl font-black text-emerald-800 mt-0.5">{name}</p>
-        </div>
+        <section className="bubble-text-stage">
+          <p className="bubble-text-label">Здорово, теперь меня зовут</p>
+          <p className="bubble-text-name">{name}</p>
+        </section>
       )}
-      <div className="absolute bottom-[-12px] left-[45%] w-0 h-0 border-x-[12px] border-x-transparent border-t-[12px] border-t-white/95" />
+      <span className="bubble-tail" />
     </div>
   );
 };

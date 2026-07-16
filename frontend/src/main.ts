@@ -1,67 +1,60 @@
-import { WEBGL, Game, Scale, Sound, Loader } from 'phaser';
-import { BackgroundManager } from './BackgroundManager';
-import { CatchGameScene } from './game/scenes/CatchGame/CatchGameScene';
+import { WEBGL, Game, Scale, Sound, Loader, Scene } from 'phaser';
+import { BootScene } from './game/scenes/BootScene'; // ТЗ: Сцена-защитник (PrivateRoute)
 import { LoginScene } from './game/scenes/LoginScene/LoginScene';
-import { MainScene } from './game/scenes/MainScene/MainScene';
-import { MemoryGameScene } from './game/scenes/MemoryGame/MemoryGameScene';
-import { SnakeGameScene } from './game/scenes/SnakeGame/SnakeGameScene';
-import './global.css';
 import { RegistrationScene_Step1 } from './game/scenes/Registration/Step_1/RegistrationScene_Step1';
 import { RegistrationScene_Step2 } from './game/scenes/Registration/Step_2/RegistrationScene_Step2';
 import { RegistrationScene_Step3 } from './game/scenes/Registration/Step_3/RegistrationScene_Step3';
 import { RegistrationScene_Step4 } from './game/scenes/Registration/Step_4/RegistrationScene_Step4';
+import { MainScene } from './game/scenes/MainScene/MainScene';
+import { MemoryGameScene } from './game/scenes/MemoryGame/MemoryGameScene';
+import { CatchGameScene } from './game/scenes/CatchGame/CatchGameScene';
+import { SnakeGameScene } from './game/scenes/SnakeGame/SnakeGameScene';
+import './global.css';
 
 import soundMainTheme from '/src/assets/resources/sound/main_theme.mp3?url';
 
 window.addEventListener('DOMContentLoaded', () => {
- 
   const game = new Game({
     type: WEBGL,
     parent: 'game-container',
-    
     render: {
       transparent: true,
       clearBeforeRender: true
     },
-    
-    transparent: true,
-    clearBeforeRender: true,
-    
     scale: {
       mode: Scale.RESIZE,
       autoCenter: Scale.CENTER_BOTH,
     },
     dom: {
-      createContainer: true,
+      createContainer: false,
     },
     input: {
       keyboard: true,
     },
     scene: [
+      BootScene, 
       LoginScene,
       RegistrationScene_Step1,
       RegistrationScene_Step2,
       RegistrationScene_Step3,
       RegistrationScene_Step4,
-      MainScene,
+      MainScene, 
       MemoryGameScene,
       CatchGameScene,
       SnakeGameScene,
     ],
   });
 
-  BackgroundManager.getInstance().init(game);
-
   game.events.once('ready', () => {
-    const startMusic = () => {
+    const startMusic = (): void => {
       if (game.sound instanceof Sound.WebAudioSoundManager) {
-        if (game.sound.context && game.sound.context.state === 'suspended') {
-          game.sound.context.resume();
+        if (game.sound.context?.state === 'suspended') {
+          game.sound.context.resume().catch(() => {});
         }
       }
       
       if (!game.cache.audio.exists('main_theme')) {
-        const activeScenes = game.scene.scenes;
+        const activeScenes: Scene[] = game.scene.scenes;
         if (activeScenes && activeScenes.length > 0) {
           const loader = new Loader.LoaderPlugin(activeScenes[0]);
           loader.audio('main_theme', soundMainTheme);

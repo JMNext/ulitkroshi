@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+.main-game-header-panel {
+  @apply absolute top-0 left-0 w-full flex justify-between items-start box-border pointer-events-none z-40 p-6 px-10;
+  padding-top: 24px;
+}
+
+.game-header-coins-capsule {
+  @apply flex items-center justify-between bg-white rounded-full overflow-hidden box-border pointer-events-auto border border-solid border-slate-100 w-[240px] h-[64px] origin-top-left transition-transform duration-75;
+}
+
+.header-coins-inner-row {
+  @apply flex items-center justify-between w-full h-full box-border px-4;
+}
+
+.header-coins-icon {
+  @apply shrink-0 object-contain h-[65%] w-auto;
+}
+
+.header-coins-text {
+  @apply flex-1 text-center text-[#1a3d1c] select-none font-black text-[24px] leading-[64px];
+}
+
+.header-coins-plus-btn {
+  @apply shrink-0 object-contain h-[65%] w-auto cursor-pointer transition-transform duration-100 ease-out active:scale-90;
+}
+
+.header-avatar-block {
+  @apply relative z-50 cursor-pointer pointer-events-auto transition-transform duration-100 ease-out box-border active:scale-95 w-[90px] h-[90px] origin-top-right;
+}
+
+.header-avatar-img {
+  @apply relative z-51 w-full h-full object-cover rounded-full pointer-events-auto shadow-sm;
+}
+
+@media (orientation: landscape) {
+  .main-game-header-panel {
+    @apply pl-10 pr-10;
+  }
+  
+  .game-header-coins-capsule,
+  .header-avatar-block {
+    transform: scale(1);
+  }
+}
+
+@media (orientation: landscape) and (max-width: 1279px) {
+  .game-header-coins-capsule,
+  .header-avatar-block {
+    transform: scale(0.85);
+  }
+}
+
+@media (orientation: portrait) {
+  .main-game-header-panel {
+    @apply px-4;
+    padding-top: 16px;
+  }
+
+  .game-header-coins-capsule,
+  .header-avatar-block {
+    transform: scale(0.65);
+  }
+}
+
+@media (orientation: portrait) and (min-width: 768px) {
+  .game-header-coins-capsule,
+  .header-avatar-block {
+    transform: scale(0.85);
+  }
+}

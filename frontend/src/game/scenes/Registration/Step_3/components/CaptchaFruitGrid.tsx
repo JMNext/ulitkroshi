@@ -1,43 +1,49 @@
 import React from 'react';
+import { useRegistrationStep3Store } from '../useRegistrationStep3Store';
 
 interface CaptchaFruitGridProps {
-  mode: 'select' | 'confirm' | 'verify' | 'error';
-  selected: number[];
-  isUltraNarrow: boolean;
-  isPortrait: boolean;
-  getFruitUrl: (i: number) => string;
   onPress: (idx: number) => void;
 }
 
-export const CaptchaFruitGrid = ({
-  mode,
-  selected,
-  isUltraNarrow,
-  isPortrait,
-  getFruitUrl,
-  onPress
-}: CaptchaFruitGridProps) => {
+const fImgs = import.meta.glob('/src/assets/fruits/fruits_*.png', { eager: true, query: '?url' }) as Record<string, { default: string }>;
+
+const ID_MAP: Record<number, string> = { 
+  0: '01', 1: '02', 2: '0003_13', 3: '03', 4: '04', 5: '05', 6: '06', 
+  7: '0007_09', 8: '07', 9: '08', 10: '10', 11: '11', 12: '12', 13: '14', 14: '15', 15: '16' 
+};
+
+export const getFruitUrl = (i: number): string => fImgs[`/src/assets/fruits/fruits_${ID_MAP[i]}.png`]?.default || '';
+
+export const CaptchaFruitGrid = ({ onPress }: CaptchaFruitGridProps) => {
+  const mode = useRegistrationStep3Store((state) => state.mode);
+  const selected = useRegistrationStep3Store((state) => state.sel);
+  const fruitOrder = useRegistrationStep3Store((state) => state.fruitOrder);
+
   const isConfirm = mode === 'confirm';
 
-  // СИНХРОНИЗИРОВАНО: Размеры кнопок в точности как у стандартного PinPad (Шаг 2)
-  const btnSizeClass = isUltraNarrow 
-    ? 'w-[18vw] h-[18vw] p-2' 
-    : (isPortrait ? 'w-[72px] h-[72px] p-2' : 'w-[82px] h-[82px] p-2.5');
-
-  // СИНХРОНИЗИРОВАНО: gap-4 и w-full для идеального совпадения с блоком пин-пада
   return (
-    <div className={`grid grid-cols-4 gap-4 justify-center mx-auto transition-opacity duration-200 box-border w-full ${isConfirm ? 'opacity-40 pointer-events-none' : ''}`}>
-      {Array.from({ length: 16 }).map((_, idx) => {
-        const isSel = selected.includes(idx);
-        const hasBorder = isSel && mode !== 'error' && mode !== 'verify';
+    <div className={`captcha-grid-container shrink-0 ${isConfirm ? 'captcha-grid-container-disabled' : ''}`}>
+      {fruitOrder.map((fruitId) => {
+        const isSel = selected.includes(fruitId);
+        
+        // В режиме verify (когда пользователь угадывает) обводка выбранных элементов ДОЛЖНА работать,
+        // но она прячется только в моменты анимации ошибки ('error')
+        const hasBorder = isSel && mode !== 'error';
+        
         return (
           <button 
-            key={idx} 
-            onClick={() => onPress(idx)} 
+            key={fruitId} 
+            type="button"
+            disabled={isConfirm || mode === 'error'}
+            onClick={() => onPress(fruitId)} 
             style={{ touchAction: 'manipulation' }} 
-            className={`bg-white rounded-full shadow-md active:scale-95 flex items-center justify-center cursor-pointer border-4 transition-all mx-auto box-border ${btnSizeClass} ${hasBorder ? 'border-[#a6f034]' : 'border-transparent'}`}
+            className={`captcha-fruit-btn ${hasBorder ? 'captcha-fruit-btn-selected' : ''}`}
           >
-            <img src={getFruitUrl(idx)} className="w-full h-full object-contain pointer-events-none" alt="fruit" />
+            <img 
+              src={getFruitUrl(fruitId)} 
+              className="w-full h-full object-contain pointer-events-none" 
+              alt="" 
+            />
           </button>
         );
       })}

@@ -1,37 +1,27 @@
+import React from 'react';
 import { PinPad } from "../../components/PinPad";
+import { SentModal } from './SentModal';
+import { useRegistrationStep2Store } from '../useRegistrationStep2Store';
 
 interface PinPadWrapperProps {
-  isDesktopSize: boolean;
-  isDisabled: boolean;
-  onKeyClick: (k: string) => void;
-  showModal: boolean;
-  isPortrait: boolean;
-  onModalConfirm: () => void;
-  SentModalComponent: (props: { isPortrait: boolean; onConfirm: () => void }) => React.JSX.Element;
+  onPressKey: (k: string) => void;
+  onGoCode: () => void;
 }
 
-export const PinPadWrapper = ({
-  isDesktopSize,
-  isDisabled,
-  onKeyClick,
-  showModal,
-  isPortrait,
-  onModalConfirm,
-  SentModalComponent
-}: PinPadWrapperProps) => {
+export const PinPadWrapper = ({ onPressKey, onGoCode }: PinPadWrapperProps) => {
+  const mode = useRegistrationStep2Store((state) => state.mode);
+
   return (
-    <div className="w-full relative flex justify-center mt-3">
+    <nav className="pinpad-wrapper-container">
       <PinPad 
-        isDesktopSize={isDesktopSize} 
-        isDisabled={isDisabled} 
-        onKeyClick={onKeyClick} 
+        isDisabled={mode === 'sent'} 
+        onKeyClick={onPressKey} 
       />
-      {showModal && (
-        <SentModalComponent 
-          isPortrait={isPortrait} 
-          onConfirm={onModalConfirm} 
+      {mode === 'sent' && (
+        <SentModal 
+          onConfirm={onGoCode} 
         />
       )}
-    </div>
+    </nav>
   );
 };

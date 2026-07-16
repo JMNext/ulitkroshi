@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+.product-card-placeholder {
+  @apply flex h-full flex-col items-center justify-center text-center text-slate-400 p-6 box-border;
+}
+
+.product-card-container {
+  @apply relative flex h-full w-full flex-col bg-slate-50/50 rounded-[24px] border border-slate-200/60 p-5 box-border overflow-hidden;
+}
+
+.product-card-close-btn {
+  @apply absolute top-4 right-4 z-20 text-slate-400 hover:text-slate-600 text-lg font-bold p-1 cursor-pointer transition-colors active:scale-95 outline-none bg-transparent border-none;
+}
+
+.product-card-scroll-block {
+  @apply flex-1 overflow-y-auto pr-1 flex flex-col items-center mb-4;
+  scrollbar-width: thin;
+}
+
+.product-card-scroll-block::-webkit-scrollbar {
+  width: 5px;
+}
+
+.product-card-scroll-block::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.product-card-scroll-block::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 9999px;
+}
+
+.product-card-scroll-block:hover::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+
+.product-card-img-box {
+  @apply w-[120px] h-[120px] bg-white rounded-[20px] border border-slate-100 flex items-center justify-center shadow-sm p-4 mt-2 box-border shrink-0;
+}
+
+.product-card-img {
+  @apply w-full h-full object-contain pointer-events-none;
+}
+
+.product-card-title,
+h4.product-card-title.ant-typography {
+  @apply text-xl font-black text-[#1a3d1c] mt-4 mb-1 text-center leading-tight tracking-wide p-0;
+}
+
+.product-card-price-row {
+  @apply flex items-center gap-1 text-sm font-bold text-slate-500 mb-3 m-0 p-0;
+}
+
+.product-card-desc-text {
+  @apply text-sm font-medium text-slate-600 leading-relaxed text-center max-w-[260px] m-0 p-0;
+}
+
+.product-card-cart-status {
+  @apply mt-4 w-full bg-emerald-50 border border-emerald-200/60 text-emerald-800 text-xs rounded-xl p-2.5 flex items-center justify-between box-border;
+}
+
+.product-card-remove-btn {
+  @apply text-red-500 hover:text-red-700 font-bold underline cursor-pointer p-0 outline-none transition-colors bg-transparent border-none;
+}
+
+.product-card-controls-panel {
+  @apply border-t border-slate-200/80 pt-3 flex flex-col gap-3 shrink-0;
+}
+
+.product-card-counter-row {
+  @apply flex items-center justify-between bg-white border border-slate-200/60 rounded-xl p-1.5 box-border;
+}
+
+.product-card-counter-btn {
+  @apply w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-lg flex items-center justify-center cursor-pointer transition-colors outline-none border-none;
+}
+
+.product-card-counter-btn:disabled {
+  @apply opacity-40;
+}
+
+.product-card-counter-btn:disabled:hover {
+  @apply bg-slate-100;
+}
+
+.product-card-counter-value {
+  @apply font-black text-base text-slate-800 m-0 p-0;
+}
+
+.product-card-subtotal-row {
+  @apply flex items-center justify-between text-xs font-bold text-slate-500 px-1 m-0 p-0;
+}
+
+.product-card-subtotal-value {
+  @apply text-sm font-black text-[#1a3d1c] flex items-center gap-0.5 m-0 p-0;
+}
+
+.product-card-submit-btn {
+  @apply w-full h-[48px] bg-gradient-to-b from-[#ffca28] to-[#ffb300] text-white font-black text-sm rounded-[24px] shadow-[0_3px_0_#e69d00,0_5px_8px_rgba(0,0,0,0.08)] active:translate-y-[1px] active:shadow-none transition-all flex items-center justify-center cursor-pointer uppercase tracking-wide box-border border-none;
+}
+
+@media (orientation: landscape) {
+  .product-card-container {
+    @apply max-w-[320px] mx-auto;
+  }
+}
+
+@media (orientation: portrait) {
+  .product-card-container {
+    @apply max-w-[310px] mx-auto;
+  }
+}

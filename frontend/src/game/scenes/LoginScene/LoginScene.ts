@@ -1,46 +1,64 @@
-import { Scene } from 'phaser';
-import { renderLoginUI, destroyLoginUI, startLoadingAnimation } from './LoginUI';
-import { BackgroundManager } from '../../../BackgroundManager';
+import { Scene, Scenes, Cameras } from 'phaser'; 
 import begemotUrl from '../../../assets/login_assets/begemot.png?url';
+import { destroyLoginUI, renderLoginUI, startLoadingAnimation } from './components/LoginUI';
+import './components/LoginUI.css';
 
 export class LoginScene extends Scene {
+  private isTransitioning: boolean = false;
+
   constructor() {
     super('LoginScene');
   }
 
-  preload = (): void => {
-    this.load.image('player-begemot', begemotUrl);
-  };
+  public preload(): void {
+    // Загружаем картинку в глобальный TextureManager под стабильным ключом
+    if (!this.textures.exists('player-begemot')) {
+      this.load.image('player-begemot', begemotUrl);
+    }
+  }
 
-  create = (): void => {
-    this.cameras.main.fadeIn(400, 0, 0, 0);
-    BackgroundManager.getInstance().applyBackground(this.scene.key);
+  public create(): void {
+    this.isTransitioning = false;
+    if (this.cameras?.main) {
+      this.cameras.main.fadeIn(400, 0, 0, 0);
+    }
+    
+    document.getElementById('game-container')?.setAttribute('data-scene', this.scene.key);
     this.buildUI();
+    
+    this.events.once(Scenes.Events.SHUTDOWN, this.handleShutdown, this);
+    this.events.once(Scenes.Events.DESTROY, this.handleShutdown, this);
+  }
 
-    this.scale.on('resize', this.handleResizeBound, this);
-
-    this.events.once('shutdown', () => {
-      this.scale.off('resize', this.handleResizeBound, this);
-      destroyLoginUI();
-      BackgroundManager.getInstance().clearBackground();
-    }, this);
-  };
-
-  handleResizeBound = (): void => {
-    if (!this.sys.isActive()) return;
-    BackgroundManager.getInstance().applyBackground(this.scene.key);
-  };
-
-  buildUI = (): void => {
+  private buildUI(): void {
     renderLoginUI(this, () => this.handleStartFlow());
-  };
+  }
 
-  handleStartFlow = (): void => {
+  private handleStartFlow(): void {
+    if (this.isTransitioning) return;
+    this.isTransitioning = true;
+
     startLoadingAnimation(() => {
-      if (!this.sys.isActive()) return;
-      this.cameras.main.fadeOut(500, 0, 0, 0).once('camerafadeoutcomplete', () => {
+      if (!this.sys || !this.sys.isActive() || !this.scene) return;
+
+      destroyLoginUI();
+
+      if (this.cameras?.main) {
+        this.cameras.main.fadeOut(300, 0, 0, 0);
+        this.cameras.main.once(Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+          if (this.sys?.isActive() && this.scene) {
+            this.scene.start('RegistrationScene_Step1');
+          }
+        });
+      } else {
         this.scene.start('RegistrationScene_Step1');
-      });
+      }
     });
-  };
+  }
+
+  private handleShutdown(): void {
+    destroyLoginUI();
+    this.events.off(Scenes.Events.SHUTDOWN, this.handleShutdown, this);
+    this.events.off(Scenes.Events.DESTROY, this.handleShutdown, this);
+  }
 }

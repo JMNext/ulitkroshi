@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+.registration-overlay-root {
+  @apply absolute inset-0 pointer-events-none overflow-hidden h-full w-full z-30 flex items-center justify-center p-4 box-border;
+}
+
+.registration-overlay-layout {
+  @apply absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[52%] scale-100 origin-center transition-all duration-150 will-change-transform pointer-events-auto flex flex-col items-center z-20 box-border w-full overflow-y-auto overflow-x-hidden max-w-[360px] max-h-[1000px] gap-4;
+  scrollbar-width: none;
+}
+
+.registration-overlay-layout::-webkit-scrollbar {
+  display: none;
+}
+
+.header-block-container {
+  @apply w-full bg-white/95 backdrop-blur-sm rounded-[32px] shadow-xl relative z-20 border border-slate-100/50 box-border shrink-0 text-center h-auto p-[18px_24px];
+}
+
+.header-block-container .header-block-title,
+.header-block-container .header-block-wrapper .header-block-title {
+  @apply font-black text-slate-700 leading-tight tracking-wide text-center m-0 p-0 block w-full h-auto text-[21px];
+}
+
+.header-block-wrapper {
+  @apply flex flex-col items-center w-full m-0 p-0 h-auto;
+}
+
+.header-resend-btn {
+  @apply font-black block w-full text-center underline tracking-tight transition-colors outline-none bg-transparent border-none p-0 text-[14px] mt-2;
+}
+
+.header-resend-btn-disabled {
+  @apply text-slate-500 cursor-default no-underline;
+}
+
+.header-resend-btn-active {
+  @apply text-emerald-600 cursor-pointer;
+}
+
+.header-block-tail {
+  @apply absolute left-1/2 -translate-x-1/2 w-0 h-0 border-x-[12px] border-transparent border-t-[12px] border-t-white/95 bottom-[-12px];
+}
+
+.display-field-phone {
+  @apply w-full bg-white flex items-center justify-center font-black rounded-full shadow-md border border-slate-50 text-slate-700 tracking-wide box-border shrink-0 p-0 m-0 h-[58px] text-[22px];
+}
+
+.display-field-code {
+  @apply w-full bg-white flex items-center justify-center font-black rounded-full shadow-md border border-slate-50 text-slate-700 box-border shrink-0 p-0 m-0 h-[58px] text-[30px] pl-3 tracking-[12px];
+}
+
+.submit-step-btn {
+  @apply w-full text-white font-black rounded-full border-b-4 shadow-md transition-all box-border pointer-events-auto border-[#366901] bg-gradient-to-b from-[#81c714] to-[#4c9203] cursor-pointer active:translate-y-[2px] active:border-b-2 opacity-100 shrink-0 border-t-0 border-x-0 h-[54px] text-[20px];
+}
+
+.pinpad-wrapper-container {
+  @apply w-full relative flex flex-col justify-center shrink-0 box-border overflow-visible pb-1 mx-auto h-auto;
+}
+
+.sent-modal-container {
+  @apply absolute left-1/2 -translate-x-1/2 bg-white border border-slate-100 rounded-[36px] shadow-2xl flex flex-col items-center justify-center text-center z-30 pointer-events-auto box-border h-auto top-5 w-[340px] p-[24px] gap-4;
+}
+
+.sent-modal-container .sent-modal-title {
+  @apply font-black text-gray-700 m-0 p-0 leading-snug px-1 block w-full h-auto text-[24px];
+}
+
+.sent-modal-btn {
+  @apply text-white font-black rounded-full border-b-4 border-[#366901] bg-gradient-to-b from-[#81c714] to-[#4c9203] shadow-md cursor-pointer active:translate-y-[2px] active:border-b-2 box-border flex items-center justify-center border-t-0 border-x-0 w-[128px] h-[44px] text-[18px];
+}
+
+@media (orientation: landscape) {
+  .registration-overlay-layout {
+    @apply max-w-[340px];
+  }
+}
+
+@media (orientation: portrait) {
+  .registration-overlay-layout {
+    @apply max-w-[310px];
+  }
+}

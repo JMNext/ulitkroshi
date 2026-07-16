@@ -11,22 +11,29 @@ export const createMemoryCard = (
 ): MemoryCardContainer => {
   const container = scene.add.container(x, y).setDepth(5) as MemoryCardContainer;
   
-  const fImg = scene.add.image(0, 0, `fruit-${id}`).setDisplaySize(innerSize * 0.65, innerSize * 0.65).setAlpha(0);
+  // Рисуем подложку карточки (белый скругленный квадрат с рамкой)
+  const br = Math.max(4, Math.floor(innerSize * 0.12));
+  const bt = Math.max(2, Math.floor(innerSize * 0.04));
+  const g = scene.add.graphics();
+  
+  g.fillStyle(0xffffff, 1);
+  g.fillRoundedRect(-innerSize / 2, -innerSize / 2, innerSize, innerSize, br);
+  g.lineStyle(bt, 0xf2eee6, 1);
+  g.strokeRoundedRect(-innerSize / 2, -innerSize / 2, innerSize, innerSize, br);
+  
+  // Добавляем изображения фрукта и рубашки, выравнивая масштаб под размер карточки
+  const fImg = scene.add.image(0, 0, `fruit-${id}`).setDisplaySize(innerSize * 0.7, innerSize * 0.7).setAlpha(0);
   const sImg = scene.add.image(0, 0, 'card-back').setDisplaySize(innerSize * 0.65, innerSize * 0.65);
   
-  const br = Math.max(3, Math.floor(innerSize * 0.14));
-  const bt = Math.max(1, Math.floor(innerSize * 0.04));
-  const g = scene.add.graphics()
-    .fillStyle(0xffffff, 1)
-    .fillRoundedRect(-innerSize / 2, -innerSize / 2, innerSize, innerSize, br)
-    .lineStyle(bt, 0xf2eee6, 1)
-    .strokeRoundedRect(-innerSize / 2, -innerSize / 2, innerSize, innerSize, br);
-  
+  // Важно: графика g должна идти ПЕРВОЙ, чтобы не перекрыть картинки сверху
   container.add([g, fImg, sImg]);
   Object.assign(container, { fruitKey: id, fruitImg: fImg, shirtImg: sImg, isFaceUp: false });
   
-  container.setInteractive(new Phaser.Geom.Rectangle(-innerSize / 2, -innerSize / 2, innerSize, innerSize), Phaser.Geom.Rectangle.Contains)
-    .on('pointerdown', () => onClick(container));
+  // Настраиваем точную зону клика по границам карточки
+  container.setInteractive(
+    new Phaser.Geom.Rectangle(-innerSize / 2, -innerSize / 2, innerSize, innerSize), 
+    Phaser.Geom.Rectangle.Contains
+  ).on('pointerdown', () => onClick(container));
     
   return container;
 };

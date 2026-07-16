@@ -29,7 +29,7 @@ export const calculateCatchMetricsUI = (scene: Phaser.Scene): CatchUiMetrics => 
   
   return {
     playerScale: isFold ? (w * 0.42) / 1080 : (isPort ? (w * 0.32) / 1080 : (isTab ? (w * 0.22) / 1080 : (w * 0.16) / 1080)),
-    playerY: isFold ? h - 140 : (isPort ? h - 165 : (isTab ? h - 120 : h - 150)),
+    playerY: isFold ? h - 240 : (isPort ? h - 265 : (isTab ? h - 220 : h - 250)),
     fruitSize: isFold ? Math.max(38, w * 0.12) : (isPort ? Math.max(45, Math.min(60, w * 0.12)) : Math.max(55, Math.min(75, h * 0.1))),
     catchRadius: isFold ? w * 0.16 : (isPort ? Math.max(50, Math.min(65, w * 0.14)) : Math.max(70, Math.min(90, h * 0.14)))
   };
@@ -43,12 +43,12 @@ export const createPlayerUI = (scene: Phaser.Scene, metrics: CatchUiMetrics): Ph
     .setMute(true)
     .setAlpha(0);
   
-  const sources = v.videoTexture?.source;
-  const textureSource = Array.isArray(sources) ? sources[0] : sources;
-  const nv = v.video || (textureSource?.image as HTMLVideoElement | null);
+  const sources = v.videoTexture?.source as any;
+  const textureSource = Array.isArray(sources) ? sources : sources;
+  const nv = v.video || textureSource?.image as HTMLVideoElement | null;
   
   if (nv && typeof nv.style !== 'undefined') {
-    Object.assign(nv.style, { objectFit: 'contain', transform: 'translateZ(0)' });
+    nv.classList.add('phaser-video-element');
   }
   
   v.play(true); 

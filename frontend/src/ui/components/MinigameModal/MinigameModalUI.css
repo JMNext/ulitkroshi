@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+.minigame-antd-blur-mask {
+  @apply backdrop-blur-md bg-black/40;
+}
+
+.minigame-antd-modal .ant-modal-content {
+  @apply bg-white rounded-[32px] shadow-2xl relative box-border flex flex-col items-center select-none origin-center transition-transform duration-75;
+  width: 440px;
+  height: auto;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(var(--modal-scale, 1));
+  padding: 32px 24px 28px 24px;
+}
+
+.minigame-modal-content-wrap,
+.minigame-modal-menu-wrapper {
+  @apply w-full flex flex-col items-center box-border relative;
+}
+
+.minigame-modal-menu-header {
+  @apply w-full relative flex items-center justify-center min-h-[32px] mb-6 box-border px-6;
+}
+
+.minigame-modal-nav-btn.is-back-arrow {
+  @apply absolute left-0 top-1/2 -translate-y-1/2 text-2xl text-gray-400 hover:text-gray-600 bg-transparent border-none font-black cursor-pointer transition-colors duration-200 focus:outline-none p-0 m-0 z-50 flex items-center justify-center leading-none;
+}
+
+.minigame-modal-nav-btn.is-close-cross {
+  @apply absolute text-2xl text-gray-400 hover:text-gray-600 bg-transparent border-none font-black cursor-pointer transition-colors duration-200 focus:outline-none p-0 m-0 z-50 top-0 right-0;
+}
+
+.minigame-modal-main-title {
+  @apply text-[#1a3d1c] font-black text-2xl tracking-wide text-center uppercase m-0 select-none leading-none border-none bg-transparent;
+}
+
+.minigame-modal-content-grid {
+  @apply w-full flex flex-col items-center gap-3.5 box-border;
+}
+
+.minigame-modal-content-grid .minigame-modal-action-row-btn.ant-btn-primary {
+  @apply text-white font-black border-none cursor-pointer flex items-center justify-center relative shadow-md uppercase select-none box-border w-full h-15 rounded-full px-12 pointer-events-auto m-0 p-0 animate-none transition-transform duration-100 ease-out text-[16px];
+}
+
+.minigame-modal-content-grid .minigame-modal-action-row-btn.ant-btn-primary.is-green,
+.minigame-modal-content-grid .minigame-modal-action-row-btn.ant-btn-primary.is-green:hover,
+.minigame-modal-content-grid .minigame-modal-action-row-btn.ant-btn-primary.is-green:focus {
+  @apply bg-[#61aa05] text-white;
+}
+
+.minigame-modal-content-grid .minigame-modal-action-row-btn.ant-btn-primary.is-green:active {
+  @apply bg-[#389e0d] scale-[0.97];
+}
+
+.minigame-modal-content-grid .minigame-modal-action-row-btn.ant-btn-primary.is-yellow,
+.minigame-modal-content-grid .minigame-modal-action-row-btn.ant-btn-primary.is-yellow:hover,
+.minigame-modal-content-grid .minigame-modal-action-row-btn.ant-btn-primary.is-yellow:focus {
+  @apply bg-[#f9b300] text-white;
+}
+
+.minigame-modal-content-grid .minigame-modal-action-row-btn.ant-btn-primary.is-yellow:active {
+  @apply bg-[#e0a800] scale-[0.97];
+}
+
+.minigame-modal-content-grid .minigame-modal-action-row-btn.ant-btn-primary.is-red,
+.minigame-modal-content-grid .minigame-modal-action-row-btn.ant-btn-primary.is-red:hover,
+.minigame-modal-content-grid .minigame-modal-action-row-btn.ant-btn-primary.is-red:focus {
+  @apply bg-[#d32f2f] text-white;
+}
+
+.minigame-modal-content-grid .minigame-modal-action-row-btn.ant-btn-primary.is-red:active {
+  @apply bg-[#b71c1c] scale-[0.97];
+}
+
+.minigame-modal-btn-icon-absolute {
+  @apply absolute left-5 w-5 h-5 flex items-center justify-center pointer-events-none;
+}
+
+.minigame-modal-btn-text-centered {
+  @apply w-full text-center block pointer-events-none tracking-wide;
+}
+
+@media (orientation: landscape) {
+  .minigame-antd-modal .ant-modal-content {
+    --modal-scale: 1;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 1279px) {
+  .minigame-antd-modal .ant-modal-content {
+    --modal-scale: 0.85;
+  }
+}
+
+@media (orientation: portrait) {
+  .minigame-antd-modal .ant-modal-content {
+    --modal-scale: 0.75;
+    padding: 28px 20px 24px 20px;
+  }
+}
+
+@media (orientation: portrait) and (min-width: 768px) {
+  .minigame-antd-modal .ant-modal-content {
+    --modal-scale: 0.9;
+  }
+}

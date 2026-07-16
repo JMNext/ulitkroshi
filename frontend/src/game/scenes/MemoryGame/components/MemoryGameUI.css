@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+.memory-game-ui-wrapper {
+  @apply absolute inset-0 pointer-events-none z-20 overflow-hidden;
+}
+
+.memory-grid-visual-anchor {
+  @apply absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2;
+}
+
+.pet-character-sprite-wrap {
+  @apply w-full h-full flex items-center justify-center overflow-hidden;
+}
+
+.pet-video-render {
+  @apply w-full h-full object-fill block contrast-[110%] brightness-[105%];
+}
+
+@media (orientation: landscape) {
+  .memory-grid-visual-anchor {
+    @apply w-[600px] h-[420px];
+  }
+
+  .memory-pet-layout-box {
+    @apply absolute pointer-events-auto origin-bottom isolate left-1/2 top-1/2 -translate-x-[660px] translate-y-[-40px] w-[280px] h-[280px] flex items-center justify-center;
+  }
+}
+
+@media (orientation: portrait) {
+  .memory-grid-visual-anchor {
+    @apply w-[480px] h-[400px];
+  }
+
+  .memory-pet-layout-box {
+    /* Возвращено исходное центрирование под игровое поле */
+    @apply absolute left-1/2 top-1/2 -translate-x-1/2 translate-y-[120px] w-[180px] h-[180px] flex items-center justify-center pointer-events-none;
+  }
+}

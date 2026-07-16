@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+/* Главный контейнер персонажа питомца */
+.pet-character-container {
+  /* 
+    ЖЕСТКО ИЗ ИСХОДНИКА: left-1/2 и bottom: 25% (четверть высоты экрана), 
+    чтобы питомец стоял ровно в той точке, где он был изначально.
+  */
+  @apply absolute pointer-events-auto origin-bottom left-1/2 bottom-1/4 transition-transform duration-75;
+  width: 644px;
+  height: 644px;
+
+  /* 
+    ИСПРАВЛЕНО: Объединяем десктопное центрирование -50% по оси X 
+    и изолированный масштаб, защищающий от раздувания.
+  */
+  transform: translateX(-50%) scale(var(--pet-scale, 1));
+}
+
+.pet-character-container.is-wash-size {
+  @apply overflow-visible relative;
+}
+
+.pet-character-container.is-default-size {
+  @apply overflow-hidden;
+}
+
+.pet-character-sprite-wrap {
+  @apply w-full h-full flex items-center justify-center relative pointer-events-auto;
+}
+
+/* Базовый рендер видео питомца */
+.pet-video-render {
+  @apply w-full h-full object-contain pointer-events-none block mix-blend-screen translate-z-0 backface-hidden;
+}
+
+/* Видео для режима мытья с кастомным масштабированием и позиционированием */
+video.pet-video-render.is-wash-video {
+  @apply absolute left-0 block h-[235.92%] top-[-68.94%] object-fill mix-blend-screen translate-z-0 backface-hidden;
+}
+
+/* АДАПТИВ ОРИЕНТАЦИИ: ГОРИЗОНТАЛЬНЫЕ СМАРТФОНЫ, ПЛАНШЕТЫ И ДЕСКТОП */
+@media (orientation: landscape) {
+  .pet-character-container {
+    /* На Nest Hub и больших мониторах фиксируем оригинальный 100% размер */
+    --pet-scale: 1;
+  }
+}
+
+/* На экранах ноутбуков поменьше (если они уже 1280px по ширине в ландшафте) */
+@media (orientation: landscape) and (max-width: 1279px) {
+  .pet-character-container {
+    /* Слегка и безопасно уменьшаем масштаб вслед за меню и кнопками */
+    --pet-scale: 0.85;
+  }
+}
+
+/* АДАПТИВ ОРИЕНТАЦИИ: ВЕРТИКАЛЬНЫЕ СМАРТФОНЫ (ПОРТРЕТ) */
+@media (orientation: portrait) {
+  .pet-character-container {
+    /* На смартфонах в портрете пропорционально сжимаем до 60% */
+    --pet-scale: 0.6;
+    
+    /* 
+      В портрете на узких экранах приподнимаем Бульку чуть выше (до 28%), 
+      чтобы он не садился лапами прямо на уменьшенные кнопки меню.
+    */
+    bottom: 28%;
+  }
+}
+
+/* На больших планшетах (iPad) в портретном режиме */
+@media (orientation: portrait) and (min-width: 768px) {
+  .pet-character-container {
+    --pet-scale: 0.8;
+    bottom: 25%;
+  }
+}

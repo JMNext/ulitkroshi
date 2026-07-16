@@ -1,51 +1,34 @@
 import React, { useRef, useEffect } from 'react';
 import petIdleVideo from '/src/assets/resources/1stpet-animation/prostoi-converted.webm';
 import petPlayVideo from '/src/assets/resources/1stpet-animation/play-converted.webm';
+import { useMemoryGameStore } from '../useMemoryGameStore';
 
 interface MemoryPetProps {
-  isWash: boolean;
   onEnded: () => void;
-  gridBottomY: number;
-  dimensions: { h: number; w: number };
-  isPort: boolean;
-  isLandscapeTablet: boolean;
-  isUltraNarrow: boolean;
 }
 
-export const MemoryPet = ({ 
-  isWash, 
-  onEnded, 
-  gridBottomY, 
-  dimensions, 
-  isPort, 
-  isLandscapeTablet, 
-  isUltraNarrow 
-}: MemoryPetProps) => {
+export const MemoryPet = ({ onEnded }: MemoryPetProps) => {
   const vIdle = useRef<HTMLVideoElement>(null);
   const vPlay = useRef<HTMLVideoElement>(null);
 
-  const size = isUltraNarrow 
-    ? 110 
-    : (isPort ? Math.max(140, Math.min(200, Math.floor(dimensions.h * 0.16))) : 130);
+  const isWash = useMemoryGameStore((state) => state.isWash);
 
   useEffect(() => { 
     if (isWash) { 
-      vIdle.current?.pause();
-      vPlay.current?.play().catch(() => {}); 
-    } 
+      if (vIdle.current) vIdle.current.pause();
+      if (vPlay.current) {
+        vPlay.current.currentTime = 0;
+        vPlay.current.play().catch((err) => console.warn("Play block:", err)); 
+      }
+    } else {
+      if (vPlay.current) vPlay.current.pause();
+      if (vIdle.current) vIdle.current.play().catch((err) => console.warn("Idle block:", err));
+    }
   }, [isWash]);
 
-  const containerStyle: React.CSSProperties = isPort 
-    ? { position: 'absolute', insetInline: 0, top: `${gridBottomY + 8}px`, display: 'flex', justifyContent: 'center', zIndex: 40 } 
-    : { position: 'absolute', left: isLandscapeTablet ? '4vw' : 'calc(20vw - 100px)', bottom: isLandscapeTablet ? '35px' : '50px', zIndex: 40 };
-
-  const wrapperStyle: React.CSSProperties = isPort 
-    ? { width: size, height: size } 
-    : { width: isLandscapeTablet ? '130px' : '30vw', height: isLandscapeTablet ? '130px' : '30vw', minWidth: '140px', maxWidth: '280px' };
-
   return (
-    <div style={containerStyle}>
-      <div style={wrapperStyle}>
+    <div className="memory-pet-layout-box">
+      <div className="pet-character-sprite-wrap">
         <video 
           ref={vIdle} 
           src={petIdleVideo} 
@@ -53,7 +36,8 @@ export const MemoryPet = ({
           playsInline 
           autoPlay 
           loop 
-          style={{ display: isWash ? 'none' : 'block', width: '100%', height: '100%', objectFit: 'contain' }} 
+          className="pet-video-render"
+          style={{ display: isWash ? 'none' : 'block' }} 
         />
         <video 
           ref={vPlay} 
@@ -61,7 +45,8 @@ export const MemoryPet = ({
           muted 
           playsInline 
           onEnded={onEnded} 
-          style={{ display: isWash ? 'block' : 'none', width: '100%', height: '100%', objectFit: 'contain' }} 
+          className="pet-video-render"
+          style={{ display: isWash ? 'block' : 'none' }} 
         />
       </div>
     </div>

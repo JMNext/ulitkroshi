@@ -1,32 +1,36 @@
+import React from 'react';
+import { Typography } from 'antd';
+import { useRegistrationStep2Store } from '../useRegistrationStep2Store';
+
 interface HeaderBlockProps {
-  mode: 'phone' | 'sent' | 'code';
-  isPortrait: boolean;
-  secs: number;
   onResend: () => void;
 }
 
-export const HeaderBlock = ({ mode, isPortrait, secs, onResend }: HeaderBlockProps) => {
+export const HeaderBlock = ({ onResend }: HeaderBlockProps) => {
+  const mode = useRegistrationStep2Store((state) => state.mode);
+  const secs = useRegistrationStep2Store((state) => state.secs);
+
   return (
-    <div className="w-full bg-white/95 backdrop-blur-sm rounded-[32px] px-5 py-4 shadow-xl relative z-20 border border-slate-100/50 box-border">
+    <Typography component="div" className="header-block-container">
       {mode !== 'code' ? (
-        <div className={`${isPortrait ? 'text-[22px]' : 'text-[26px]'} font-black text-slate-700 leading-snug tracking-wide`}>
+        <p className="header-block-title">
           Набери свой номер телефона!
-        </div>
+        </p>
       ) : (
-        <div className="flex flex-col items-center w-full">
-          <div className={`${isPortrait ? 'text-[22px]' : 'text-[26px]'} font-black text-slate-700 leading-snug tracking-wide`}>
+        <Typography component="div" className="header-block-wrapper">
+          <p className="header-block-title">
             Введи номер из смс!
-          </div>
+          </p>
           <button 
             disabled={secs > 0} 
             onClick={onResend} 
-            className={`text-[15px] font-black mt-2 block w-full text-center underline tracking-tight transition-colors border-none bg-transparent p-0 ${secs > 0 ? 'text-slate-500 cursor-default' : 'text-emerald-600 cursor-pointer'}`}
+            className={`header-resend-btn ${secs > 0 ? 'header-resend-btn-disabled' : 'header-resend-btn-active'}`}
           >
             {secs > 0 ? `Отправить повторно через ${secs} сек` : 'Отправить повторно'}
           </button>
-        </div>
+        </Typography>
       )}
-      <div className="absolute bottom-[-12px] left-1/2 -translate-x-1/2 w-0 h-0 border-x-[12px] border-transparent border-t-[12px] border-t-white/95" />
-    </div>
+      <span className="header-block-tail" />
+    </Typography>
   );
 };
