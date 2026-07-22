@@ -9,11 +9,20 @@ export default defineConfig({
     open: true,
   },
   build: {
-    chunkSizeWarningLimit: 2000,
+    chunkSizeWarningLimit: 4000,
     assetsInlineLimit: 0,
     rolldownOptions: {
       output: {
         strictExecutionOrder: true,
+        codeSplitting: {
+          groups: [
+            {
+              name: 'game-vendor',
+              test: /node_modules[\\/](phaser|antd|react|react-dom)/,
+              priority: 10,
+            },
+          ],
+        },
       },
     },
   },

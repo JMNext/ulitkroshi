@@ -1,36 +1,46 @@
-import React from 'react';
-import { Typography } from 'antd';
 import { useRegistrationStep2Store } from '../useRegistrationStep2Store';
 
-interface HeaderBlockProps {
-  onResend: () => void;
-}
+export const HeaderBlock = () => {
+  const mode = useRegistrationStep2Store(s => s.mode);
+  const secs = useRegistrationStep2Store(s => s.secs);
+  const startTimer = useRegistrationStep2Store(s => s.startTimer);
+  const sendPhone = useRegistrationStep2Store(s => s.sendPhone);
+  const attempts = useRegistrationStep2Store(s => s.attempts);
+  const errorMessage = useRegistrationStep2Store(s => s.errorMessage);
 
-export const HeaderBlock = ({ onResend }: HeaderBlockProps) => {
-  const mode = useRegistrationStep2Store((state) => state.mode);
-  const secs = useRegistrationStep2Store((state) => state.secs);
+  const getTitle = (): string => {
+    if (errorMessage) return errorMessage;
+    if (mode === 'code') {
+      return attempts > 0 && attempts < 3 
+        ? `Неверный код. Осталось попыток: ${3 - attempts}` 
+        : 'Введи номер из смс!';
+    }
+    return 'Набери свой номер телефона!';
+  };
 
   return (
-    <Typography component="div" className="header-block-container">
-      {mode !== 'code' ? (
-        <p className="header-block-title">
-          Набери свой номер телефона!
-        </p>
-      ) : (
-        <Typography component="div" className="header-block-wrapper">
-          <p className="header-block-title">
-            Введи номер из смс!
-          </p>
-          <button 
-            disabled={secs > 0} 
-            onClick={onResend} 
-            className={`header-resend-btn ${secs > 0 ? 'header-resend-btn-disabled' : 'header-resend-btn-active'}`}
-          >
-            {secs > 0 ? `Отправить повторно через ${secs} сек` : 'Отправить повторно'}
-          </button>
-        </Typography>
+    <div className="bg-white border border-slate-200/50 rounded-[32px] shadow-lg flex flex-col justify-center items-center overflow-hidden select-none pointer-events-none box-border w-[540px] h-[140px] p-6">
+      <p className="font-black text-slate-700 leading-tight tracking-wide text-center m-0 p-0 block text-[21px]">
+        {getTitle()}
+      </p>
+
+      {mode === 'code' && (
+        <span 
+          onClick={() => { 
+            if (secs === 0) { 
+              useRegistrationStep2Store.setState({ errorMessage: '' }); 
+              sendPhone().then(() => startTimer()); 
+            } 
+          }} 
+          className={`font-black block text-center tracking-tight transition-colors text-[14px] mt-3 ${
+            secs > 0 
+              ? 'text-slate-500 no-underline cursor-not-allowed pointer-events-none' 
+              : 'text-emerald-600 underline cursor-pointer pointer-events-auto'
+          }`}
+        >
+          {secs > 0 ? `Отправить повторно через ${secs} сек` : 'Отправить повторно'}
+        </span>
       )}
-      <span className="header-block-tail" />
-    </Typography>
+    </div>
   );
 };

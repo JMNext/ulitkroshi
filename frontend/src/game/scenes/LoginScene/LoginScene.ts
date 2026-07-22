@@ -1,64 +1,73 @@
-import { Scene, Scenes, Cameras } from 'phaser'; 
-import begemotUrl from '../../../assets/login_assets/begemot.png?url';
-import { destroyLoginUI, renderLoginUI, startLoadingAnimation } from './components/LoginUI';
-import './components/LoginUI.css';
+// LoginScene.ts
+import * as Phaser from 'phaser';
+import { Scene as PhaserScene } from 'phaser';
+import { createRoot, Root } from 'react-dom/client';
+import React from 'react';
+import { LoginUiManager } from './LoginUiManager';
 
-export class LoginScene extends Scene {
-  private isTransitioning: boolean = false;
+export class LoginScene extends PhaserScene {
+  private root: Root | null = null;
+  private uiContainer: HTMLDivElement | null = null;
 
-  constructor() {
-    super('LoginScene');
-  }
-
-  public preload(): void {
-    // Загружаем картинку в глобальный TextureManager под стабильным ключом
-    if (!this.textures.exists('player-begemot')) {
-      this.load.image('player-begemot', begemotUrl);
-    }
+  constructor() { 
+    super('LoginScene'); 
   }
 
   public create(): void {
-    this.isTransitioning = false;
-    if (this.cameras?.main) {
-      this.cameras.main.fadeIn(400, 0, 0, 0);
+    this.cameras.main.fadeIn(400, 0, 0, 0);
+
+    const oldContainer = document.getElementById('phaser-login-ui-root');
+    if (oldContainer) {
+      oldContainer.remove();
     }
-    
-    document.getElementById('game-container')?.setAttribute('data-scene', this.scene.key);
-    this.buildUI();
-    
-    this.events.once(Scenes.Events.SHUTDOWN, this.handleShutdown, this);
-    this.events.once(Scenes.Events.DESTROY, this.handleShutdown, this);
+
+    this.uiContainer = document.createElement('div');
+    this.uiContainer.id = 'phaser-login-ui-root';
+    this.uiContainer.className = 'fixed inset-0 w-full h-full pointer-events-none z-50 transition-opacity duration-300 ease-out';
+    document.body.appendChild(this.uiContainer);
+
+    this.root = createRoot(this.uiContainer);
+    this.root.render(
+      React.createElement(LoginUiManager, {
+        scene: this,
+        onComplete: () => this.handleLoginComplete()
+      })
+    );
+
+    this.events.once('shutdown', this.cleanup, this);
+    this.events.once('destroy', this.cleanup, this);
   }
 
-  private buildUI(): void {
-    renderLoginUI(this, () => this.handleStartFlow());
-  }
+  private cleanup = (): void => {
+    this.events.off('shutdown', this.cleanup, this);
+    this.events.off('destroy', this.cleanup, this);
 
-  private handleStartFlow(): void {
-    if (this.isTransitioning) return;
-    this.isTransitioning = true;
+    try { 
+      this.root?.unmount(); 
+    } catch (e) {
+      console.error(e);
+    }
+    this.root = null;
 
-    startLoadingAnimation(() => {
-      if (!this.sys || !this.sys.isActive() || !this.scene) return;
+    if (this.uiContainer) {
+      this.uiContainer.remove();
+      this.uiContainer = null;
+    }
+  };
 
-      destroyLoginUI();
+  private handleLoginComplete(): void {
+    if (this.uiContainer) {
+      this.uiContainer.style.opacity = '0';
+      this.uiContainer.style.transition = 'opacity 0.3s ease-out';
+    }
 
-      if (this.cameras?.main) {
-        this.cameras.main.fadeOut(300, 0, 0, 0);
-        this.cameras.main.once(Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-          if (this.sys?.isActive() && this.scene) {
-            this.scene.start('RegistrationScene_Step1');
-          }
-        });
-      } else {
+    if (this.cameras && this.cameras.main) {
+      this.cameras.main.fadeOut(300, 0, 0, 0);
+      this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
         this.scene.start('RegistrationScene_Step1');
-      }
-    });
-  }
-
-  private handleShutdown(): void {
-    destroyLoginUI();
-    this.events.off(Scenes.Events.SHUTDOWN, this.handleShutdown, this);
-    this.events.off(Scenes.Events.DESTROY, this.handleShutdown, this);
+      });
+    } else {
+      this.scene.start('RegistrationScene_Step1');
+    }
   }
 }

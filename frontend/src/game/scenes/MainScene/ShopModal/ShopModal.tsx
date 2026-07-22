@@ -3,7 +3,6 @@ import { Typography } from 'antd';
 import { ProductCard } from '../ProductCard/ProductCard';
 import { useMainGameStore } from '../useMainGameStore';
 import eatIcon from '/src/assets/buttom_menu-icons/eat.svg';
-import './ShopModal.css';
 import { BoostItem, useShopStore } from '../useShopStore';
 
 interface ShopModalProps {
@@ -33,12 +32,6 @@ export const ShopModal = ({ onClose }: ShopModalProps) => {
     return () => resetStore();
   }, [resetStore]);
 
-  const handleBackdropClick = (e: React.MouseEvent<HTMLElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   const totalPrice = Object.entries(cart).reduce((total, [idStr, qty]) => {
     const item = MOCK_BOOSTS.find((b) => b.id === Number(idStr));
     return total + (item ? item.price * qty : 0);
@@ -47,82 +40,102 @@ export const ShopModal = ({ onClose }: ShopModalProps) => {
   const isCartEmpty = Object.keys(cart).length === 0;
 
   const handleCheckoutPurchase = () => {
-    if (isCartEmpty) return;
-    if (coinsBalance < totalPrice) {
-      setPurchaseStatus({ success: false, text: 'Недостаточно монет для покупки!' });
+    if (isCartEmpty || coinsBalance < totalPrice) {
+      if (coinsBalance < totalPrice) {
+        setPurchaseStatus({ success: false, text: 'Недостаточно монет для покупки!' } as any);
+      }
       return;
     }
-    const newBalance = coinsBalance - totalPrice;
-    setCoins(newBalance);
-    
+    setCoins(coinsBalance - totalPrice);
     clearCart();
     setSelectedItem(null);
-    setPurchaseStatus({ success: true, text: `Успешно куплено! Списано: ${totalPrice}` });
+    setPurchaseStatus({ success: true, text: `Успешно куплено! Списано: ${totalPrice}` } as any);
   };
 
   return (
-    <main className="modal-backdrop-blur" onClick={handleBackdropClick}>
-      <section className="shop-modal-card">
-        <section className="shop-main-column">
-          <nav className="shop-header-row">
-            <nav className="shop-title-balance-wrap">
-              <Typography.Title level={3} className="shop-title">Магазин бустов</Typography.Title>
-              <nav className="shop-balance-badge">
-                <Typography.Text className="shop-balance-text">
-                  Баланс: {coinsBalance}
-                </Typography.Text>
-                <img src={eatIcon} className="pointer-events-none h-[14px] w-[14px] shrink-0" alt="coin" />
-              </nav>
-            </nav>
-            <button onClick={onClose} className="shop-close-btn">✕</button>
-          </nav>
+    <section 
+      className="flex w-[880px] portrait:w-[440px] h-[650px] portrait:h-[600px] p-6 bg-white rounded-[32px] gap-5 portrait:gap-0 border-4 border-[#4caf50] box-border relative select-none"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex-1 flex flex-col min-h-0 w-full">
+        <header className="flex justify-between items-center mb-4">
+          <div className="flex items-center gap-4">
+            <Typography.Title level={3} className="!text-[#1a3d1c] !font-black !text-2xl portrait:!text-xl !m-0 !p-0">
+              Магазин бустов
+            </Typography.Title>
+            <div className="bg-amber-50 border border-amber-200 px-3 py-1 rounded-full flex items-center gap-1">
+              <Typography.Text className="!font-black !text-amber-700 !text-sm portrait:!text-xs !m-0 !p-0">
+                Баланс: {coinsBalance}
+              </Typography.Text>
+              <img src={eatIcon} className="w-[14px] h-[14px]" alt="coin" />
+            </div>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="text-slate-400 hover:text-slate-600 transition-colors text-2xl font-bold bg-transparent border-none cursor-pointer outline-none"
+          >
+            ✕
+          </button>
+        </header>
 
-          {purchaseStatus && (
-            <nav className={`shop-status-banner ${purchaseStatus.success ? 'shop-status-success' : 'shop-status-error'}`}>
-              <Typography.Text className="shop-status-text">{purchaseStatus.text}</Typography.Text>
-              {purchaseStatus.success && <img src={eatIcon} className="pointer-events-none h-[12px] w-[12px] shrink-0" alt="coin" />}
-            </nav>
-          )}
+        {purchaseStatus && typeof purchaseStatus === 'object' && 'text' in purchaseStatus && (
+          <div className={`mb-3 p-2 text-center text-xs font-black rounded-xl border flex items-center justify-center gap-1 ${(purchaseStatus as any).success ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+            <Typography.Text className="!text-inherit !text-xs !font-black !m-0 !p-0">
+              {(purchaseStatus as any).text}
+            </Typography.Text>
+            {(purchaseStatus as any).success && <img src={eatIcon} className="w-[12px] h-[12px]" alt="coin" />}
+          </div>
+        )}
 
-          <nav className="shop-goods-grid">
-            {MOCK_BOOSTS.map((item) => {
-              const countInCart = cart[item.id] || 0;
-              const isSelected = selectedItem?.id === item.id;
-              return (
-                <section
-                  key={item.id}
-                  onClick={() => setSelectedItem(item)}
-                  className={`shop-good-card ${isSelected ? 'shop-good-card-selected' : 'shop-good-card-normal'}`}
-                >
-                  {countInCart > 0 && <span className="shop-good-badge-count">{countInCart}</span>}
-                  <img src={eatIcon} className="shop-good-img" alt="eat" />
-                  <span className="shop-good-price-lbl">
-                    {item.price}
-                    <img src={eatIcon} className="pointer-events-none h-[11px] w-[11px] shrink-0" alt="coin-icon" />
+        <div className="grid grid-cols-4 portrait:grid-cols-3 gap-3 overflow-y-auto pr-1 py-1.5 flex-1 content-start">
+          {MOCK_BOOSTS.map((item) => {
+            const countInCart = cart[item.id] || 0;
+            const isSelected = selectedItem?.id === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setSelectedItem(item)}
+                className={`aspect-square bg-gradient-to-b from-slate-50 to-slate-100 rounded-2xl flex flex-col items-center justify-between p-3 border-2 cursor-pointer relative transition-all outline-none ${isSelected ? 'border-4 border-[#4caf50] bg-emerald-50/30' : 'border-slate-200 hover:border-slate-300'}`}
+              >
+                {countInCart > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-[#4caf50] text-white font-black text-xs px-1.5 py-0.5 rounded-full z-10 leading-none">
+                    {countInCart}
                   </span>
-                </section>
-              );
-            })}
-          </nav>
+                )}
+                <img src={eatIcon} className="w-[55px] h-[55px] portrait:w-[48px] portrait:h-[48px] object-contain mt-1" alt="eat" />
+                <span className="text-xs font-black text-slate-600 bg-white px-2 py-1 rounded-full border border-slate-200 leading-none mb-0.5 flex items-center gap-0.5">
+                  {item.price}
+                  <img src={eatIcon} className="w-[11px] h-[11px]" alt="coin-icon" />
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
-          {!isCartEmpty && (
-            <nav className="shop-checkout-panel">
-              <nav className="shop-checkout-price-wrap">
-                <Typography.Text className="shop-checkout-title">Итого к оплате:</Typography.Text>
-                <Typography.Text className="shop-checkout-sum">
-                  {totalPrice}
-                  <img src={eatIcon} className="pointer-events-none h-[16px] w-[16px] shrink-0" alt="coin" />
-                </Typography.Text>
-              </nav>
-              <button onClick={handleCheckoutPurchase} className="shop-checkout-btn">Купить</button>
-            </nav>
-          )}
-        </section>
+        {!isCartEmpty && (
+          <div className="mt-4 p-3 bg-slate-50 rounded-2xl border border-solid border-slate-100 flex justify-between items-center shrink-0">
+            <div className="flex flex-col">
+              <Typography.Text className="!text-xs !text-slate-500 !font-bold !leading-none !mb-1 !m-0 !p-0">
+                Итого к оплате:
+              </Typography.Text>
+              <Typography.Text className="!text-xl !font-black !text-emerald-600 flex items-center gap-1 !leading-none !m-0 !p-0">
+                {totalPrice}
+                <img src={eatIcon} className="w-[16px] h-[16px]" alt="coin" />
+              </Typography.Text>
+            </div>
+            <button 
+              onClick={handleCheckoutPurchase} 
+              className="h-11 px-6 bg-amber-400 hover:bg-amber-500 transition-colors text-white font-black rounded-xl text-sm border-none uppercase tracking-wide flex items-center justify-center cursor-pointer outline-none"
+            >
+              Купить
+            </button>
+          </div>
+        )}
+      </div>
 
-        <section className="shop-details-column">
-          <ProductCard onCloseCard={() => setSelectedItem(null)} />
-        </section>
-      </section>
-    </main>
+      <aside className="w-[280px] portrait:w-auto border-l portrait:border-none pl-5 portrait:pl-0 border-solid border-slate-100 flex flex-col min-h-0">
+        <ProductCard onCloseCard={() => setSelectedItem(null)} />
+      </aside>
+    </section>
   );
 };

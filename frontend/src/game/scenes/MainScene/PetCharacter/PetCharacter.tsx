@@ -1,63 +1,104 @@
-import React, { useEffect, useRef } from 'react';
-import './PetCharacter.css';
+import { useEffect, useRef, useState } from 'react';
+import { usePetCareStore } from '../usePetCareStore';
+import { PET_ANIMS_CONFIG } from './basePet';
 
-const videoProstoi1 = new URL('/src/assets/resources/1stpet-animation/prostoi-converted.webm', import.meta.url).href;
-const videoProstoi2 = new URL('/src/assets/resources/1stpet-animation/prostoi2.webm', import.meta.url).href;
-const videoSadState = new URL('/src/assets/resources/1stpet-animation/sad_state.webm', import.meta.url).href;
-const videoSleepBegin = new URL('/src/assets/resources/1stpet-animation/sleep_begin.webm', import.meta.url).href;
-const videoSleepCircle = new URL('/src/assets/resources/1stpet-animation/sleep_circle.webm', import.meta.url).href;
-const videoSleepAwake = new URL('/src/assets/resources/1stpet-animation/sleep_awake.webm', import.meta.url).href;
-const videoEat = new URL('/src/assets/resources/1stpet-animation/eat-converted.webm', import.meta.url).href;
-const videoPlay = new URL('/src/assets/resources/1stpet-animation/play_ball.webm', import.meta.url).href;
-const videoWash = new URL('/src/assets/resources/1stpet-animation/wash-converted.webm', import.meta.url).href; 
-
-interface PetCharacterProps {
-  currentAnim: string;
-  onAnimationComplete: (anim: string) => void;
-}
-
-const ANIMATION_MAP: Record<string, string> = {
-  wash: videoWash, 
-  play: videoPlay, 
-  eat: videoEat, 
-  sad_state: videoSadState,
-  sleep_begin: videoSleepBegin, 
-  sleep_circle: videoSleepCircle, 
-  sleep_awake: videoSleepAwake,
-  prostoi2: videoProstoi2, 
-  prostoi1: videoProstoi1,
+const ANIMS_SOURCES: Record<string, string> = {
+  wash: new URL('/src/assets/resources/1stpet-animation/wash-converted.webm', import.meta.url).href,
+  play: new URL('/src/assets/resources/1stpet-animation/play_ball.webm', import.meta.url).href,
+  eat: new URL('/src/assets/resources/1stpet-animation/eat-converted.webm', import.meta.url).href,
+  sad_state: new URL('/src/assets/resources/1stpet-animation/sad_state.webm', import.meta.url).href,
+  sleep_begin: new URL('/src/assets/resources/1stpet-animation/sleep_begin.webm', import.meta.url).href,
+  sleep_circle: new URL('/src/assets/resources/1stpet-animation/sleep_circle.webm', import.meta.url).href,
+  sleep_awake: new URL('/src/assets/resources/1stpet-animation/sleep_awake.webm', import.meta.url).href,
+  prostoi2: new URL('/src/assets/resources/1stpet-animation/prostoi2.webm', import.meta.url).href,
+  prostoi1: new URL('/src/assets/resources/1stpet-animation/prostoi-converted.webm', import.meta.url).href,
 };
 
-const LOOPING_ANIMS = new Set(['prostoi1', 'prostoi2', 'sleep_circle', 'sad_state']);
-const COMPLETABLE_ANIMS = new Set(['sleep_begin', 'sleep_awake', 'wash', 'play', 'eat']);
+const LOOPS = new Set<string>(['sleep_circle', 'sad_state', 'prostoi1', 'prostoi2']);
+const ANIMS_KEYS = Object.keys(PET_ANIMS_CONFIG);
 
-export const PetCharacter = ({ currentAnim, onAnimationComplete }: PetCharacterProps) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const isWash = currentAnim === 'wash';
+interface PetCharacterProps {
+  onAnimationComplete: (a: string) => void;
+}
+
+export const PetCharacter = ({ onAnimationComplete }: PetCharacterProps) => {
+  const currentAnim = usePetCareStore(s => s.currentAnim);
+  const setCurrentAnim = usePetCareStore(s => s.setCurrentAnim);
+  const setWashState = usePetCareStore(s => s.setWashState);
+  
+  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+  const [prevAnim, setPrevAnim] = useState<string | null>(null);
+  const [isNewPlaying, setIsNewPlaying] = useState<boolean>(false);
 
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.load();
-    video.play().catch(() => {});
-  }, [currentAnim]);
+    const active = videoRefs.current[currentAnim];
+    if (!active) return;
+
+    setIsNewPlaying(false);
+    active.currentTime = 0;
+    active.play().catch(() => {});
+
+    Object.entries(videoRefs.current).forEach(([k, v]) => {
+      if (v && k !== currentAnim && k !== prevAnim) v.pause();
+    });
+  }, [currentAnim, prevAnim]);
+
+  const handlePlaying = (key: string): void => {
+    if (key === currentAnim) {
+      setIsNewPlaying(true);
+      if (prevAnim && prevAnim !== currentAnim) videoRefs.current[prevAnim]?.pause();
+      setPrevAnim(currentAnim);
+    }
+  };
+
+  const handleEnded = (key: string): void => {
+    if (key !== currentAnim) return;
+    if (key === 'sleep_begin') setCurrentAnim('sleep_circle');
+    else if (key === 'sleep_awake') { 
+      setCurrentAnim('prostoi1'); 
+      setWashState('idle'); 
+    } else if (key === 'prostoi1' || key === 'prostoi2') {
+      const next: string = Math.random() < 0.3 ? 'prostoi2' : 'prostoi1';
+      if (next === currentAnim) videoRefs.current[currentAnim]?.play().catch(() => {});
+      else setCurrentAnim(next);
+    } else onAnimationComplete(key);
+  };
 
   return (
-    <div className={`pet-character-container ${isWash ? 'is-wash-size' : 'is-default-size'}`}>
-      <div className="pet-character-sprite-wrap">
-        <video
-          ref={videoRef}
-          src={ANIMATION_MAP[currentAnim] || videoProstoi1}
-          className={`pet-video-render ${isWash ? 'is-wash-video' : ''}`}
-          loop={LOOPING_ANIMS.has(currentAnim)}
-          muted
-          preload="auto"
-          playsInline
-          controls={false}
-          onEnded={() => COMPLETABLE_ANIMS.has(currentAnim) && onAnimationComplete(currentAnim)}
-          style={{ pointerEvents: 'none' }}
-        />
-      </div>
+    <div className="w-[644px] max-w-[644px] h-[644px] max-h-[644px] relative overflow-visible select-none">
+      {ANIMS_KEYS.map((key) => {
+        const src = ANIMS_SOURCES[key];
+        const config = PET_ANIMS_CONFIG[key];
+        if (!src || !config) return null;
+
+        const isCurrent = key === currentAnim;
+        const isPrevious = key === prevAnim;
+        const isVisible = (isCurrent && isNewPlaying) || (isPrevious && !isNewPlaying);
+
+        return (
+          <video
+            key={key}
+            ref={(el) => { videoRefs.current[key] = el; }}
+            src={src}
+            loop={LOOPS.has(key)}
+            muted
+            preload="auto"
+            playsInline
+            onPlaying={() => handlePlaying(key)}
+            onEnded={() => handleEnded(key)}
+            style={{
+              height: config.height,
+              transform: `translate(-50%, ${config.translateY})`,
+              objectFit: 'cover',
+            }}
+            className={`pet-anim-${key} absolute left-1/2 bottom-0 mix-blend-screen brightness-[0.95] contrast-[1.2] w-[644px] ${
+              key === 'wash' 
+                ? 'max-w-[644px]' 
+                : 'max-w-[644px] h-[644px] max-h-[644px]'
+            } ${isVisible ? 'visible opacity-100 z-10' : 'invisible opacity-0 z-0'}`}
+          />
+        );
+      })}
     </div>
   );
 };

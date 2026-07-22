@@ -1,130 +1,132 @@
 import { Scene } from 'phaser';
 import React from 'react';
-import { createRoot, Root } from 'react-dom/client';
-import { SnakeState } from './SnakeGameLogic';
-import { ISnakeGameScene, SnakeUiContainer } from './components/SnakeUiContainer';
-import { calculateSnakeMetrics } from './utils/SnakeMetrics';
-import { buildGridRender } from './utils/buildGridRender';
-import { executeSnakeStep } from './utils/snakeStepEngine';
-import iconLifeSvg from '/src/assets/interface-icons/life.svg?url';
 import { useSnakeGameStore } from './useSnakeGameStore';
+import { SnakeGameLogicManager } from './SnakeGameLogicManager';
+import { SnakeGameUiManager } from './SnakeGameUiManager';
+import { SnakePetEntity } from './components/SnakePetEntity';
 
-interface GameInitData { difficulty?: 'easy' | 'medium' | 'hard'; }
+import fonGorizImg from '/src/assets/background/fon_goriz.png';
+import fonVertImg from '/src/assets/background/fon_vert.png';
+import petIdleVideo from '/src/assets/resources/1stpet-animation/prostoi-converted.webm';
+import petPlayVideo from '/src/assets/resources/1stpet-animation/play-converted.webm';
+import petSadVideo from '/src/assets/resources/1stpet-animation/sad_state.webm';
+import { localGetFruitUrl } from '../MemoryGame/MemoryGameScene';
 
-export class SnakeGameScene extends Scene implements ISnakeGameScene {
-  public sState!: SnakeState;
-  public visualSnake: any[] = [];
-  public visualHearts: any[] = [];
-  public fruitObj: any = null;
-  public m = { gridSize: 0, offsetX: 0, offsetY: 0 };
-  public gridGfx: any = null;
-  public interval = 160;
-  public petWashState = false;
-  public petCrashState = false;
-  
-  private moveTimer = 0;
-  private regUiRoot: Root | null = null;
-  private isDestroyed = false;
+const FP = ['01', '02', '0003_13', '03', '04', '05', '06', '0007_09', '07', '08', '10', '11', '12', '14', '15', '16'];
 
-  public get score(): number { return this.sState?.score || 0; }
+export class SnakeGameScene extends Scene {
+  public difficulty = 'medium'; score = 0; hp = 100; petVideoSrc = petIdleVideo;
+  private bgImage: Phaser.GameObjects.Image | null = null; private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
+  public logicManager!: SnakeGameLogicManager; private uiManager!: SnakeGameUiManager; private petEntity!: SnakePetEntity;
+  private unsubscribeStore: (() => void) | null = null; private handleWindowResizeBound: () => void; private resizeTimeout: ReturnType<typeof setTimeout> | null = null;
+  private uncrashTime = 0;
 
-  constructor() { super('SnakeGameScene'); }
+  constructor() { super('SnakeGameScene'); this.handleWindowResizeBound = this.handleWindowResize.bind(this); }
 
-  public init = (data: GameInitData): void => {
-    const SPEED_CONFIG: Record<string, number> = { easy: 380, medium: 160, hard: 100 };
-    this.interval = SPEED_CONFIG[data.difficulty || 'medium'] || 160;
-    this.visualSnake = []; this.fruitObj = null; this.moveTimer = 0; this.isDestroyed = false;
-    this.petWashState = false; this.petCrashState = false;
-    this.sState = {
-      snake: [{ x: 3, y: 5 }, { x: 2, y: 5 }, { x: 1, y: 5 }],
-      dir: 'RIGHT', nextDir: 'RIGHT', score: 0, hp: 100, isOver: false, isPause: false
-    };
-    useSnakeGameStore.getState().resetStore();
-  };
+  public init(data: { difficulty?: 'easy' | 'medium' | 'hard' }): void {
+    this.difficulty = data.difficulty || 'medium'; this.score = 0; this.hp = 100;
+    const SC = { easy: 340, medium: 200, hard: 120 };
+    this.logicManager = new SnakeGameLogicManager(this, SC[this.difficulty as 'easy' | 'medium' | 'hard'] || 200);
+    this.uiManager = new SnakeGameUiManager(this); this.petEntity = new SnakePetEntity(this);
+    useSnakeGameStore.getState().initGame();
+  }
 
-  public preload = (): void => {
-    this.load.image('icon-life', iconLifeSvg);
-    const FRUITS = ['01', '02', '0003_13', '03', '04', '05', '06', '0007_09', '07', '08', '10', '11', '12', '14', '15', '16'];
-    FRUITS.forEach(id => {
-      const fImgs = import.meta.glob('/src/assets/fruits/fruits_*.png', { eager: true, query: '?url' }) as Record<string, { default: string }>;
-      fImgs[`/src/assets/fruits/fruits_${id}.png`]?.default && this.load.image(`f-${id}`, fImgs[`/src/assets/fruits/fruits_${id}.png`].default);
-    });
-  };
+  public preload(): void {
+    this.load.image('snake_bg_horiz', fonGorizImg).image('snake_bg_vert', fonVertImg);
+    FP.forEach((id, idx) => this.load.image(`fruit_idx_${idx}`, localGetFruitUrl(id)));
+  }
 
-  public create = (): void => {
+  public create(): void {
     document.getElementById('game-container')?.setAttribute('data-scene', this.scene.key);
-    this.setupUI();
-    this.m = calculateSnakeMetrics(this.scale.gameSize.width, this.scale.gameSize.height);
-    buildGridRender(this);
+    this.bgImage = this.add.image(0, 0, 'snake_bg_horiz').setOrigin(0, 0); this.executeBackgroundResize();
+    this.uiManager.createUiContainer();
+    const isPortrait = window.innerHeight > window.innerWidth;
+    this.petEntity.create({ idle: petIdleVideo, play: petPlayVideo, sad: petSadVideo });
+    this.logicManager.initGame(isPortrait);
 
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (useSnakeGameStore.getState().isGameOver || !this.logicManager.snake[0]) return;
+      const h = this.logicManager.snake[0];
+      const hX = this.logicManager.startX + h.x * this.logicManager.cellSize + this.logicManager.cellSize / 2, hY = this.logicManager.startY + h.y * this.logicManager.cellSize + this.logicManager.cellSize / 2;
+      const dX = pointer.x - hX, dY = pointer.y - hY;
+      if (Math.abs(dX) > Math.abs(dY)) this.logicManager.changeDirection(dX > 0 ? 'RIGHT' : 'LEFT');
+      else this.logicManager.changeDirection(dY > 0 ? 'DOWN' : 'UP');
+    });
+
+    this.uiManager.render();
+    this.unsubscribeStore = useSnakeGameStore.subscribe(state => state.isGameOver, (isGameOver) => {
+      if (isGameOver) { this.uiManager.render(); if (useSnakeGameStore.getState().score >= 20) this.triggerWinCoinsExplosion(); }
+    });
+    if (this.input.keyboard) this.cursors = this.input.keyboard.createCursorKeys();
     window.addEventListener('keydown', this.handleKeyDown);
-    this.scale.on('resize', this.handleResize, this);
-    this.events.once('shutdown', () => {
-      this.scale.off('resize', this.handleResize, this);
-      window.removeEventListener('keydown', this.handleKeyDown);
-      this.destroyUI();
-    }, this);
-  };
+    window.addEventListener('resize', this.handleWindowResizeBound);
+    window.addEventListener('orientationchange', this.handleWindowResizeBound);
+  }
 
-  // ИСПРАВЛЕНО: Объявляем метод через стрелочную функцию, чтобы его тип существовал для create()
-  private handleKeyDown = (e: KeyboardEvent): void => { 
-    const DIR_MAP: Record<string, string> = { ArrowUp: 'UP', ArrowDown: 'DOWN', ArrowLeft: 'LEFT', ArrowRight: 'RIGHT', w: 'UP', s: 'DOWN', a: 'LEFT', d: 'RIGHT' };
-    if (e && DIR_MAP[e.key]) this.changeDirection(DIR_MAP[e.key]); 
-  };
-
-  public update = (time: number): void => {
-    if (!this.sState.isPause && !this.sState.isOver && this.m.gridSize > 0 && time >= this.moveTimer) {
-      executeSnakeStep(this); 
-      this.moveTimer = time + this.interval;
-    }
-  };
-
-  public changeDirection = (d: string): void => {
-    const OPPOSITE_DIR: Record<string, string> = { UP: 'DOWN', DOWN: 'UP', LEFT: 'RIGHT', RIGHT: 'LEFT' };
-    if (OPPOSITE_DIR[d] !== this.sState.dir) {
-      this.sState.nextDir = d;
-      if (this.sState.isPause) {
-        this.sState.isPause = false; this.sState.dir = d;
-        this.moveTimer = this.time.now + this.interval;
+  public update(time: number): void {
+    const store = useSnakeGameStore.getState(); if (store.isGameOver) return;
+    if (store.isCrashed) {
+      if (time > this.uncrashTime) {
+        useSnakeGameStore.getState().updateGameState(this.score, this.hp, false, false, false, false);
+        this.petEntity.setVideoState('idle'); this.logicManager.resetPositionOnCrash(); this.uiManager.render();
       }
+      return;
     }
-  };
-
-  private setupUI() {
-    let el = document.getElementById('snake-ui-overlay');
-    if (!el) {
-      el = document.createElement('div'); el.id = 'snake-ui-overlay';
-      el.className = 'absolute inset-0 z-40 pointer-events-none';
-      document.getElementById('game-container')?.appendChild(el);
+    if (this.cursors) {
+      if (this.cursors.left.isDown && this.logicManager.dir !== 'RIGHT') this.logicManager.changeDirection('LEFT');
+      else if (this.cursors.right.isDown && this.logicManager.dir !== 'LEFT') this.logicManager.changeDirection('RIGHT');
+      else if (this.cursors.up.isDown && this.logicManager.dir !== 'DOWN') this.logicManager.changeDirection('UP');
+      else if (this.cursors.down.isDown && this.logicManager.dir !== 'UP') this.logicManager.changeDirection('DOWN');
     }
-    if (!this.regUiRoot && el) this.regUiRoot = createRoot(el);
-    this.regUiRoot?.render(React.createElement(SnakeUiContainer, {
-      scene: this as any,
-      onBack: () => { this.destroyUI(); this.scene.start('MainScene'); },
-      onRestart: () => this.scene.restart()
-    }));
+    this.logicManager.handleTicks(time);
   }
 
-  private handleResize = () => {
-    if (!this.scene.isActive(this.scene.key) || this.isDestroyed) return;
-    this.m = calculateSnakeMetrics(this.scale.gameSize.width, this.scale.gameSize.height);
-    buildGridRender(this);
-    useSnakeGameStore.getState().setGameState(this.sState.score, this.sState.hp, this.sState.isOver, this.petWashState, this.petCrashState);
+  private handleKeyDown = (e: KeyboardEvent): void => {
+    const DM: Record<string, string> = { ArrowUp: 'UP', ArrowDown: 'DOWN', ArrowLeft: 'LEFT', ArrowRight: 'RIGHT', w: 'UP', s: 'DOWN', a: 'LEFT', d: 'RIGHT', W: 'UP', S: 'DOWN', A: 'LEFT', D: 'RIGHT' };
+    if (e && DM[e.key] && this.logicManager) this.logicManager.changeDirection(DM[e.key]);
   };
 
-  private destroyUI() { 
-    this.isDestroyed = true;
-    if (this.regUiRoot) { try { this.regUiRoot.unmount(); } catch {} this.regUiRoot = null; }
-    document.getElementById('snake-ui-overlay')?.remove(); 
+  public addScore(): void {
+    this.score++; const isWin = this.score >= 20;
+    useSnakeGameStore.getState().updateGameState(this.score, this.hp, isWin, isWin, true, false);
+    this.petEntity.setVideoState('play'); this.uiManager.render();
   }
 
-  public animateCoins(amount: number): void {
+  public triggerCrash(time: number): void {
+    this.hp = Math.max(0, this.hp - 25); const isOver = this.hp <= 0;
+    useSnakeGameStore.getState().updateGameState(this.score, this.hp, isOver, false, false, !isOver);
+    this.petEntity.setVideoState('sad'); this.uiManager.render(); this.uncrashTime = time + 1500;
+  }
+
+  public onPetPlayEnded(): void { if (!useSnakeGameStore.getState().isCrashed) this.petEntity.setVideoState('idle'); }
+  public onPetSadEnded(): void {}
+
+  private handleWindowResize(): void { if (this.resizeTimeout) clearTimeout(this.resizeTimeout); this.resizeTimeout = setTimeout(() => this.executeBackgroundResize(), 150); }
+
+  private executeBackgroundResize(): void {
+    if (!this.bgImage || !this.scale) return;
+    const w = window.innerWidth, h = window.innerHeight, isPortrait = h > w;
+    this.scale.resize(w, h); this.bgImage.setTexture(isPortrait ? 'snake_bg_vert' : 'snake_bg_horiz').setPosition(0, 0).setDisplaySize(w, h);
+    if (this.logicManager) this.logicManager.resizeMetrics(isPortrait);
+    if (this.petEntity) this.petEntity.resize(isPortrait);
+    if (this.uiManager) this.uiManager.render();
+  }
+
+  private cleanup = (): void => {
+    if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
+    window.removeEventListener('keydown', this.handleKeyDown); window.removeEventListener('resize', this.handleWindowResizeBound); window.removeEventListener('orientationchange', this.handleWindowResizeBound);
+    if (this.unsubscribeStore) this.unsubscribeStore();
+    this.logicManager.destroy(); this.petEntity.destroy(); this.uiManager.destroy(); useSnakeGameStore.getState().resetStore();
+  };
+
+  public exitGame(): void { this.cleanup(); this.scene.start('MainScene'); }
+
+  public triggerWinCoinsExplosion(): void {
     const w = this.scale.width, h = this.scale.height;
-    for (let i = 0; i < amount; i++) {
+    for (let i = 0; i < 20; i++) {
       this.time.delayedCall(i * 30, () => {
-        const rad = Math.max(12, Math.min(18, h * 0.024));
-        const c = this.add.graphics().fillStyle(0xf9b300, 1).fillCircle(0, 0, rad).setDepth(30);
-        c.x = w / 2; c.y = h / 2;
+        if (!this.scene.isActive(this.scene.key)) return;
+        const c = this.add.graphics().fillStyle(0xf9b300, 1).fillCircle(0, 0, 14).setDepth(30); c.x = w / 2; c.y = h / 2;
         this.tweens.add({
           targets: c, x: c.x + Phaser.Math.Between(-150, 150), y: c.y - Phaser.Math.Between(100, 300), scale: 1.2, duration: 520, ease: 'Quad.easeOut',
           onComplete: () => this.tweens.add({ targets: c, y: h + 40, alpha: 0, scale: 0.5, duration: 480, ease: 'Quad.easeIn', onComplete: () => c.destroy() })

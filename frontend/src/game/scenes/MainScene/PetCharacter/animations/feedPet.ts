@@ -5,28 +5,38 @@ import eatIconUrl from "../../../../../assets/buttom_menu-icons/eat.svg";
 export const startFeedingDrag = (scene: Phaser.Scene, e: TouchEvent | MouseEvent) => {
   createBaseDrag(scene, e, {
     url: eatIconUrl,
+    action: 'eat',
+    delaySound: true,
     onSuccess: (startX, startY) => {
-      const targetX = window.innerWidth / 2 - 40;
-      const targetY = window.innerHeight * 0.55;
+      const playEatSound = () => {
+        if (scene.cache.audio.exists('eat')) {
+          scene.sound.play('eat');
+        }
+      };
 
-      const item = document.createElement('img');
+      playEatSound();
+      setTimeout(playEatSound, 600);
+
+      let targetX: number = window.innerWidth / 2;
+      let targetY: number = window.innerHeight * 0.55;
+
+      const petElement: Element | null = document.querySelector('.pet-anim-prostoi1') || document.querySelector('.pet-anim-prostoi2');
+      if (petElement) {
+        const rect: DOMRect = petElement.getBoundingClientRect();
+        targetX = window.innerWidth / 2;
+        targetY = rect.top + rect.height / 2;
+      }
+
+      const item: HTMLImageElement = document.createElement('img');
       item.src = eatIconUrl;
-      item.style.cssText = `
-        position: fixed;
-        left: ${startX}px;
-        top: ${startY}px;
-        width: 80px;
-        height: 80px;
-        transform: translate(-50%, -50%);
-        pointer-events: none;
-        z-index: 50;
-      `;
-      document.getElementById('game-container')?.appendChild(item);
+      item.className = "fixed w-20 h-20 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-50";
+      item.style.left = `${startX}px`;
+      item.style.top = `${startY}px`;
+      
+      // ИСПРАВЛЕНО: Аппендим напрямую в body, так как game-container отсутствует
+      document.body.appendChild(item);
 
-      /* Триггерим начало видео-анимации сразу в момент броска, убирая задержку */
-      scene.events.emit('care_trigger_eat');
-
-      const flight = item.animate([
+      const flight: Animation = item.animate([
         { left: `${startX}px`, top: `${startY}px`, transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
         { left: `${targetX}px`, top: `${targetY}px`, transform: 'translate(-50%, -50%) scale(0.3)', opacity: 0 }
       ], {

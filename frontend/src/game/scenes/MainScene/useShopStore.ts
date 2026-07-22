@@ -11,7 +11,6 @@ interface ShopState {
   selectedItem: BoostItem | null;
   cart: { [key: number]: number };
   purchaseStatus: { success: boolean; text: string } | null;
-  
   setSelectedItem: (item: BoostItem | null) => void;
   addToCart: (id: number, qty: number) => void;
   removeFromCart: (id: number) => void;

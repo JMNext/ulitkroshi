@@ -6,8 +6,8 @@ interface PetCareState {
   setCurrentAnim: (anim: string) => void;
   setWashState: (washState: 'idle' | 'hidden' | 'glowing') => void;
   canExecuteAction: (actionText: string) => boolean;
-  triggerCareAction: (action: 'wash' | 'play' | 'eat', onSoundPlay?: (sound: string) => void) => void;
-  triggerSleepAction: (onSoundPlay?: (sound: string) => void, onSoundStop?: () => void) => void;
+  triggerCareAction: (action: 'wash' | 'play' | 'eat') => void;
+  triggerSleepAction: () => void;
   resetStore: () => void;
 }
 
@@ -25,44 +25,39 @@ export const usePetCareStore = create<PetCareState>((set, get) => ({
   
   canExecuteAction: (actionText) => {
     const s = get().currentAnim;
-    if (s === 'sleep_circle' || s === 'sleep_begin') return actionText === 'Спать';
+    if (s === 'sleep_circle' || s === 'sleep_begin' || s === 'sleep_awake') {
+      return actionText === 'Спать';
+    }
     return s === 'prostoi1' || s === 'prostoi2';
   },
 
-  triggerCareAction: (action, onSoundPlay) => {
+  triggerCareAction: (action) => {
     const { currentAnim } = get();
     if (currentAnim !== 'prostoi1' && currentAnim !== 'prostoi2') return;
 
     if (careTimeoutId) clearTimeout(careTimeoutId);
-    if (onSoundPlay) onSoundPlay(action);
 
     set({ currentAnim: action, washState: 'hidden' });
 
+    // Личные тайминги для каждой анимации. Настраивай цифры здесь как хочешь
+    const timeouts: Record<'wash' | 'play' | 'eat', number> = {
+      eat: 2000,   // Еда вернется быстрее всего
+      play: 3200,  // Для игры с мячом нужно чуть больше времени
+      wash: 4000   // Душ длится дольше всех
+    };
+
     careTimeoutId = setTimeout(() => {
       set({ currentAnim: 'prostoi1', washState: 'idle' });
-    }, 3500);
+    }, timeouts[action]);
   },
 
-  triggerSleepAction: (onSoundPlay, onSoundStop) => {
+  triggerSleepAction: () => {
     const { currentAnim } = get();
 
     if (['prostoi1', 'prostoi2'].includes(currentAnim)) {
       set({ currentAnim: 'sleep_begin', washState: 'hidden' });
-
-      if (careTimeoutId) clearTimeout(careTimeoutId);
-      careTimeoutId = setTimeout(() => {
-        set({ currentAnim: 'sleep_circle' });
-        if (onSoundPlay) onSoundPlay('sleep');
-      }, 3500);
-
     } else if (currentAnim === 'sleep_circle') {
-      if (onSoundStop) onSoundStop();
       set({ currentAnim: 'sleep_awake', washState: 'hidden' });
-
-      if (careTimeoutId) clearTimeout(careTimeoutId);
-      careTimeoutId = setTimeout(() => {
-        set({ currentAnim: 'prostoi1', washState: 'idle' });
-      }, 3500);
     }
   },
   

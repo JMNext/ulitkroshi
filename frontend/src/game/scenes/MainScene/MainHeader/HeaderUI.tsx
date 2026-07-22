@@ -1,41 +1,34 @@
-import React from 'react';
-import { useMainGameStore } from '../useMainGameStore';
-
+// MainHeaderUI.tsx
 import coinIcon from '../../../../assets/buttom_menu-icons/eat.svg';
 import avatarIcon from '../../../../assets/interface-icons/icon-avatar.svg';
 import plusIcon from '../../../../assets/interface-icons/plus.svg';
+import { useMainGameStore } from '../useMainGameStore';
 
-interface HeaderUIProps {
+interface MainHeaderUIProps {
   onPlusClick: () => void;
   onAvatarClick: () => void;
 }
 
-export const HeaderUI = ({ onPlusClick, onAvatarClick }: HeaderUIProps) => {
-  const coins = useMainGameStore((state) => state.coins);
+export const MainHeaderUI = ({ onPlusClick, onAvatarClick }: MainHeaderUIProps) => {
+  const coins = useMainGameStore((s) => s.coins);
 
   return (
-    <header className="flex justify-between items-start w-full box-border pointer-events-none pt-[clamp(24px,5vh,50px)] px-[clamp(12px,4vw,40px)]">
-      <div className="flex items-center justify-between bg-white rounded-full overflow-hidden box-border border border-[#f1f5f9] h-[clamp(42px,7.5vh,70px)] w-[clamp(150px,22vw,240px)] pointer-events-auto">
-        <div className="flex items-center justify-between w-full h-full box-border px-[clamp(8px,1.2vw,14px)]">
-          <img src={coinIcon} className="shrink-0 object-contain h-[70%] w-auto" alt="cookie" /> 
-          <span className="flex-1 text-center font-black text-[#1a3d1c] select-none text-[clamp(16px,2.5vh,26px)] leading-[clamp(42px,7.5vh,70px)]">
-            {coins}
-          </span>
-          <img 
-            src={plusIcon} 
-            className="shrink-0 object-contain h-[70%] w-auto cursor-pointer transition-transform duration-100 ease-out active:scale-90" 
-            alt="plus" 
-            onClick={onPlusClick}
-          />
-        </div>
+    <div className="main-header-container box-border flex w-full flex-row items-center justify-between h-auto">
+      {/* Плашка монет с восстановленным мобильным скейлингом */}
+      <div className="coin-balance-plate box-border flex items-center justify-between rounded-full border border-white bg-[#fff6e9] shadow-md h-[94px] w-[290px] p-[14px] transition-transform duration-100 max-h-[1000px]:scale-[0.78] max-h-[1000px]:origin-left portrait:scale-[0.72] portrait:origin-left">
+        <img src={coinIcon} className="coin-icon shrink-0 object-contain h-[80px] w-[80px]" alt="cookie" />
+        <span className="coin-value-text flex-1 px-2 text-center font-black text-slate-700 text-[24px] max-h-[1000px]:text-[20px]">
+          {coins}
+        </span>
+        <button type="button" onClick={onPlusClick} className="add-coins-button m-0 shrink-0 border-none bg-transparent p-0 outline-none cursor-pointer active:scale-95 transition-transform h-[60px] w-[60px]">
+          <img src={plusIcon} className="add-coins-icon w-full h-full object-contain" alt="plus" />
+        </button>
       </div>
 
-      <div 
-        className="relative z-50 cursor-pointer pointer-events-auto transition-transform duration-100 ease-out active:scale-95 box-border h-[clamp(60px,11vh,100px)] w-[clamp(60px,11vh,100px)]" 
-        onClick={onAvatarClick}
-      >
-        <img src={avatarIcon} className="relative z-51 w-full h-full object-cover rounded-full pointer-events-auto" alt="avatar" />
-      </div>
-    </header>
+      {/* Кнопка аватара с восстановленным мобильным скейлингом */}
+      <button type="button" onClick={onAvatarClick} className="avatar-profile-button m-0 shrink-0 border-none bg-transparent p-0 outline-none cursor-pointer active:scale-95 transition-transform h-[100px] w-[100px] max-h-[1000px]:scale-[0.78] max-h-[1000px]:origin-right portrait:scale-[0.72] portrait:origin-right">
+        <img src={avatarIcon} className="avatar-profile-icon w-full h-full object-contain drop-shadow-md" alt="avatar" />
+      </button>
+    </div>
   );
 };

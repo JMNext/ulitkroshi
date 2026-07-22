@@ -1,69 +1,83 @@
-import Phaser from 'phaser';
+import * as Phaser from 'phaser';
+import { Scene as PhaserScene } from 'phaser';
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
-import { RegistrationUI_Step3 } from './RegistrationUI_Step3';
-import './RegistrationUI_Step3.css';
+import { Step3UiManager } from './components/Step3UiManager';
+import { useRegistrationStep3Store } from './useRegistrationStep3Store';
 
-export class RegistrationScene_Step3 extends Phaser.Scene {
-  private regStep3UiRoot: Root | null = null;
+export class RegistrationScene_Step3 extends PhaserScene {
+  private root: Root | null = null;
+  private uiContainer: HTMLDivElement | null = null;
 
   constructor() { 
     super('RegistrationScene_Step3'); 
   }
 
   public create(): void {
-    if (this.cameras?.main) {
-      this.cameras.main.resetFX();
-      this.cameras.main.fadeIn(400, 0, 0, 0);
+    this.cameras.main.fadeIn(400, 0, 0, 0);
+
+    const oldContainer = document.getElementById('phaser-custom-ui-root');
+    if (oldContainer) {
+      oldContainer.remove();
     }
 
-    const gameContainer = document.getElementById('game-container');
-    if (gameContainer) {
-      gameContainer.setAttribute('data-scene', this.scene.key);
-    }
+    this.uiContainer = document.createElement('div');
+    this.uiContainer.id = 'phaser-custom-ui-root';
+    this.uiContainer.className = 'fixed inset-0 w-full h-full pointer-events-none z-50 transition-opacity duration-500 ease-out';
+    document.body.appendChild(this.uiContainer);
 
-    this.mountUI();
-
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.handleShutdown, this);
-  }
-
-  private mountUI(): void {
-    this.unmountUI(); 
-    
-    const container = document.createElement('div');
-    container.id = 'registration-step3-ui-overlay';
-    container.className = 'absolute inset-0 pointer-events-none z-30';
-    
-    document.getElementById('game-container')?.appendChild(container);
-
-    this.regStep3UiRoot = createRoot(container);
-    
-    this.regStep3UiRoot.render(
-      React.createElement(RegistrationUI_Step3, {
-        onDone: () => this.completeScene()
+    this.root = createRoot(this.uiContainer);
+    this.root.render(
+      React.createElement(Step3UiManager, {
+        scene: this,
+        onComplete: () => this.completeScene(),
+        onFullReset: () => this.handleFullReset()
       })
     );
+
+    this.events.once('shutdown', this.cleanup, this);
+    this.events.once('destroy', this.cleanup, this);
   }
 
-  private unmountUI(): void {
-    if (this.regStep3UiRoot) {
-      this.regStep3UiRoot.unmount();
-      this.regStep3UiRoot = null;
+  private cleanup = (): void => {
+    this.events.off('shutdown', this.cleanup, this);
+    this.events.off('destroy', this.cleanup, this);
+
+    try { 
+      this.root?.unmount(); 
+    } catch (e) {
+      console.error(e);
     }
-    document.getElementById('registration-step3-ui-overlay')?.remove();
+    this.root = null;
+
+    if (this.uiContainer) {
+      this.uiContainer.remove();
+      this.uiContainer = null;
+    }
+
+    useRegistrationStep3Store.getState().resetStore();
+  };
+
+  private handleFullReset(): void {
+    useRegistrationStep3Store.setState({ attempts: 0, errorMessage: '' });
+    useRegistrationStep3Store.getState().generateNewOrder();
+    useRegistrationStep3Store.getState().setCaptchaState([], [], 'select', false);
   }
 
   private completeScene(): void {
-    if (this.cameras?.main) {
-      this.cameras.main.fadeOut(400, 0, 0, 0).once('camerafadeoutcomplete', () => {
-        this.scene.start('RegistrationScene_Step4');
-      });
-    } else {
-      this.scene.start('RegistrationScene_Step4');
+    if (this.uiContainer) {
+      this.uiContainer.style.opacity = '0';
+      this.uiContainer.style.transition = 'opacity 0.5s ease-out';
     }
-  }
 
-  private handleShutdown(): void {
-    this.unmountUI();
+    const startNext = (): void => {
+      this.scene.start('RegistrationScene_Step4');
+    };
+    if (this.cameras && this.cameras.main) {
+      this.cameras.main.fadeOut(500, 0, 0, 0);
+      this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, startNext);
+    } else {
+      startNext();
+    }
   }
 }

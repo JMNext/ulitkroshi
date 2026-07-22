@@ -1,43 +1,53 @@
-import React from 'react';
-import { Typography } from 'antd';
+// CaptchaHeaderPanel.tsx
 import { useRegistrationStep3Store } from '../useRegistrationStep3Store';
 import { getFruitUrl } from './CaptchaFruitGrid';
 
-const TITLES = {
-  select: 'Выбери 4 фрукта<br/>и запомни их!',
-  confirm: 'Запомнил?',
-  verify: 'А теперь повтори фрукты,<br/>которые ты запомнил!',
-  error: 'Что то не так, давай<br/>еще раз!'
-};
-
 export const CaptchaHeaderPanel = () => {
-  const mode = useRegistrationStep3Store((state) => state.mode);
-  const correct = useRegistrationStep3Store((state) => state.corr);
-  const selected = useRegistrationStep3Store((state) => state.sel);
+  const { mode, sel: selected, attempts, errorMessage } = useRegistrationStep3Store();
 
-  const isConfirm = mode === 'confirm';
-  const displayArray = isConfirm ? correct : selected;
+  const getHeaderText = (): string => {
+    if (errorMessage) return errorMessage;
+    if (mode === 'verify') return attempts > 0 ? `Осталось попыток: ${3 - attempts}` : 'А теперь повтори фрукты,<br/>которые ты запомнил!';
+    if (mode === 'confirm') return 'Запомнил?';
+    if (mode === 'error') return 'Что то не так, давай<br/>еще раз!';
+    return 'Выбери 4 фрукта<br/>и запомни их!';
+  };
 
   return (
-    /* Добавлен класс shrink-0, защищающий заднее поле от изменения размеров */
-    <Typography.Text component="div" className="captcha-header-container shrink-0">
-      <p 
-        className="captcha-header-title" 
-        dangerouslySetInnerHTML={{ __html: TITLES[mode] || TITLES.select }} 
-      />
-      <Typography.Text component="div" className="captcha-slots-row">
+    <div className="bg-white border border-slate-200 rounded-[32px] shadow-xl flex flex-col items-center justify-start box-border select-none pointer-events-none w-[455px] h-[230px] pt-8">
+      
+      <div className="w-full flex items-center justify-center px-4 box-border h-[56px]">
+        <p 
+          className="font-black text-slate-700 leading-tight tracking-wide text-center m-0 p-0 block text-[20px]" 
+          dangerouslySetInnerHTML={{ __html: getHeaderText() }} 
+        />
+      </div>
+      
+      <div className="w-full flex justify-center items-center box-border gap-x-3 mt-[18px]">
         {Array.from({ length: 4 }).map((_, i) => {
-          const fIdx = i < displayArray.length ? displayArray[i] : null;
-          return fIdx !== null ? (
-            <Typography.Text component="div" key={i} className="captcha-slot-cell captcha-slot-filled box-border">
-              <img src={getFruitUrl(fIdx)} className="w-full h-full object-contain pointer-events-none" alt="" />
-            </Typography.Text>
-          ) : (
-            <Typography.Text component="div" key={i} className="captcha-slot-cell captcha-slot-empty box-border" />
+          const hasFruit = i < selected.length;
+          
+          return (
+            <div 
+              key={i} 
+              className={`p-1 rounded-full flex items-center justify-center border border-solid shadow-inner box-border shrink-0 w-[68px] h-[68px] ${
+                hasFruit 
+                  ? 'border-slate-100 bg-gray-50' 
+                  : 'border-slate-200 bg-stone-100'
+              }`}
+            >
+              {hasFruit && (
+                <img 
+                  src={getFruitUrl(selected[i])} 
+                  className="w-full h-full object-contain pointer-events-none" 
+                  alt="" 
+                />
+              )}
+            </div>
           );
         })}
-      </Typography.Text>
-      <span className="captcha-header-tail" />
-    </Typography.Text>
+      </div>
+
+    </div>
   );
 };

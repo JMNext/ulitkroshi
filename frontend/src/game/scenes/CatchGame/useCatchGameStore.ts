@@ -1,13 +1,14 @@
 import { create } from 'zustand';
+import { subscribeWithSelector } from 'zustand/middleware';
 
 interface CatchGameState {
   score: number;
   hp: number;
   isGameOver: boolean;
+  isWin: boolean;
   
-  setScore: (score: number) => void;
-  setHp: (hp: number) => void;
-  setGameOver: (isGameOver: boolean) => void;
+  initGame: () => void;
+  updateGameState: (score: number, hp: number, isGameOver: boolean, isWin: boolean) => void;
   resetStore: () => void;
 }
 
@@ -15,13 +16,23 @@ const initialValues = {
   score: 0,
   hp: 100,
   isGameOver: false,
+  isWin: false,
 };
 
-export const useCatchGameStore = create<CatchGameState>((set) => ({
-  ...initialValues,
+export const useCatchGameStore = create<CatchGameState>()(
+  subscribeWithSelector((set) => ({
+    ...initialValues,
 
-  setScore: (score) => set({ score }),
-  setHp: (hp) => set({ hp }),
-  setGameOver: (isGameOver) => set({ isGameOver }),
-  resetStore: () => set(initialValues),
-}));
+    initGame: () => {
+      set({ ...initialValues });
+    },
+
+    updateGameState: (score, hp, isGameOver, isWin) => {
+      set({ score, hp, isGameOver, isWin });
+    },
+
+    resetStore: () => {
+      set(initialValues);
+    },
+  }))
+);

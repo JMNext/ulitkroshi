@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import React from 'react';
 import begemotImg from '../../../../assets/login_assets/begemot.png';
 
 interface LoginLoaderProps {
@@ -7,54 +8,59 @@ interface LoginLoaderProps {
 
 export const LoginLoader = ({ onComplete }: LoginLoaderProps) => {
   const [progress, setProgress] = useState<number>(0);
-  const onCompleteRef = useRef<(() => void) | null>(null);
+  const onCompleteRef = useRef<() => void>(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
-    onCompleteRef.current = onComplete;
-  }, [onComplete]);
-
-  useEffect(() => {
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress = Math.min(currentProgress + 0.015, 1);
-      setProgress(currentProgress);
-
-      if (currentProgress >= 1) {
-        clearInterval(interval);
-        if (onCompleteRef.current) {
-          onCompleteRef.current();
+    let timeoutId: number;
+    
+    const interval = window.setInterval(() => {
+      setProgress((prev) => {
+        const next = Math.min(prev + 0.015, 1);
+        if (next >= 1) {
+          window.clearInterval(interval);
+          timeoutId = window.setTimeout(() => {
+            onCompleteRef.current();
+          }, 50);
         }
-      }
+        return next;
+      });
     }, 16);
-
-    return () => clearInterval(interval);
+    return () => {
+      window.clearInterval(interval);
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
   }, []);
 
-  const begemotRotation = Math.sin(progress * 30) * 6;
+  const progressPercent: number = progress * 100;
+  const rotationDegrees: number = Math.sin(progress * 30) * 6;
 
   return (
-    <section className="login-controls-wrapper">
-      <nav className="login-loading-bar">
-        <nav className="login-loading-track">
-          <nav
-            style={{ width: `${progress * 100}%` }}
-            className="login-loading-fill"
+    <div className="p-1 rounded-full shadow-xl flex items-center pointer-events-auto box-border select-none origin-bottom border border-solid border-slate-200/30 bg-white/95 w-[340px] h-[36px]">
+      <div className="w-full h-full rounded-full p-[3px] relative overflow-visible flex items-center bg-[#ede9e6]">
+        
+        <div className="w-full h-6 rounded-full overflow-hidden bg-transparent">
+          <div 
+            style={{ width: `${progressPercent}%` }}
+            className="h-full bg-[#f9b300] rounded-full transition-none"
           />
-          <nav
-            style={{
-              left: `${progress * 100}%`,
-              transform: `translateX(-50%) rotate(${begemotRotation}deg)`
-            }}
-            className="login-loading-runner"
-          >
-            <img
-              src={begemotImg}
-              className="login-runner-img"
-              alt="begemot"
-            />
-          </nav>
-        </nav>
-      </nav>
-    </section>
+        </div>
+
+        <div
+          style={{
+            left: `${progressPercent}%`,
+            transform: `translate(-50%, -50%) rotate(${rotationDegrees}deg)`
+          }}
+          className="flex items-center justify-center z-10 absolute will-change-transform top-1/2 w-[56px] h-[56px]"
+        >
+          <img 
+            src={begemotImg} 
+            alt="Бегемотик" 
+            className="w-full h-full object-contain pointer-events-none"
+          />
+        </div>
+
+      </div>
+    </div>
   );
 };

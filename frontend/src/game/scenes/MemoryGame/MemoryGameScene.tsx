@@ -1,106 +1,140 @@
-import * as Phaser from 'phaser';
+import { Scene } from 'phaser';
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
-import { generateDeckLogic } from './MemoryGameLogic';
-import { IMemoryGameScene, MemoryUiContainer } from './components/MemoryUiContainer';
-
 import { useMemoryGameStore } from './useMemoryGameStore';
-import { buildGridUIEngine } from './utils/memoryStepEngine';
+import { GameHeaderUI } from '../../../ui/components/GameHeader/GameHeaderUI';
+import { GameOverModalUI } from '../../../ui/components/GameOverModal/GameOverModalUI';
+import { MemoryGrid } from './components/MemoryGrid';
+import { MemoryPet } from './components/MemoryPet';
 
-export interface MemoryConfig { rows: number; cols: number; pairs: number; shuffleCount: number; }
-export interface MemoryCardContainer extends Phaser.GameObjects.Container { fruitKey: string; fruitImg: Phaser.GameObjects.Image; shirtImg: Phaser.GameObjects.Image; isFaceUp: boolean; }
+import fonGorizImg from '/src/assets/background/fon_goriz.png';
+import fonVertImg from '/src/assets/background/fon_vert.png';
 
-const FRUITS: string[] = ['01', '02', '0003_13', '03', '04', '05', '06', '0007_09', '07', '08', '10', '11', '12', '14', '15', '16'];
-const fImgs = import.meta.glob('/src/assets/fruits/fruits_*.png', { eager: true, query: '?url' }) as Record<string, { default: string }>;
+const FRUITS_POOL = ['01', '02', '03', '04', '05', '06', '07', '08', '10', '11', '12', '14', '15', '16'];
 
-export class MemoryGameScene extends Phaser.Scene implements IMemoryGameScene {
-  public difficulty: string = 'easy';
-  public selectedCards: MemoryCardContainer[] = [];
-  public canClick: boolean = false;
-  public matchesFound: number = 0;
-  public cardsList: MemoryCardContainer[] = [];
-  public totalPairs: number = 0;
-  public stepsTaken: number = 0;
-  
-  public mTimer: Phaser.Time.TimerEvent | null = null;
-  public pTimer: Phaser.Time.TimerEvent | null = null;
-  private isDestroyed: boolean = false;
-  private regUiRoot: Root | null = null;
+export class MemoryGameScene extends Scene {
+  private root: Root | null = null;
+  private uiContainer: HTMLDivElement | null = null;
+  private bgImage: Phaser.GameObjects.Image | null = null;
+  private unsubscribeStore: (() => void) | null = null;
+  private handleWindowResizeBound: () => void;
+  private resizeTimeout: ReturnType<typeof setTimeout> | null = null;
+  private initUiTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  public cfgs: Record<string, MemoryConfig> = {
-    easy: { rows: 3, cols: 4, pairs: 6, shuffleCount: 12 },
-    medium: { rows: 4, cols: 6, pairs: 12, shuffleCount: 24 },
-    hard: { rows: 4, cols: 8, pairs: 16, shuffleCount: 32 },
-  };
+  public difficulty = 'medium';
+  public totalPairs = 6;
 
-  constructor() { super('MemoryGameScene'); }
+  constructor() {
+    super('MemoryGameScene');
+    // ИСПРАВЛЕНО: биндим чистую функцию класса, чтобы убрать ошибку типов TS
+    this.handleWindowResizeBound = this.handleWindowResize.bind(this);
+  }
 
-  public init = (data: { difficulty?: string }): void => {
-    this.difficulty = data.difficulty || 'easy';
-    this.selectedCards = []; this.canClick = false; this.matchesFound = 0; this.cardsList = []; this.stepsTaken = 0; this.isDestroyed = false;
+  public init(data: { difficulty?: 'easy' | 'medium' | 'hard' }): void {
+    this.difficulty = data.difficulty || 'medium';
+    const pairsConfig = { easy: 4, medium: 6, hard: 8 };
+    this.totalPairs = pairsConfig[this.difficulty as 'easy' | 'medium' | 'hard'] || 6;
+    useMemoryGameStore.getState().initGame(this.totalPairs, FRUITS_POOL);
+  }
+
+  public preload(): void {
+    this.load.image('memory_bg_horiz', fonGorizImg);
+    this.load.image('memory_bg_vert', fonVertImg);
+  }
+
+  public create(): void {
+    document.getElementById('game-container')?.setAttribute('data-scene', this.scene.key);
+
+    this.bgImage = this.add.image(0, 0, 'memory_bg_horiz').setOrigin(0, 0);
+    this.executeBackgroundResize();
+
+    const gameContainer = document.getElementById('game-container');
+    if (gameContainer) {
+      document.getElementById('phaser-memory-ui-root')?.remove();
+      this.uiContainer = document.createElement('div');
+      this.uiContainer.id = 'phaser-memory-ui-root';
+      this.uiContainer.className = 'absolute inset-0 w-full h-full z-40 overflow-hidden bg-transparent pointer-events-none';
+      gameContainer.appendChild(this.uiContainer);
+      this.root = createRoot(this.uiContainer);
+    }
+
+    const syncUI = () => {
+      const state = useMemoryGameStore.getState();
+      this.root?.render(
+        React.createElement(React.Fragment, null,
+          React.createElement('div', { className: 'pointer-events-auto absolute inset-x-0 top-0 z-50 h-24' },
+            React.createElement(GameHeaderUI, { score: state.score, onBack: () => this.exitGameSession() })
+          ),
+          React.createElement(MemoryGrid, { difficulty: this.difficulty, totalPairs: this.totalPairs, onReady: () => {}, scene: this }),
+          React.createElement(MemoryPet, null),
+          state.isGameOver && React.createElement('div', { className: 'pointer-events-auto absolute inset-0 z-50' },
+            React.createElement(GameOverModalUI, {
+              score: state.score,
+              isWin: true,
+              onRestart: () => this.scene.restart(),
+              onBack: () => this.exitGameSession()
+            })
+          )
+        )
+      );
+    };
+
+    this.initUiTimeout = setTimeout(() => {
+      syncUI();
+
+      this.unsubscribeStore = useMemoryGameStore.subscribe(
+        (state) => `${state.deck.length}-${state.score}-${state.isGameOver}-${state.canClick}`,
+        () => {
+          syncUI();
+        }
+      );
+    }, 100);
+
+    window.addEventListener('resize', this.handleWindowResizeBound);
+    window.addEventListener('orientationchange', this.handleWindowResizeBound);
+  }
+
+  private handleWindowResize(): void {
+    if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
+    this.resizeTimeout = setTimeout(() => {
+      this.executeBackgroundResize();
+    }, 150);
+  }
+
+  private executeBackgroundResize(): void {
+    if (this.bgImage && this.scale) {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const isPortrait = height > width;
+
+      this.scale.resize(width, height);
+      this.bgImage.setTexture(isPortrait ? 'memory_bg_vert' : 'memory_bg_horiz');
+      this.bgImage.setPosition(0, 0);
+      this.bgImage.setDisplaySize(width, height);
+    }
+  }
+
+  private cleanup = (): void => {
+    if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
+    if (this.initUiTimeout) clearTimeout(this.initUiTimeout);
+    window.removeEventListener('resize', this.handleWindowResizeBound);
+    window.removeEventListener('orientationchange', this.handleWindowResizeBound);
+
+    if (this.unsubscribeStore) this.unsubscribeStore();
+    if (this.root) { this.root.unmount(); this.root = null; }
+    if (this.uiContainer) { this.uiContainer.remove(); this.uiContainer = null; }
+    document.getElementById('memory-html-pet-entity')?.remove();
     useMemoryGameStore.getState().resetStore();
   };
 
-  public preload = (): void => {
-    this.load.image('card-back', new URL('/src/assets/buttom_menu-icons/sleep.svg?url', import.meta.url).href);
-    for (let i = 0; i < FRUITS.length; i++) {
-      const id = FRUITS[i]; const p = `/src/assets/fruits/fruits_${id}.png`;
-      if (fImgs[p]?.default) this.load.image(`fruit-${id}`, fImgs[p].default);
-    }
-  };
-
-  public create = (): void => {
-    document.getElementById('game-container')?.setAttribute('data-scene', this.scene.key);
-    this.setupUI();
-    this.totalPairs = (this.cfgs[this.difficulty] || this.cfgs.easy).pairs;
-    
-    // Передаем инициализацию поля внешнему движку шагов
-    buildGridUIEngine(this, generateDeckLogic(this.totalPairs, FRUITS));
-    
-    this.scale.on('resize', this.handleResize, this);
-    this.events.once('shutdown', (): void => {
-      this.scale.off('resize', this.handleResize, this);
-      if (this.mTimer) this.mTimer.remove();
-      if (this.pTimer) this.pTimer.remove();
-      this.destroyUI();
-    }, this);
-  };
-
-  private setupUI(): void {
-    if (this.sys.game.canvas) this.sys.game.canvas.style.cssText = 'position: relative; z-index: 10;';
-    let el = document.getElementById('memory-ui-overlay');
-    if (!el) {
-      el = document.createElement('div'); el.id = 'memory-ui-overlay'; el.className = 'absolute inset-0 z-40 pointer-events-none';
-      document.getElementById('game-container')?.appendChild(el);
-    }
-    if (!this.regUiRoot && el) this.regUiRoot = createRoot(el);
-    this.regUiRoot?.render(React.createElement(MemoryUiContainer, { onBack: () => this.exitGame() }));
-  }
-
-  private destroyUI(): void {
-    if (this.regUiRoot) { try { this.regUiRoot.unmount(); } catch {} this.regUiRoot = null; }
-    document.getElementById('memory-ui-overlay')?.remove();
-  }
-
-  private handleResize = (): void => {
-    if (!this.scene.isActive(this.scene.key) || this.isDestroyed) return;
-    if (this.mTimer) this.mTimer.remove();
-    if (this.pTimer) this.pTimer.remove();
-    this.tweens.killAll();
-    
-    const active = this.cardsList.map((c: MemoryCardContainer) => c.fruitKey);
-    this.cardsList.forEach((c: MemoryCardContainer) => c?.destroy && c.destroy());
-    
-    this.cardsList = []; this.selectedCards = [];
-    buildGridUIEngine(this, active);
-    useMemoryGameStore.getState().setScore(this.matchesFound);
-  };
-
-  private exitGame = (): void => {
-    this.isDestroyed = true;
-    if (this.mTimer) this.mTimer.remove();
-    if (this.pTimer) this.pTimer.remove();
-    this.destroyUI();
+  public exitGameSession(): void {
+    this.cleanup();
     this.scene.start('MainScene');
-  };
+  }
 }
+
+export const localGetFruitUrl = (id: string): string => {
+  const fImgs = import.meta.glob('/src/assets/fruits/fruits_*.png', { eager: true, query: '?url' }) as Record<string, { default: string }>;
+  const formattedId = id === '0003_13' ? '0003_13' : id === '0007_09' ? '0007_09' : id;
+  return fImgs[`/src/assets/fruits/fruits_${formattedId}.png`]?.default || '';
+};

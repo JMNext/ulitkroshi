@@ -1,71 +1,78 @@
-import Phaser from 'phaser';
+import * as Phaser from 'phaser';
+import { Scene as PhaserScene } from 'phaser';
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
-import { RegistrationUI_Step1 } from './RegistrationUI_Step1';
-import './RegistrationUI_Step1.css';
+import { Step1UiManager } from './components/Step1UiManager';
+import { useRegistrationStep1Store } from './useRegistrationStep1Store';
 
-export class RegistrationScene_Step1 extends Phaser.Scene {
-  private regUiRoot: Root | null = null;
+export class RegistrationScene_Step1 extends PhaserScene {
+  private root: Root | null = null;
+  private uiContainer: HTMLDivElement | null = null;
 
-  constructor() {
-    super('RegistrationScene_Step1');
+  constructor() { 
+    super('RegistrationScene_Step1'); 
   }
+
+  public preload(): void {}
 
   public create(): void {
-    if (this.cameras?.main) {
-      this.cameras.main.resetFX();
-      this.cameras.main.fadeIn(400, 0, 0, 0);
+    this.cameras.main.fadeIn(400, 0, 0, 0);
+
+    const oldContainer = document.getElementById('phaser-custom-ui-root');
+    if (oldContainer) {
+      oldContainer.remove();
     }
 
-    const gameContainer = document.getElementById('game-container');
-    if (gameContainer) {
-      gameContainer.setAttribute('data-scene', this.scene.key);
-    }
+    this.uiContainer = document.createElement('div');
+    this.uiContainer.id = 'phaser-custom-ui-root';
+    this.uiContainer.className = 'fixed inset-0 w-full h-full pointer-events-none z-50 transition-opacity duration-500 ease-out';
+    document.body.appendChild(this.uiContainer);
 
-    this.mountUI();
-
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.handleShutdown, this);
-  }
-
-  private mountUI(): void {
-    this.unmountUI();
-
-    const container = document.createElement('div');
-    container.id = 'registration-step1-ui-overlay';
-    container.className = 'absolute inset-0 pointer-events-none z-30';
-
-    const gameContainer = document.getElementById('game-container');
-    if (!gameContainer) return;
-    
-    gameContainer.appendChild(container);
-
-    this.regUiRoot = createRoot(container);
-    this.regUiRoot.render(
-      React.createElement(RegistrationUI_Step1, {
-        onDone: () => this.handleDoneComplete()
+    this.root = createRoot(this.uiContainer);
+    this.root.render(
+      React.createElement(Step1UiManager, {
+        scene: this,
+        onComplete: () => this.completeScene()
       })
     );
+
+    this.events.once('shutdown', this.cleanup, this);
+    this.events.once('destroy', this.cleanup, this);
   }
 
-  private unmountUI(): void {
-    if (this.regUiRoot) {
-      this.regUiRoot.unmount();
-      this.regUiRoot = null;
+  private cleanup = (): void => {
+    this.events.off('shutdown', this.cleanup, this);
+    this.events.off('destroy', this.cleanup, this);
+
+    try { 
+      this.root?.unmount(); 
+    } catch (e) {
+      console.error(e);
     }
-    document.getElementById('registration-step1-ui-overlay')?.remove();
-  }
+    this.root = null;
 
-  private handleDoneComplete(): void {
-    if (this.cameras?.main) {
-      this.cameras.main.fadeOut(500, 0, 0, 0).once('camerafadeoutcomplete', () => {
-        this.scene.start('RegistrationScene_Step2');
-      });
-    } else {
+    if (this.uiContainer) {
+      this.uiContainer.remove();
+      this.uiContainer = null;
+    }
+
+    useRegistrationStep1Store.getState().resetStore();
+  };
+
+  private completeScene(): void {
+    if (this.uiContainer) {
+      this.uiContainer.style.opacity = '0';
+      this.uiContainer.style.transition = 'opacity 0.5s ease-out';
+    }
+
+    const next = (): void => {
       this.scene.start('RegistrationScene_Step2');
+    };
+    if (this.cameras && this.cameras.main) {
+      this.cameras.main.fadeOut(500, 0, 0, 0);
+      this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, next);
+    } else {
+      next();
     }
-  }
-
-  private handleShutdown(): void {
-    this.unmountUI();
   }
 }
