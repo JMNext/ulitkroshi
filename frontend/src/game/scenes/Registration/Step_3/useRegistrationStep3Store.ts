@@ -12,10 +12,9 @@ interface Step3State {
   attempts: number; 
   errorMessage: string; 
   isSubmitting: boolean;      
-  setCaptchaState: (sel: number[], corr: number[], mode: CaptchaMode, shake: boolean) => void;
-  toggleSelect: (id: number) => void; 
+  toggleSelect: (id: number, sessionId: string, onComplete: () => void) => Promise<void>; 
+  saveFirstStep: () => void; 
   undoLastSelect: () => void; 
-  verifyAndSubmit: (currentSel: number[], sessionId: string) => Promise<boolean>; 
   generateNewOrder: () => void; 
   resetStore: () => void;
   fullReset: () => void;
@@ -45,8 +44,6 @@ export const useRegistrationStep3Store = create<Step3State>((set, get) => ({
   ...initialValues,
   fruitOrder: generateShuffledArray(),
 
-  setCaptchaState: (sel, corr, mode, shake) => set({ sel, corr, mode, shake }),
-
   undoLastSelect: () => {
     const { mode, sel } = get();
     if (mode !== 'confirm' && mode !== 'error' && sel.length) {
@@ -54,55 +51,68 @@ export const useRegistrationStep3Store = create<Step3State>((set, get) => ({
     }
   },
 
-  toggleSelect: (id) => {
-    const { mode, sel, isSubmitting } = get();
-    if (mode === 'confirm' || mode === 'error' || isSubmitting) return;
+  toggleSelect: async (id, sessionId, onComplete) => {
+    const { mode, sel, corr, isSubmitting, attempts } = get();
+    if (mode === 'error' || isSubmitting || attempts >= 3) return;
     
     const next = sel.includes(id) ? sel.filter((v) => v !== id) : [...sel, id];
-    if (next.length <= 4) {
-      set({ 
-        sel: next, 
-        ...(mode === 'verify' ? {} : { mode: next.length === 4 ? 'confirm' : 'select' }) 
-      });
+    if (next.length > 4) return;
+
+
+    set({ sel: next });
+
+
+    if (next.length === 4) {
+
+      if (corr.length === 0) {
+        set({ mode: 'confirm' });
+      } 
+
+      else {
+        const isCorrect = next.length === corr.length && next.every(v => corr.includes(v));
+
+        if (isCorrect) {
+          set({ isSubmitting: true, errorMessage: '' });
+          try {
+            await useAuthStore.getState().verifyFruit(sessionId, next.map(String));
+            set({ isSubmitting: false });
+            onComplete(); 
+          } catch (err) {
+            set({ 
+              isSubmitting: false, 
+              sel: [], 
+              errorMessage: err instanceof Error ? err.message : 'Ошибка сервера',
+              mode: 'verify'
+            });
+          }
+        } else {
+          const nextAttempts = attempts + 1;
+          set({ 
+            mode: 'error', 
+            shake: true, 
+            attempts: nextAttempts, 
+            errorMessage: 'Ой-ой, что-то не сходится!' 
+          });
+          setTimeout(() => set({ sel: [], shake: false, mode: 'verify' }), 1500);
+        }
+      }
+    } else {
+
+      set({ mode: corr.length > 0 ? 'verify' : 'select' });
     }
   },
 
-  verifyAndSubmit: async (currentSel, sessionId) => {
-    const { corr, attempts } = get();
-    
-    if (currentSel.length === corr.length && currentSel.every((v, i) => v === corr[i])) {
-      set({ isSubmitting: true, errorMessage: '' });
-      try {
-        await useAuthStore.getState().verifyFruit(sessionId, currentSel.map(String));
-        set({ isSubmitting: false });
-        return true;
-      } catch (err) {
-        set({ 
-          isSubmitting: false, 
-          sel: [], 
-          errorMessage: err instanceof Error ? err.message : 'Ошибка сервера' 
-        });
-        return false;
-      }
-    } else {
-      const nextAttempts = attempts + 1;
-      set({ 
-        mode: 'error', 
-        shake: true, 
-        attempts: nextAttempts, 
-        errorMessage: 'Ой-ой, что-то не сходится!' 
-      });
-      setTimeout(() => set({ sel: [], shake: false, mode: 'verify' }), 1500);
-      return false;
-    }
+  saveFirstStep: () => {
+    const { sel } = get();
+    set({
+      corr: sel,
+      sel: [],
+      mode: 'verify',
+      fruitOrder: generateShuffledArray()
+    });
   },
 
   generateNewOrder: () => set({ fruitOrder: generateShuffledArray() }),
-  
   resetStore: () => set({ ...initialValues, fruitOrder: generateShuffledArray() }),
-
-  fullReset: () => set({ 
-    ...initialValues, 
-    fruitOrder: generateShuffledArray() 
-  })
+  fullReset: () => set({ ...initialValues, fruitOrder: generateShuffledArray() })
 }));

@@ -1,11 +1,11 @@
 import { useRegistrationStep3Store } from '../useRegistrationStep3Store';
 
 export const CaptchaConfirmModal = ({ onConfirm }: { onConfirm: () => void }) => {
-  const setCaptchaState = useRegistrationStep3Store((s) => s.setCaptchaState);
+  const saveFirstStep = useRegistrationStep3Store((s) => s.saveFirstStep);
 
   const handleConfirm = () => {
-    setCaptchaState([], useRegistrationStep3Store.getState().sel, 'verify', false);
-    onConfirm();
+    saveFirstStep(); // Стор сам всё запишет и перемешает
+    onConfirm();     // Закрываем модалку/вызываем коллбек компонента
   };
 
   return (

@@ -10,9 +10,9 @@ import fonVertImg from '/src/assets/background/fon_vert.png';
 
 export const Step3UiManager = ({ sessionId, onComplete, onFullReset }: { sessionId: string; onComplete: () => void; onFullReset: () => void }) => {
   const mode = useRegistrationStep3Store((s) => s.mode);
+  const corr = useRegistrationStep3Store((s) => s.corr);
   const attempts = useRegistrationStep3Store((s) => s.attempts);
   const toggleSelect = useRegistrationStep3Store((s) => s.toggleSelect);
-  const setCaptchaState = useRegistrationStep3Store((s) => s.setCaptchaState);
   
   const [isMobile, setIsMobile] = useState(false);
   const [landscapeScale, setLandscapeScale] = useState(1);
@@ -47,19 +47,6 @@ export const Step3UiManager = ({ sessionId, onComplete, onFullReset }: { session
     };
   }, []);
 
-  useEffect(() => {
-    let currentSel: number[] = useRegistrationStep3Store.getState().sel;
-    const unsub = useRegistrationStep3Store.subscribe((state) => {
-      if (state.mode === 'verify' && state.sel.length === 4 && !state.isSubmitting && state.sel !== currentSel) {
-        currentSel = state.sel;
-        state.verifyAndSubmit(state.sel, sessionId).then((isSuccess) => {
-          if (isSuccess) onComplete();
-        });
-      }
-    });
-    return () => unsub();
-  }, [onComplete, sessionId]);
-
   const isScaledLsc = !isMobile && landscapeScale < 1;
 
   return (
@@ -93,7 +80,8 @@ export const Step3UiManager = ({ sessionId, onComplete, onFullReset }: { session
           className="pointer-events-auto absolute z-40 shrink-0"
         >
           <div className="relative w-full h-full">
-            <CaptchaFruitGrid onPress={toggleSelect} />
+
+            <CaptchaFruitGrid onPress={(id) => toggleSelect(id, sessionId, onComplete)} />
             {attempts >= 3 && <CaptchaBlockModal onReset={onFullReset} />}
           </div>
         </div>
@@ -105,14 +93,12 @@ export const Step3UiManager = ({ sessionId, onComplete, onFullReset }: { session
           <CaptchaResetButton onReset={onFullReset} />
         </div>
 
-        {mode === 'confirm' && (
+        {mode === 'confirm' && corr.length === 0 && (
           <div 
             style={{ top: '510px', left: '50%', transform: 'translate(-50%, -50%)' }}
             className="pointer-events-auto absolute z-50 shrink-0"
           >
-            <CaptchaConfirmModal
-              onConfirm={() => setCaptchaState([], useRegistrationStep3Store.getState().sel, 'verify', false)}
-            />
+            <CaptchaConfirmModal onConfirm={() => {}} />
           </div>
         )}
       </div>

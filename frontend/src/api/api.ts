@@ -4,7 +4,6 @@ import { BaseService } from "./base.service";
 class AuthService extends BaseService {
   private static instance: AuthService;
   private currentUser: UserProfile | null = null;
-  // 1. Добавляем временное хранилище для проверенного имени питомца/пользователя
   private lastCheckedName: string = "Константин"; 
   
   private constructor() { super(); }
@@ -20,13 +19,12 @@ class AuthService extends BaseService {
     return this.currentUser;
   }
 
-  // 2. Используем сохраненное имя по умолчанию вместо хардкода
   private createMockUser(email: string = "user@example.com"): UserProfile {
     return {
       id: "mock-uid-12345",
       email: email,
       phone: "+79991112233",
-      name: this.lastCheckedName, // Теперь берется актуальное имя
+      name: this.lastCheckedName, 
       roles: ["user", "admin"]
     };
   }
@@ -42,7 +40,7 @@ class AuthService extends BaseService {
   async logout(): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 300));
     this.currentUser = null;
-    this.lastCheckedName = "Константин"; // Сбрасываем к дефолту
+    this.lastCheckedName = "Константин"; 
   }
 
   async restore(): Promise<UserProfile | null> {
@@ -63,7 +61,7 @@ class AuthService extends BaseService {
 
   async register(data: { name: string; phone: string }): Promise<any> {
     await new Promise(resolve => setTimeout(resolve, 800));
-    if (data.name) this.lastCheckedName = data.name; // Запоминаем из прямой регистрации
+    if (data.name) this.lastCheckedName = data.name; 
     return { success: true, message: "Mock registration successful" };
   }
 
@@ -84,7 +82,7 @@ class AuthService extends BaseService {
     const response: AuthResponse = {
       accessToken: "mock_access_token_fruit_" + Date.now(),
       refreshToken: "mock_refresh_token_fruit_" + Date.now(),
-      user: this.createMockUser() // Вернет юзера с сохраненным lastCheckedName
+      user: this.createMockUser() 
     };
 
     this.currentUser = response.user;
@@ -97,7 +95,7 @@ class AuthService extends BaseService {
     const response: AuthResponse = {
       accessToken: "mock_access_token_qr_" + Date.now(),
       refreshToken: "mock_refresh_token_qr_" + Date.now(),
-      user: this.createMockUser() // Вернет юзера с сохраненным lastCheckedName
+      user: this.createMockUser() 
     };
 
     this.currentUser = response.user;
@@ -113,9 +111,7 @@ class AuthService extends BaseService {
       };
     }
     
-    // 3. Запоминаем имя, если оно успешно прошло валидацию инпута
     this.lastCheckedName = name; 
-    
     return { available: true };
   }
 }

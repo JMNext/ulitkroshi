@@ -26,7 +26,7 @@ export const SpeechInputField = ({ scene }: { scene?: Phaser.Scene }) => {
   if (stage !== 1 && stage !== 3) return null;
 
   return (
-    <div className="flex flex-col items-center box-border w-full px-4 gap-3 mx-auto">
+    <div className="flex flex-col items-center box-border w-full gap-3 mx-auto">
       <input
         ref={inputRef}
         type="text"
@@ -44,11 +44,11 @@ export const SpeechInputField = ({ scene }: { scene?: Phaser.Scene }) => {
             submit(input); 
           }
         }}
-        className="border bg-white text-center font-black rounded-full shadow-md border-slate-100 outline-none text-emerald-800 placeholder-slate-400 box-border tracking-wide disabled:opacity-75 w-full text-[22px] px-8 py-4 h-[68px]"
+        className="border bg-white text-center font-black rounded-full shadow-md border-slate-100 outline-none text-emerald-800 placeholder-slate-400 box-border tracking-wide disabled:opacity-75 w-full text-[22px] px-4 sm:px-8 py-4 h-[68px]"
       />
 
       {nameStatus === 'taken' && nameSuggestions.length > 0 && !isNameChecking && (
-        <div className="flex flex-wrap justify-center gap-2 max-w-full overflow-x-hidden">
+        <div className="flex flex-wrap justify-center gap-2 w-full overflow-x-hidden">
           {nameSuggestions.map((suggestion) => (
             <button
               key={suggestion}

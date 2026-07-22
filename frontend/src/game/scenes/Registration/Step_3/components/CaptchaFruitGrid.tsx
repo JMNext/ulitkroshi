@@ -10,8 +10,7 @@ export const CaptchaFruitGrid = ({ onPress }: { onPress: (idx: number) => void }
   const fruitOrder = useRegistrationStep3Store((s) => s.fruitOrder);
   const shake = useRegistrationStep3Store((s) => s.shake);
   const attempts = useRegistrationStep3Store((s) => s.attempts);
-  
-  const isConfirm = mode === 'confirm';
+  const isSubmitting = useRegistrationStep3Store((s) => s.isSubmitting);
 
   return (
     <nav 
@@ -21,24 +20,27 @@ export const CaptchaFruitGrid = ({ onPress }: { onPress: (idx: number) => void }
       <style>{`@keyframes captchaShakeEffect { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }`}</style>
       
       <div 
-        className={`grid grid-cols-4 grid-rows-4 w-full h-full box-border shrink-0 select-none gap-x-[20px] gap-y-[20px] ${isConfirm ? 'opacity-40' : ''}`}
+        className={`grid grid-cols-4 grid-rows-4 w-full h-full box-border shrink-0 select-none gap-x-[20px] gap-y-[20px] ${isSubmitting ? 'opacity-40' : ''}`}
       >
-        {fruitOrder.map((fruitId) => (
-          <button 
-            key={fruitId} 
-            type="button"
-            disabled={isConfirm || mode === 'error' || attempts >= 3}
-            onClick={() => onPress(fruitId)} 
-            style={{ 
-              touchAction: 'manipulation',
-              borderColor: selected.includes(fruitId) && mode !== 'error' ? '#a6f034' : 'transparent',
-              borderWidth: '4px'
-            }} 
-            className="relative outline-none w-full h-full bg-white border-solid rounded-full shadow-md flex items-center justify-center transition-all box-border shrink-0 active:scale-95 cursor-pointer pointer-events-auto p-2.5"
-          >
-            <img src={getFruitUrl(fruitId)} className="w-full h-full object-contain pointer-events-none" alt="" />
-          </button>
-        ))}
+        {fruitOrder.map((fruitId) => {
+          const isSelected = selected.includes(fruitId);
+          return (
+            <button 
+              key={fruitId} 
+              type="button"
+              disabled={mode === 'error' || isSubmitting || attempts >= 3}
+              onClick={() => onPress(fruitId)} 
+              style={{ 
+                touchAction: 'manipulation',
+                borderColor: isSelected && mode !== 'error' ? '#a6f034' : 'transparent',
+                borderWidth: '4px'
+              }} 
+              className="relative outline-none w-full h-full bg-white border-solid rounded-full shadow-md flex items-center justify-center transition-all box-border shrink-0 active:scale-95 cursor-pointer pointer-events-auto p-2.5"
+            >
+              <img src={getFruitUrl(fruitId)} className="w-full h-full object-contain pointer-events-none" alt="" />
+            </button>
+          );
+        })}
       </div>
     </nav>
   );
