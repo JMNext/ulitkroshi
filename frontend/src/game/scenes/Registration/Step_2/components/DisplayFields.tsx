@@ -1,9 +1,9 @@
 import { useRegistrationStep2Store } from '../useRegistrationStep2Store';
 
 export const DisplayFields = () => {
-  const mode = useRegistrationStep2Store(s => s.mode);
-  const phone = useRegistrationStep2Store(s => s.phone);
-  const code = useRegistrationStep2Store(s => s.code);
+  const mode = useRegistrationStep2Store((s) => s.mode);
+  const phone = useRegistrationStep2Store((s) => s.phone);
+  const code = useRegistrationStep2Store((s) => s.code);
 
   const displayValue = mode === 'code' ? code.padEnd(4, '_').split('').join(' ') : phone;
 

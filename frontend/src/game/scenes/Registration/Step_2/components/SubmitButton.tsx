@@ -1,13 +1,13 @@
 import { useRegistrationStep2Store } from '../useRegistrationStep2Store';
 
 export const SubmitButton = () => {
-  const mode = useRegistrationStep2Store(s => s.mode);
-  const rawPhone = useRegistrationStep2Store(s => s.rawPhone);
-  const sendPhone = useRegistrationStep2Store(s => s.sendPhone);
+  const mode = useRegistrationStep2Store((s) => s.mode);
+  const rawPhone = useRegistrationStep2Store((s) => s.rawPhone);
+  const sendPhone = useRegistrationStep2Store((s) => s.sendPhone);
 
   if (mode !== 'phone') return null;
 
-  const isReady: boolean = rawPhone.trim().length === 10;
+  const isReady = rawPhone.trim().length === 10;
 
   return (
     <button 

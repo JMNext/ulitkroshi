@@ -1,11 +1,14 @@
 import * as Phaser from 'phaser';
-import { Scene as PhaserScene } from 'phaser';
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { Step4UiManager } from './components/Step4UiManager';
 import { useRegistrationStep4Store } from './useRegistrationStep4Store';
 
-export class RegistrationScene_Step4 extends PhaserScene {
+interface WindowWithMetrika extends Window {
+  ym?: (id: number, action: string, target: string, params?: Record<string, unknown>) => void;
+}
+
+export class RegistrationScene_Step4 extends Phaser.Scene {
   private root: Root | null = null;
   private uiContainer: HTMLDivElement | null = null;
 
@@ -27,14 +30,10 @@ export class RegistrationScene_Step4 extends PhaserScene {
     document.body.appendChild(this.uiContainer);
 
     this.root = createRoot(this.uiContainer);
-
     this.renderUI();
 
-    // СТРОКА УДАЛЕНА: Больше не затираем имя из useRegistrationStep1Store, 
-    // так как актуальное имя питомца уже сохранено в useMainGameStore на первом шаге.
-
-    const win = window as any;
-    if (typeof window !== 'undefined' && win.ym) {
+    const win = window as WindowWithMetrika;
+    if (typeof window !== 'undefined' && typeof win.ym === 'function') {
       const CID = 12345678;
       win.ym(CID, 'reachGoal', 'onboarding_completed');
       win.ym(CID, 'reachGoal', 'login_success', { type: 'registration_flow' });
@@ -68,7 +67,6 @@ export class RegistrationScene_Step4 extends PhaserScene {
     
     this.root.render(
       React.createElement(Step4UiManager, {
-        scene: this,
         onPlayComplete: () => this.handlePlayComplete()
       })
     );

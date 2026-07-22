@@ -7,6 +7,7 @@ export class SnakePetEntity {
   private videoIdle: HTMLVideoElement | null = null;
   private videoPlay: HTMLVideoElement | null = null;
   private videoSad: HTMLVideoElement | null = null;
+  private bgBacking: HTMLDivElement | null = null;
 
   constructor(scene: Scene) {
     this.scene = scene;
@@ -18,9 +19,22 @@ export class SnakePetEntity {
     const gameContainer = document.getElementById('game-container');
     if (!gameContainer) return;
 
-    this.videoIdle = this.createVideoElement(videoSrcs.idle, true);
-    this.videoPlay = this.createVideoElement(videoSrcs.play, false);
-    this.videoSad = this.createVideoElement(videoSrcs.sad, false);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+    this.bgBacking = document.createElement('div');
+    this.bgBacking.id = 'snake-pet-bg-backing';
+    this.bgBacking.style.position = 'absolute';
+    this.bgBacking.style.backgroundColor = '#ffffff';
+    this.bgBacking.style.borderRadius = '50%';
+    this.bgBacking.style.filter = 'blur(6px)';
+    this.bgBacking.style.zIndex = '0';
+    this.bgBacking.style.pointerEvents = 'none';
+    this.bgBacking.style.opacity = '0.95';
+    this.bgBacking.style.display = isIOS ? 'block' : 'none';
+
+    this.videoIdle = this.createVideoElement(videoSrcs.idle, true, isIOS);
+    this.videoPlay = this.createVideoElement(videoSrcs.play, false, isIOS);
+    this.videoSad = this.createVideoElement(videoSrcs.sad, false, isIOS);
 
     this.videoPlay.onended = () => (this.scene as any).onPetPlayEnded();
     this.videoSad.onended = () => (this.scene as any).onPetSadEnded();
@@ -38,13 +52,14 @@ export class SnakePetEntity {
     petBox.style.display = 'flex';
     petBox.style.alignItems = 'center';
     petBox.style.justifyContent = 'center';
-    petBox.style.overflow = 'hidden';
+    petBox.style.overflow = isIOS ? 'visible' : 'hidden';
     petBox.style.borderRadius = '50%';
 
     petBox.appendChild(this.videoIdle);
     petBox.appendChild(this.videoPlay);
     petBox.appendChild(this.videoSad);
     
+    this.innerWrapper.appendChild(this.bgBacking);
     this.innerWrapper.appendChild(petBox);
     this.element.appendChild(this.innerWrapper);
     gameContainer.appendChild(this.element);
@@ -54,7 +69,7 @@ export class SnakePetEntity {
     this.setVideoState('idle');
   }
 
-  private createVideoElement(src: string, loop: boolean): HTMLVideoElement {
+  private createVideoElement(src: string, loop: boolean, isIOS: boolean): HTMLVideoElement {
     const video = document.createElement('video');
     video.src = src;
     video.muted = true;
@@ -66,6 +81,11 @@ export class SnakePetEntity {
     video.style.objectFit = 'fill';
     video.style.filter = 'contrast(110%) brightness(105%)';
     video.style.display = 'none';
+    video.style.position = 'relative';
+    video.style.zIndex = '10';
+    if (isIOS) {
+      video.style.mixBlendMode = 'screen';
+    }
     return video;
   }
 
@@ -98,7 +118,7 @@ export class SnakePetEntity {
   }
 
   public resize(isPortrait: boolean): void {
-    if (!this.element || !this.innerWrapper) return;
+    if (!this.element || !this.innerWrapper || !this.bgBacking) return;
 
     const petBox = document.getElementById('snake-pet-box-target');
     if (!petBox) return;
@@ -179,6 +199,15 @@ export class SnakePetEntity {
         petBox.style.left = '160px'; 
       }
     }
+
+    const backingSize = parseFloat(petBox.style.width) * 0.75;
+    this.bgBacking.style.width = `${backingSize}px`;
+    this.bgBacking.style.height = `${backingSize}px`;
+    this.bgBacking.style.left = `calc(${petBox.style.left} + (parseInt('${petBox.style.width}') - ${backingSize}px) / 2)`;
+    this.bgBacking.style.top = `calc(${petBox.style.top} + (parseInt('${petBox.style.height}') - ${backingSize}px) / 2)`;
+    this.bgBacking.style.transform = petBox.style.transform;
+    this.bgBacking.style.bottom = petBox.style.bottom;
+    this.bgBacking.style.right = petBox.style.right;
   }
 
   public destroy(): void {
@@ -189,6 +218,10 @@ export class SnakePetEntity {
     const targetElement = document.getElementById('snake-html-pet-entity');
     if (targetElement) {
       targetElement.remove();
+    }
+    if (this.bgBacking) {
+      this.bgBacking.remove();
+      this.bgBacking = null;
     }
     this.innerWrapper = null;
     this.videoIdle = null;

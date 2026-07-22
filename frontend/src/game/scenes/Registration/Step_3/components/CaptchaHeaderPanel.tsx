@@ -1,9 +1,11 @@
-// CaptchaHeaderPanel.tsx
 import { useRegistrationStep3Store } from '../useRegistrationStep3Store';
 import { getFruitUrl } from './CaptchaFruitGrid';
 
 export const CaptchaHeaderPanel = () => {
-  const { mode, sel: selected, attempts, errorMessage } = useRegistrationStep3Store();
+  const mode = useRegistrationStep3Store((s) => s.mode);
+  const selected = useRegistrationStep3Store((s) => s.sel);
+  const attempts = useRegistrationStep3Store((s) => s.attempts);
+  const errorMessage = useRegistrationStep3Store((s) => s.errorMessage);
 
   const getHeaderText = (): string => {
     if (errorMessage) return errorMessage;

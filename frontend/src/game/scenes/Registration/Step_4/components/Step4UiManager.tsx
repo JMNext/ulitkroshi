@@ -1,19 +1,11 @@
-// Step4UiManager.tsx
 import { useEffect, useState } from 'react';
-import React from 'react';
 import { SuccessBubble } from './SuccessBubble';
 import { HappyPetVideo } from './HappyPetVideo';
 import { FinalPlayButton } from './FinalPlayButton';
-
 import fonGorizImg from '/src/assets/background/fon_goriz.png';
 import fonVertImg from '/src/assets/background/fon_vert.png';
 
-interface Step4UiManagerProps {
-  scene: Phaser.Scene;
-  onPlayComplete: () => void;
-}
-
-export const Step4UiManager = ({ scene, onPlayComplete }: Step4UiManagerProps) => {
+export const Step4UiManager = ({ onPlayComplete }: { onPlayComplete: () => void }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [landscapeScale, setLandscapeScale] = useState(1);
   const [portraitScale, setPortraitScale] = useState(1);
@@ -30,7 +22,7 @@ export const Step4UiManager = ({ scene, onPlayComplete }: Step4UiManagerProps) =
       } else {
         const scaleX = (window.innerWidth * 0.90) / 460;
         const scaleY = (window.innerHeight * 0.92) / 1020;
-        setPortraitScale(Math.min(Math.min(scaleX, scaleY), 1));
+        setPortraitScale(Math.min(scaleX, scaleY, 1));
       }
     };
 
@@ -50,15 +42,15 @@ export const Step4UiManager = ({ scene, onPlayComplete }: Step4UiManagerProps) =
   const isScaledLsc = !isMobile && landscapeScale < 1;
 
   return (
-    <div id="reg-step4-container" className="pointer-events-none fixed inset-0 z-10 h-full w-full touch-none overflow-hidden select-none transition-opacity duration-500 ease-out">
+    <div id="reg-step4-container" className="pointer-events-none fixed inset-0 z-10 h-full w-full touch-none overflow-hidden select-none transition-opacity duration-500 ease-out flex items-center justify-center">
       <img src={fonGorizImg} className="pointer-events-none absolute inset-0 z-0 hidden h-full w-full object-fill landscape:block" alt="" />
       <img src={fonVertImg} className="pointer-events-none absolute inset-0 z-0 hidden h-full w-full object-fill portrait:block" alt="" />
 
       <div 
         style={isMobile ? {
-          transform: `translate(-50%, -50%) scale(${portraitScale})`, 
-          transformOrigin: 'center center', top: '50%', left: '50%',
-          width: '100%', height: '1020px', position: 'absolute'
+          transform: `scale(${portraitScale})`, 
+          transformOrigin: 'center center',
+          width: '460px', height: '1020px', position: 'relative'
         } : isScaledLsc ? {
           transform: `translate(-50%, -50%) scale(${landscapeScale})`, 
           transformOrigin: 'center center', top: '50%', left: '50%',
@@ -76,11 +68,7 @@ export const Step4UiManager = ({ scene, onPlayComplete }: Step4UiManagerProps) =
         </div>
 
         <div
-          style={isMobile ? {
-            top: '120px', left: '50%', transform: 'translateX(-50%)'
-          } : {
-            top: '160px', left: '50%', transform: 'translateX(-50%)'
-          }}
+          style={isMobile ? { top: '120px', left: '50%', transform: 'translateX(-50%)' } : { top: '160px', left: '50%', transform: 'translateX(-50%)' }}
           className="absolute z-10 shrink-0"
         >
           <HappyPetVideo />

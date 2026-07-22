@@ -5,5 +5,7 @@ interface Step4State {
 }
 
 export const useRegistrationStep4Store = create<Step4State>((set) => ({
-  resetStore: () => set({}),
+  resetStore: () => {
+    set({});
+  },
 }));

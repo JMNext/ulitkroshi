@@ -1,15 +1,12 @@
 import buttonBg from '../../../../assets/interface-icons/button.svg';
 
-interface SideButtonsMenuProps {
-  buttons: {
-    id: string;
-    src: string;
-    icon: string;
-  }[];
-  onAction: (id: string) => void;
-}
-
-export const SideButtonsMenu = ({ buttons, onAction }: SideButtonsMenuProps) => {
+export const SideButtonsMenu = ({ 
+  buttons, 
+  onAction 
+}: { 
+  buttons: { id: string; src: string; icon: string }[]; 
+  onAction: (id: string) => void; 
+}) => {
   return (
     <nav className="side-menu-navigation flex select-none flex-col gap-5">
       {buttons.map((btn) => (

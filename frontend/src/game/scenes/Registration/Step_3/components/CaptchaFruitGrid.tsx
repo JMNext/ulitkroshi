@@ -1,17 +1,16 @@
-// CaptchaFruitGrid.tsx
-import React from 'react';
 import { useRegistrationStep3Store } from '../useRegistrationStep3Store';
 
 const fImgs = import.meta.glob('/src/assets/fruits/fruits_*.png', { eager: true, query: '?url' }) as Record<string, { default: string }>;
 const ID_MAP: Record<number, string> = { 0: '01', 1: '02', 2: '0003_13', 3: '03', 4: '04', 5: '05', 6: '06', 7: '0007_09', 8: '07', 9: '08', 10: '10', 11: '11', 12: '12', 13: '14', 14: '15', 15: '16' };
 export const getFruitUrl = (i: number): string => fImgs[`/src/assets/fruits/fruits_${ID_MAP[i]}.png`]?.default || '';
 
-interface CaptchaFruitGridProps {
-  onPress: (idx: number) => void;
-}
-
-export const CaptchaFruitGrid = ({ onPress }: CaptchaFruitGridProps) => {
-  const { mode, sel: selected, fruitOrder, shake, attempts } = useRegistrationStep3Store();
+export const CaptchaFruitGrid = ({ onPress }: { onPress: (idx: number) => void }) => {
+  const mode = useRegistrationStep3Store((s) => s.mode);
+  const selected = useRegistrationStep3Store((s) => s.sel);
+  const fruitOrder = useRegistrationStep3Store((s) => s.fruitOrder);
+  const shake = useRegistrationStep3Store((s) => s.shake);
+  const attempts = useRegistrationStep3Store((s) => s.attempts);
+  
   const isConfirm = mode === 'confirm';
 
   return (

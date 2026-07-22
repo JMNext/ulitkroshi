@@ -1,8 +1,15 @@
 import { create } from 'zustand';
 
 interface PetCareState {
+  petName: string;
+  hp: number;
+  activePetIndex: number;
   currentAnim: string;
   washState: 'idle' | 'hidden' | 'glowing';
+  careTimeoutId: ReturnType<typeof setTimeout> | null;
+  setPetName: (name: string) => void;
+  setHp: (hp: number) => void;
+  setActivePetIndex: (index: number) => void;
   setCurrentAnim: (anim: string) => void;
   setWashState: (washState: 'idle' | 'hidden' | 'glowing') => void;
   canExecuteAction: (actionText: string) => boolean;
@@ -12,14 +19,20 @@ interface PetCareState {
 }
 
 const initialValues = {
+  petName: 'Булька',
+  hp: 100,
+  activePetIndex: 0,
   currentAnim: 'prostoi1',
   washState: 'idle' as const,
+  careTimeoutId: null as ReturnType<typeof setTimeout> | null,
 };
-
-let careTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 export const usePetCareStore = create<PetCareState>((set, get) => ({
   ...initialValues,
+
+  setPetName: (petName) => set({ petName }),
+  setHp: (hp) => set({ hp }),
+  setActivePetIndex: (activePetIndex) => set({ activePetIndex }),
   setCurrentAnim: (currentAnim) => set({ currentAnim }),
   setWashState: (washState) => set({ washState }),
   
@@ -32,23 +45,24 @@ export const usePetCareStore = create<PetCareState>((set, get) => ({
   },
 
   triggerCareAction: (action) => {
-    const { currentAnim } = get();
+    const { currentAnim, careTimeoutId } = get();
     if (currentAnim !== 'prostoi1' && currentAnim !== 'prostoi2') return;
 
     if (careTimeoutId) clearTimeout(careTimeoutId);
 
     set({ currentAnim: action, washState: 'hidden' });
 
-    // Личные тайминги для каждой анимации. Настраивай цифры здесь как хочешь
     const timeouts: Record<'wash' | 'play' | 'eat', number> = {
       eat: 2000,   // Еда вернется быстрее всего
       play: 3200,  // Для игры с мячом нужно чуть больше времени
       wash: 4000   // Душ длится дольше всех
     };
 
-    careTimeoutId = setTimeout(() => {
-      set({ currentAnim: 'prostoi1', washState: 'idle' });
+    const id = setTimeout(() => {
+      set({ currentAnim: 'prostoi1', washState: 'idle', careTimeoutId: null });
     }, timeouts[action]);
+
+    set({ careTimeoutId: id });
   },
 
   triggerSleepAction: () => {
@@ -62,10 +76,12 @@ export const usePetCareStore = create<PetCareState>((set, get) => ({
   },
   
   resetStore: () => {
-    if (careTimeoutId) {
-      clearTimeout(careTimeoutId);
-      careTimeoutId = null;
-    }
-    set(initialValues);
+    const { careTimeoutId } = get();
+    if (careTimeoutId) clearTimeout(careTimeoutId);
+    
+    set((state) => ({
+      ...initialValues,
+      petName: state.petName,
+    }));
   },
 }));

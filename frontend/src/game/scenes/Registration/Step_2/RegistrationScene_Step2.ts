@@ -1,11 +1,10 @@
 import * as Phaser from 'phaser';
-import { Scene as PhaserScene } from 'phaser';
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { Step2UiManager } from './components/Step2UiManager';
 import { useRegistrationStep2Store } from './useRegistrationStep2Store';
 
-export class RegistrationScene_Step2 extends PhaserScene {
+export class RegistrationScene_Step2 extends Phaser.Scene {
   private root: Root | null = null;
   private uiContainer: HTMLDivElement | null = null;
   private handleKeyDownBound: ((e: KeyboardEvent) => void) | null = null;
@@ -26,6 +25,8 @@ export class RegistrationScene_Step2 extends PhaserScene {
     this.uiContainer.id = 'phaser-custom-ui-root';
     this.uiContainer.className = 'fixed inset-0 w-full h-full pointer-events-none z-50 transition-opacity duration-500 ease-out';
     document.body.appendChild(this.uiContainer);
+
+    this.root = createRoot(this.uiContainer);
 
     const handleComplete = (sid: string) => this.completeScene(sid);
 
@@ -68,12 +69,10 @@ export class RegistrationScene_Step2 extends PhaserScene {
   }
 
   public renderUI(onSuccessCode: (sid: string) => void): void {
-    if (!this.uiContainer) return;
+    if (!this.root) return;
     
-    this.root = createRoot(this.uiContainer);
     this.root.render(
       React.createElement(Step2UiManager, {
-        scene: this,
         onComplete: onSuccessCode
       })
     );

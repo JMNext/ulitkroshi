@@ -1,16 +1,20 @@
 import * as Phaser from 'phaser';
-import { Scene as PhaserScene } from 'phaser';
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { Step3UiManager } from './components/Step3UiManager';
 import { useRegistrationStep3Store } from './useRegistrationStep3Store';
 
-export class RegistrationScene_Step3 extends PhaserScene {
+export class RegistrationScene_Step3 extends Phaser.Scene {
   private root: Root | null = null;
   private uiContainer: HTMLDivElement | null = null;
+  private sessionId: string = '';
 
   constructor() { 
     super('RegistrationScene_Step3'); 
+  }
+
+  public init(data: { sessionId?: string }): void {
+    this.sessionId = data.sessionId || '';
   }
 
   public create(): void {
@@ -29,7 +33,7 @@ export class RegistrationScene_Step3 extends PhaserScene {
     this.root = createRoot(this.uiContainer);
     this.root.render(
       React.createElement(Step3UiManager, {
-        scene: this,
+        sessionId: this.sessionId,
         onComplete: () => this.completeScene(),
         onFullReset: () => this.handleFullReset()
       })
@@ -59,9 +63,7 @@ export class RegistrationScene_Step3 extends PhaserScene {
   };
 
   private handleFullReset(): void {
-    useRegistrationStep3Store.setState({ attempts: 0, errorMessage: '' });
-    useRegistrationStep3Store.getState().generateNewOrder();
-    useRegistrationStep3Store.getState().setCaptchaState([], [], 'select', false);
+    useRegistrationStep3Store.getState().fullReset();
   }
 
   private completeScene(): void {

@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Input } from 'antd';
 import { useMainGameStore } from '../useMainGameStore';
 import editButtonIcon from '/src/assets/interface-icons/button_edit.svg';
 import avatarIcon from '/src/assets/interface-icons/icon-avatar.svg';
 
-interface ProfileEditUIProps {
-  onClose: () => void;
-  onAddPetClick?: () => void;
-}
-
-export const ProfileEditUI = ({ onClose, onAddPetClick }: ProfileEditUIProps) => {
+export const ProfileEditUI = ({ 
+  onClose, 
+  onAddPetClick 
+}: { 
+  onClose: () => void; 
+  onAddPetClick?: () => void; 
+}) => {
   const username = useMainGameStore((state) => state.username);
   const setUsername = useMainGameStore((state) => state.setUsername);
 

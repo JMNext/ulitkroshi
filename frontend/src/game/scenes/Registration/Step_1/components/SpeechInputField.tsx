@@ -1,11 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useRegistrationStep1Store } from '../useRegistrationStep1Store';
 
-interface SpeechInputFieldProps {
-  scene?: Phaser.Scene;
-}
-
-export const SpeechInputField = ({ scene }: SpeechInputFieldProps) => {
+export const SpeechInputField = ({ scene }: { scene?: Phaser.Scene }) => {
   const { input, setInput, submit, nameStatus, nameSuggestions, isNameChecking, stage, selectSuggestion } = useRegistrationStep1Store();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -30,7 +26,7 @@ export const SpeechInputField = ({ scene }: SpeechInputFieldProps) => {
   if (stage !== 1 && stage !== 3) return null;
 
   return (
-    <div className="flex flex-col items-center box-border w-full max-w-[460px] px-4 gap-3 mx-auto">
+    <div className="flex flex-col items-center box-border w-full px-4 gap-3 mx-auto">
       <input
         ref={inputRef}
         type="text"
@@ -48,7 +44,7 @@ export const SpeechInputField = ({ scene }: SpeechInputFieldProps) => {
             submit(input); 
           }
         }}
-        className="border bg-white text-center font-black rounded-full shadow-md border-slate-100 outline-none text-emerald-800 placeholder-slate-400 box-border tracking-wide disabled:opacity-75 w-full text-[20px] portrait:text-[18px] px-8 py-4 h-[62px]"
+        className="border bg-white text-center font-black rounded-full shadow-md border-slate-100 outline-none text-emerald-800 placeholder-slate-400 box-border tracking-wide disabled:opacity-75 w-full text-[22px] px-8 py-4 h-[68px]"
       />
 
       {nameStatus === 'taken' && nameSuggestions.length > 0 && !isNameChecking && (
@@ -61,7 +57,7 @@ export const SpeechInputField = ({ scene }: SpeechInputFieldProps) => {
                 selectSuggestion(suggestion);
                 if (inputRef.current) inputRef.current.blur();
               }}
-              className="bg-gradient-to-b from-sky-50 to-sky-100 font-extrabold text-sky-800 rounded-full border-2 border-sky-400/80 shadow-sm flex items-center justify-center transition-all duration-100 leading-none shrink-0 outline-none text-[15px] p-[10px_16px] active:scale-95"
+              className="bg-gradient-to-b from-sky-50 to-sky-100 font-extrabold text-sky-800 rounded-full border-2 border-sky-400/80 shadow-sm flex items-center justify-center transition-all duration-100 leading-none shrink-0 outline-none text-[16px] p-[12px_20px] active:scale-95"
             >
               {suggestion}
             </button>

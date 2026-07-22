@@ -10,14 +10,14 @@ export const ConfirmSelection = () => {
       <button 
         type="button"
         onClick={() => setStage(1)} 
-        className="flex-1 font-black text-white bg-gradient-to-b from-[#ff5252] to-[#e63254] flex items-center justify-center border-none uppercase tracking-wide active:scale-95 transition-all duration-100 ease-out outline-none will-change-transform rounded-full text-[24px] px-8 py-3"
+        className="flex-1 font-black text-white bg-gradient-to-b from-[#ff5252] to-[#e63254] flex items-center justify-center border-none uppercase tracking-wide active:scale-95 transition-all duration-100 ease-out outline-none rounded-full text-[24px] px-8 py-3"
       >
         Нет
       </button>
       <button 
         type="button"
         onClick={() => setStage(4)} 
-        className="flex-1 font-black text-white bg-gradient-to-b from-[#81c714] to-[#60aa05] flex items-center justify-center border-none uppercase tracking-wide active:scale-95 transition-all duration-100 ease-out outline-none will-change-transform rounded-full text-[24px] px-8 py-3"
+        className="flex-1 font-black text-white bg-gradient-to-b from-[#81c714] to-[#60aa05] flex items-center justify-center border-none uppercase tracking-wide active:scale-95 transition-all duration-100 ease-out outline-none rounded-full text-[24px] px-8 py-3"
       >
         Да!
       </button>

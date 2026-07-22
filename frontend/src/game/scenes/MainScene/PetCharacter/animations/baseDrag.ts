@@ -22,14 +22,14 @@ const checkOverlapWithPetCSS = (clientX: number, clientY: number): boolean => {
   return Phaser.Math.Distance.Between(clientX, clientY, targetX, targetY) <= 160;
 };
 
-export const createBaseDrag = (scene: Phaser.Scene, nativeEvent: MouseEvent | TouchEvent, config: BaseDragConfig): void => {
+export const createBaseDrag = (scene: Phaser.Scene, nativeEvent: any, config: BaseDragConfig): void => {
   const state = usePetCareStore.getState().currentAnim;
   if (state !== 'prostoi1' && state !== 'prostoi2') return;
 
-  const isTouchEvent = 'touches' in nativeEvent;
+  const isTouchEvent = nativeEvent && 'touches' in nativeEvent;
   const touch = isTouchEvent 
     ? (nativeEvent.touches?.[0] || nativeEvent.changedTouches?.[0]) 
-    : (nativeEvent as MouseEvent);
+    : nativeEvent;
 
   if (!touch || typeof touch.clientX !== 'number') return;
 
@@ -44,20 +44,19 @@ export const createBaseDrag = (scene: Phaser.Scene, nativeEvent: MouseEvent | To
   dragImg.style.left = `${touch.clientX}px`;
   dragImg.style.top = `${touch.clientY}px`;
   
-  // Изначально аппендится в body, здесь всё ок
   document.body.appendChild(dragImg);
 
-  const onGlobalMove = (e: MouseEvent | TouchEvent): void => {
+  const onGlobalMove = (e: any): void => {
     if (e.cancelable) e.preventDefault();
-    const currentTouch = 'touches' in e ? (e.touches?.[0] || e.changedTouches?.[0]) : (e as MouseEvent);
+    const currentTouch = 'touches' in e ? (e.touches?.[0] || e.changedTouches?.[0]) : e;
     if (!currentTouch || typeof currentTouch.clientX !== 'number') return;
     dragImg.style.left = `${currentTouch.clientX}px`;
     dragImg.style.top = `${currentTouch.clientY}px`;
   };
 
-  const onGlobalUp = (e: MouseEvent | TouchEvent): void => {
+  const onGlobalUp = (e: any): void => {
     cleanup();
-    const endTouch = 'touches' in e ? (e.touches?.[0] || e.changedTouches?.[0]) : (e as MouseEvent);
+    const endTouch = 'touches' in e ? (e.touches?.[0] || e.changedTouches?.[0]) : e;
     const endX = endTouch?.clientX ?? touch.clientX;
     const endY = endTouch?.clientY ?? touch.clientY;
 

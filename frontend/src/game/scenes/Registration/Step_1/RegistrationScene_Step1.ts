@@ -1,16 +1,15 @@
 import * as Phaser from 'phaser';
-import { Scene as PhaserScene } from 'phaser';
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { Step1UiManager } from './components/Step1UiManager';
 import { useRegistrationStep1Store } from './useRegistrationStep1Store';
 
-export class RegistrationScene_Step1 extends PhaserScene {
+export class RegistrationScene_Step1 extends Phaser.Scene {
   private root: Root | null = null;
   private uiContainer: HTMLDivElement | null = null;
 
-  constructor() { 
-    super('RegistrationScene_Step1'); 
+  constructor() {
+    super('RegistrationScene_Step1');
   }
 
   public preload(): void {}
@@ -30,10 +29,7 @@ export class RegistrationScene_Step1 extends PhaserScene {
 
     this.root = createRoot(this.uiContainer);
     this.root.render(
-      React.createElement(Step1UiManager, {
-        scene: this,
-        onComplete: () => this.completeScene()
-      })
+      React.createElement(Step1UiManager, { scene: this, onComplete: () => this.completeScene() })
     );
 
     this.events.once('shutdown', this.cleanup, this);
@@ -44,8 +40,8 @@ export class RegistrationScene_Step1 extends PhaserScene {
     this.events.off('shutdown', this.cleanup, this);
     this.events.off('destroy', this.cleanup, this);
 
-    try { 
-      this.root?.unmount(); 
+    try {
+      this.root?.unmount();
     } catch (e) {
       console.error(e);
     }
@@ -68,6 +64,7 @@ export class RegistrationScene_Step1 extends PhaserScene {
     const next = (): void => {
       this.scene.start('RegistrationScene_Step2');
     };
+
     if (this.cameras && this.cameras.main) {
       this.cameras.main.fadeOut(500, 0, 0, 0);
       this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, next);

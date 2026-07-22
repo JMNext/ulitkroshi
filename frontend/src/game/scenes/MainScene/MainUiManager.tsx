@@ -144,13 +144,12 @@ export const MainUiManager = ({ scene }: { scene: Phaser.Scene }) => {
         </div>
       </div>
 
-      {/* ИСПРАВЛЕНО: Клик по оверлею теперь снова корректно закрывает модалку. pointer-events контролируются точно */}
       {modal && (
         <div className={MODAL_OVERLAY_CLASS} onClick={() => setModal(null)}>
           <div 
             style={modalScaleStyle} 
             className="pointer-events-auto max-w-[calc(100vw-32px)] px-2" 
-            onClick={(e) => e.stopPropagation()} // Блокируем всплытие клика из самой модалки
+            onClick={(e) => e.stopPropagation()} 
           >
             {modal === 'profile' && <ProfileEditUI onClose={() => setModal(null)} onAddPetClick={() => setModal('pets')} />}
             {modal === 'shop' && <ShopModal onClose={() => setModal(null)} />}

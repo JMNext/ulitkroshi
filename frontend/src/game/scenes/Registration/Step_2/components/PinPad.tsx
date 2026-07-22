@@ -2,11 +2,7 @@ import { useRegistrationStep2Store } from '../useRegistrationStep2Store';
 import normalButtonBg from '/src/assets/board/button.svg';
 import redButtonBg from '/src/assets/board/red_button.svg';
 
-interface PinPadProps {
-  onSuccessCode: (sessionId: string) => void;
-}
-
-export const PinPad = ({ onSuccessCode }: PinPadProps) => {
+export const PinPad = ({ onSuccessCode }: { onSuccessCode: (sessionId: string) => void }) => {
   const mode = useRegistrationStep2Store((s) => s.mode);
   const handleKeyboardInput = useRegistrationStep2Store((s) => s.handleKeyboardInput);
 

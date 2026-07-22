@@ -21,7 +21,6 @@ const game = new Game({
     clearBeforeRender: true
   },
   scale: {
-    // RESIZE позволяет холсту Phaser занимать 100% реальной ширины и высоты браузера
     mode: Scale.RESIZE,
     autoCenter: Scale.CENTER_BOTH,
     width: 1920,
@@ -45,17 +44,14 @@ const game = new Game({
 
 game.events.once('ready', () => {
   const startMusic = (): void => {
-    // Безопасное сужение типов для TypeScript через instanceof
     if (game.sound instanceof Sound.WebAudioSoundManager) {
       if (game.sound.context && game.sound.context.state === 'suspended') {
         game.sound.context.resume().catch(() => {});
       }
     }
-    
-    // Возвращаем удаленную логику загрузки и проверки кэша звука
+
     if (!game.cache.audio.exists('main_theme')) {
       const activeScenes = game.scene.scenes;
-      // Передаем первую активную сцену для корректной инициализации плагина загрузчика
       if (activeScenes && activeScenes.length > 0 && activeScenes[0]) {
         const loader = new Loader.LoaderPlugin(activeScenes[0]);
         loader.audio('main_theme', soundMainTheme);

@@ -1,13 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Typography } from 'antd';
 import eatIcon from '/src/assets/buttom_menu-icons/eat.svg';
 import { useShopStore } from '../useShopStore';
 
-interface ProductCardProps {
-  onCloseCard: () => void;
-}
-
-export const ProductCard = ({ onCloseCard }: ProductCardProps) => {
+export const ProductCard = ({ onCloseCard }: { onCloseCard: () => void }) => {
   const selectedItem = useShopStore((state) => state.selectedItem);
   const cart = useShopStore((state) => state.cart);
 

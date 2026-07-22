@@ -3,8 +3,15 @@ import { useRegistrationStep1Store } from '../Step_1/useRegistrationStep1Store';
 import { useAuthStore } from '../../../../store/useAuthStore';
 
 interface Step2State {
-  phone: string; code: string; mode: 'phone' | 'sent' | 'code'; secs: number; rawPhone: string;
-  attempts: number; errorMessage: string; isVerifying: boolean; timerId: number | null;
+  phone: string; 
+  code: string; 
+  mode: 'phone' | 'sent' | 'code'; 
+  secs: number; 
+  rawPhone: string;
+  attempts: number; 
+  errorMessage: string; 
+  isVerifying: boolean; 
+  timerId: ReturnType<typeof setInterval> | null;
   setMode: (mode: 'phone' | 'sent' | 'code') => void;
   sendPhone: () => Promise<void>;
   startTimer: () => void;
@@ -14,11 +21,20 @@ interface Step2State {
 }
 
 const initialValues = {
-  phone: '+7 ( _ _ _ ) _ _ _ - _ _ - _ _', code: '', mode: 'phone' as const, secs: 60, rawPhone: '',
-  attempts: 0, errorMessage: '', isVerifying: false, timerId: null,
+  phone: '+7 ( _ _ _ ) _ _ _ - _ _ - _ _', 
+  code: '', 
+  mode: 'phone' as const, 
+  secs: 60, 
+  rawPhone: '',
+  attempts: 0, 
+  errorMessage: '', 
+  isVerifying: false, 
+  timerId: null as ReturnType<typeof setInterval> | null,
 };
 
-const clearTimer = (id: number | null) => id && clearInterval(id);
+const clearTimer = (id: ReturnType<typeof setInterval> | null) => {
+  if (id) clearInterval(id);
+};
 
 export const useRegistrationStep2Store = create<Step2State>((set, get) => ({
   ...initialValues,
@@ -43,7 +59,7 @@ export const useRegistrationStep2Store = create<Step2State>((set, get) => ({
   startTimer: () => {
     clearTimer(get().timerId);
     set({ secs: 60 });
-    const id = window.setInterval(() => {
+    const id = setInterval(() => {
       set((s) => s.secs <= 1 
         ? (clearInterval(id), { secs: 0, timerId: null, code: '', attempts: 0, errorMessage: 'Время действия кода истекло.' }) 
         : { secs: s.secs - 1 }

@@ -1,24 +1,37 @@
 import { create } from 'zustand';
 import { useAuthStore } from '../../../../store/useAuthStore';
-import { useMainGameStore } from '../../MainScene/useMainGameStore';
+import { usePetCareStore } from '../../MainScene/usePetCareStore';
 
-interface Step1State {
-  stage: number; name: string; input: string; isNameChecking: boolean;       
-  nameStatus: 'idle' | 'available' | 'taken'; nameSuggestions: string[];     
+export interface Step1State {
+  stage: number; 
+  name: string; 
+  input: string; 
+  isNameChecking: boolean;       
+  nameStatus: 'idle' | 'available' | 'taken'; 
+  nameSuggestions: string[];     
   nameHistory: string[];
-  setInput: (val: string) => void; setStage: (stage: number) => void;
-  submit: (value: string) => void; setSpeechResult: (text: string) => void;
-  setSpeechError: () => void; resetStore: () => void;
-  triggerNameCheck: (value: string) => Promise<boolean>; selectSuggestion: (suggestion: string) => void;
+  setInput: (val: string) => void; 
+  setStage: (stage: number) => void;
+  submit: (value: string) => void; 
+  setSpeechResult: (text: string) => void;
+  setSpeechError: () => void; 
+  resetStore: () => void;
+  triggerNameCheck: (value: string) => Promise<boolean>; 
+  selectSuggestion: (suggestion: string) => void;
+  processAndSubmitName: (targetText: string) => Promise<void>;
 }
 
 const initialValues = {
-  stage: 1, name: '', input: '', isNameChecking: false,
-  nameStatus: 'idle' as const, nameSuggestions: [] as string[],
+  stage: 1, 
+  name: '', 
+  input: '', 
+  isNameChecking: false,
+  nameStatus: 'idle' as const, 
+  nameSuggestions: [] as string[],
   nameHistory: [] as string[],
 };
 
-const formatName = (s: string) => s.trim() ? s.trim().charAt(0).toUpperCase() + s.trim().slice(1) : 'Булька';
+const formatName = (s: string): string => s.trim() ? s.trim().charAt(0).toUpperCase() + s.trim().slice(1) : 'Булька';
 
 export const useRegistrationStep1Store = create<Step1State>((set, get) => ({
   ...initialValues,
@@ -53,9 +66,8 @@ export const useRegistrationStep1Store = create<Step1State>((set, get) => ({
       
       const isAvailable = !!result.available;
       
-      // Если имя свободно, сразу прокидываем его в глобальный игровой стор
       if (isAvailable) {
-        useMainGameStore.getState().setPetName(trimmed);
+        usePetCareStore.getState().setPetName(trimmed);
       }
       
       set({
@@ -74,47 +86,33 @@ export const useRegistrationStep1Store = create<Step1State>((set, get) => ({
 
   selectSuggestion: (suggestion) => {
     const formatted = formatName(suggestion);
-    
-    // Синхронизируем имя при клике на готовую подсказку
-    useMainGameStore.getState().setPetName(formatted);
-
+    usePetCareStore.getState().setPetName(formatted);
     set({ input: '', name: formatted, nameStatus: 'available', nameSuggestions: [], stage: 2 });
   },
 
-  submit: async (value) => {
-    const formatted = formatName(value);
+  processAndSubmitName: async (targetText) => {
+    const textToProcess = targetText.trim() || get().input.trim();
+    
+    if (!textToProcess) {
+      set({ stage: 3 });
+      return;
+    }
+
+    const formatted = formatName(textToProcess);
     set({ name: formatted, input: '' });
     await get().triggerNameCheck(formatted);
   },
 
-  setSpeechResult: (text) => {
-    const currentInput = get().input.trim();
-    
-    if (!text.trim()) {
-      if (currentInput) {
-        const formatted = formatName(currentInput);
-        set({ name: formatted, input: '' });
-        get().triggerNameCheck(formatted);
-      } else {
-        set({ stage: 3 });
-      }
-      return;
-    }
-
-    const formatted = formatName(text);
-    set({ name: formatted, input: '' });
-    get().triggerNameCheck(formatted);
+  submit: async (value) => {
+    await get().processAndSubmitName(value);
   },
 
-  setSpeechError: () => {
-    const currentInput = get().input.trim();
-    if (currentInput) {
-      const formatted = formatName(currentInput);
-      set({ name: formatted, input: '' });
-      get().triggerNameCheck(formatted);
-    } else {
-      set({ stage: 3 });
-    }
+  setSpeechResult: async (text) => {
+    await get().processAndSubmitName(text);
+  },
+
+  setSpeechError: async () => {
+    await get().processAndSubmitName('');
   },
 
   resetStore: () => {

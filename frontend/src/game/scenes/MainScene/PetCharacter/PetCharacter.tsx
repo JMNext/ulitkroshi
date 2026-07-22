@@ -30,6 +30,9 @@ export const PetCharacter = ({ onAnimationComplete }: PetCharacterProps) => {
   const [prevAnim, setPrevAnim] = useState<string | null>(null);
   const [isNewPlaying, setIsNewPlaying] = useState<boolean>(false);
 
+  // Проверка устройства на Apple iOS
+  const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+
   useEffect(() => {
     const active = videoRefs.current[currentAnim];
     if (!active) return;
@@ -65,7 +68,12 @@ export const PetCharacter = ({ onAnimationComplete }: PetCharacterProps) => {
   };
 
   return (
-    <div className="w-[644px] max-w-[644px] h-[644px] max-h-[644px] relative overflow-visible select-none">
+    <div className="w-[644px] max-w-[644px] h-[644px] max-h-[644px] relative overflow-visible select-none flex items-center justify-center">
+      {/* Рендерим белую подложку ТОЛЬКО на iPhone/Safari */}
+      {isIOS && (
+        <div className="absolute w-[450px] h-[450px] bg-white rounded-full blur-md z-0 pointer-events-none opacity-95" />
+      )}
+      
       {ANIMS_KEYS.map((key) => {
         const src = ANIMS_SOURCES[key];
         const config = PET_ANIMS_CONFIG[key];
@@ -91,7 +99,10 @@ export const PetCharacter = ({ onAnimationComplete }: PetCharacterProps) => {
               transform: `translate(-50%, ${config.translateY})`,
               objectFit: 'cover',
             }}
-            className={`pet-anim-${key} absolute left-1/2 bottom-0 mix-blend-screen brightness-[0.95] contrast-[1.2] w-[644px] ${
+            /* Смешивание mix-blend-screen применяется ТОЛЬКО на iOS устройствax */
+            className={`pet-anim-${key} absolute left-1/2 bottom-0 brightness-[0.95] contrast-[1.2] w-[644px] ${
+              isIOS ? 'mix-blend-screen relative z-10' : ''
+            } ${
               key === 'wash' 
                 ? 'max-w-[644px]' 
                 : 'max-w-[644px] h-[644px] max-h-[644px]'

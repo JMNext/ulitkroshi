@@ -4,6 +4,7 @@ export class CatchGamePet {
   private scene: Scene;
   public element: HTMLDivElement | null = null;
   private videoEl: HTMLVideoElement | null = null;
+  private bgBacking: HTMLDivElement | null = null;
 
   public x = 0;
   public y = 0;
@@ -20,10 +21,26 @@ export class CatchGamePet {
     const gameContainer = document.getElementById('game-container');
     if (!gameContainer) return;
 
+    // Проверяем, айфон ли это
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
     this.width = isPortrait ? 160 : 240;
     this.height = isPortrait ? 160 : 240;
     this.x = window.innerWidth / 2;
     this.y = isPortrait ? window.innerHeight - 110 : window.innerHeight - 150;
+
+    this.bgBacking = document.createElement('div');
+    this.bgBacking.style.position = 'absolute';
+    this.bgBacking.style.width = '75%';
+    this.bgBacking.style.height = '75%';
+    this.bgBacking.style.backgroundColor = '#ffffff';
+    this.bgBacking.style.borderRadius = '50%';
+    this.bgBacking.style.filter = 'blur(6px)';
+    this.bgBacking.style.zIndex = '0';
+    this.bgBacking.style.pointerEvents = 'none';
+    this.bgBacking.style.opacity = '0.95';
+    // На Windows скрываем подложку, на iOS — показываем
+    this.bgBacking.style.display = isIOS ? 'block' : 'none';
 
     this.videoEl = document.createElement('video');
     this.videoEl.src = videoSrc;
@@ -36,6 +53,12 @@ export class CatchGamePet {
     this.videoEl.style.objectFit = 'fill';
     this.videoEl.style.borderRadius = '50%';
     this.videoEl.style.filter = 'contrast(110%) brightness(105%)';
+    this.videoEl.style.position = 'relative';
+    this.videoEl.style.zIndex = '10';
+    // На Windows не применяем смешивание, на iOS — применяем
+    if (isIOS) {
+      this.videoEl.style.mixBlendMode = 'screen';
+    }
 
     this.element = document.createElement('div');
     this.element.id = 'catch-raw-html-pet';
@@ -48,11 +71,12 @@ export class CatchGamePet {
     this.element.style.display = 'flex';
     this.element.style.alignItems = 'center';
     this.element.style.justifyContent = 'center';
-    this.element.style.overflow = 'hidden';
+    this.element.style.overflow = isIOS ? 'visible' : 'hidden';
     this.element.style.borderRadius = '50%';
     this.element.style.pointerEvents = 'none';
     this.element.style.zIndex = '35';
 
+    this.element.appendChild(this.bgBacking);
     this.element.appendChild(this.videoEl);
     gameContainer.appendChild(this.element);
   }
@@ -96,5 +120,6 @@ export class CatchGamePet {
   public destroy(): void {
     if (this.element) { this.element.remove(); this.element = null; }
     if (this.videoEl) { this.videoEl.remove(); this.videoEl = null; }
+    if (this.bgBacking) { this.bgBacking.remove(); this.bgBacking = null; }
   }
 }

@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { Scene as PhaserScene, Sound } from 'phaser';
+import { Scene as PhaserScene } from 'phaser';
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { MainUiManager } from './MainUiManager';
@@ -37,11 +37,10 @@ export class MainScene extends PhaserScene {
 
     const playCareSound = (act: string): void => {
       try {
-        if (this.sound instanceof Sound.WebAudioSoundManager) {
-          if (this.sound.context && this.sound.context.state === 'suspended') {
-            this.sound.context.resume().then(() => this.sound.play(act, { volume: 0.8 }));
-            return;
-          }
+        const audioContext = (this.sound as Phaser.Sound.WebAudioSoundManager).context;
+        if (audioContext && audioContext.state === 'suspended') {
+          audioContext.resume().then(() => this.sound.play(act, { volume: 0.8 }));
+          return;
         }
         this.sound.play(act, { volume: 0.8 });
       } catch (e) {
@@ -60,6 +59,13 @@ export class MainScene extends PhaserScene {
   }
 
   private handleMinigameStart(data: { key: string; difficulty: string }): void {
+    // Вместо stopAll() останавливаем только звуки этой сцены, чтобы не глушить main_theme
+    ['eat', 'wash', 'play', 'sleep'].forEach((soundKey) => {
+      if (this.sound.get(soundKey)) {
+        this.sound.stopByKey(soundKey);
+      }
+    });
+
     this.cleanup();
     this.scene.stop();
     this.scene.start(data.key, { difficulty: data.difficulty });
@@ -75,9 +81,7 @@ export class MainScene extends PhaserScene {
     });
 
     try { 
-      if (this.root) {
-        this.root.unmount(); 
-      }
+      this.root?.unmount(); 
     } catch (e) {
       console.error('Ошибка при размонтировании React в MainScene:', e);
     }
@@ -99,7 +103,14 @@ export class MainScene extends PhaserScene {
     );
   }
 
-  public completeScene(nextSceneKey: string, data?: any): void {
+  public completeScene(nextSceneKey: string, data?: Record<string, unknown>): void {
+    // Здесь тоже точечно останавливаем звуки ухода взамен stopAll()
+    ['eat', 'wash', 'play', 'sleep'].forEach((soundKey) => {
+      if (this.sound.get(soundKey)) {
+        this.sound.stopByKey(soundKey);
+      }
+    });
+    
     if (this.uiContainer) {
       this.uiContainer.style.opacity = '0';
       this.uiContainer.style.transition = 'opacity 0.5s ease-out';
