@@ -13,30 +13,13 @@ export const CaptchaFruitGrid = ({ onPress }: { onPress: (idx: number) => void }
   const isSubmitting = useRegistrationStep3Store((s) => s.isSubmitting);
 
   return (
-    <nav 
-      style={{ animation: shake ? 'captchaShakeEffect 0.5s ease-in-out' : 'none' }} 
-      className="flex flex-col justify-center shrink-0 box-border overflow-hidden select-none pointer-events-auto p-0 relative w-[455px] h-[455px]"
-    >
+    <nav style={{ animation: shake ? 'captchaShakeEffect 0.5s ease-in-out' : 'none' }} className="flex flex-col justify-center shrink-0 box-border overflow-hidden select-none pointer-events-auto p-0 relative w-[455px] h-[455px]">
       <style>{`@keyframes captchaShakeEffect { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }`}</style>
-      
-      <div 
-        className={`grid grid-cols-4 grid-rows-4 w-full h-full box-border shrink-0 select-none gap-x-[20px] gap-y-[20px] ${isSubmitting ? 'opacity-40' : ''}`}
-      >
+      <div className={`grid grid-cols-4 grid-rows-4 w-full h-full box-border shrink-0 select-none gap-x-[20px] gap-y-[20px] ${isSubmitting ? 'opacity-40' : ''}`}>
         {fruitOrder.map((fruitId) => {
           const isSelected = selected.includes(fruitId);
           return (
-            <button 
-              key={fruitId} 
-              type="button"
-              disabled={mode === 'error' || isSubmitting || attempts >= 3}
-              onClick={() => onPress(fruitId)} 
-              style={{ 
-                touchAction: 'manipulation',
-                borderColor: isSelected && mode !== 'error' ? '#a6f034' : 'transparent',
-                borderWidth: '4px'
-              }} 
-              className="relative outline-none w-full h-full bg-white border-solid rounded-full shadow-md flex items-center justify-center transition-all box-border shrink-0 active:scale-95 cursor-pointer pointer-events-auto p-2.5"
-            >
+            <button key={fruitId} type="button" disabled={mode === 'error' || isSubmitting || attempts >= 3} onClick={() => onPress(fruitId)} style={{ touchAction: 'manipulation', borderColor: isSelected && mode !== 'error' ? '#a6f034' : 'transparent', borderWidth: '4px' }} className="relative outline-none w-full h-full bg-white border-solid rounded-full shadow-md flex items-center justify-center transition-all box-border shrink-0 active:scale-95 cursor-pointer pointer-events-auto p-2.5">
               <img src={getFruitUrl(fruitId)} className="w-full h-full object-contain pointer-events-none" alt="" />
             </button>
           );
