@@ -1,19 +1,22 @@
-import petVideoUrl from '/src/assets/resources/1stpet-animation/prostoi-converted.webm';
+import petVideoMov from '/src/assets/resources/1stpet-animation/prostoi-converted.mov';
+import petVideoWebm from '/src/assets/resources/1stpet-animation/prostoi-converted.webm';
 
 export const PetVideoBlock = () => {
-  const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
-
   return (
     <div className="flex items-center justify-center box-border shrink-0 select-none w-[644px] h-[644px] relative">
-      {isIOS && <div className="absolute w-[450px] h-[450px] bg-white rounded-full blur-md z-0 pointer-events-none opacity-95" />}
       <video
-        src={petVideoUrl}
-        className={`object-contain block contrast-[110%] brightness-[105%] w-full h-full relative z-10 ${isIOS ? 'mix-blend-screen' : ''}`}
+        className="object-contain block contrast-[110%] brightness-[105%] w-full h-full relative z-10"
         autoPlay
         loop
         muted
         playsInline
-      />
+      >
+        {/* iOS нативно подхватит прозрачный MOV с кодеком HEVC */}
+        <source src={petVideoMov} type='video/mp4; codecs="hvc1"' />
+        {/* Android и Desktop заберут прозрачный WebM с кодеком VP9 */}
+        <source src={petVideoWebm} type="video/webm" />
+        Ваш браузер не поддерживает видео.
+      </video>
     </div>
   );
 };

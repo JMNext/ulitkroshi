@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
-import petIdleVideo from '/src/assets/resources/1stpet-animation/prostoi-converted.webm';
-import petPlayVideo from '/src/assets/resources/1stpet-animation/play-converted.webm';
+import petIdleWebm from '/src/assets/resources/1stpet-animation/prostoi-converted.webm';
+import petIdleMov from '/src/assets/resources/1stpet-animation/prostoi-converted.mov';
+import petPlayWebm from '/src/assets/resources/1stpet-animation/play-converted.webm';
+import petPlayMov from '/src/assets/resources/1stpet-animation/play-converted.mov';
 import { useMemoryGameStore } from '../useMemoryGameStore';
 
 export const MemoryPet = () => {
@@ -12,44 +14,33 @@ export const MemoryPet = () => {
 
     document.getElementById('memory-html-pet-entity')?.remove();
 
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const currentIdleSrc = isIOS ? petIdleMov : petIdleWebm;
+    const currentPlaySrc = isIOS ? petPlayMov : petPlayWebm;
 
-    const bgBacking = document.createElement('div');
-    bgBacking.id = 'memory-pet-bg-backing';
-    bgBacking.style.position = 'absolute';
-    bgBacking.style.backgroundColor = '#ffffff';
-    bgBacking.style.borderRadius = '50%';
-    bgBacking.style.filter = 'blur(6px)';
-    bgBacking.style.zIndex = '0';
-    bgBacking.style.pointerEvents = 'none';
-    bgBacking.style.opacity = '0.95';
-    bgBacking.style.display = isIOS ? 'block' : 'none';
+    const createVideo = (src: string, loop = false) => {
+      const video = document.createElement('video');
+      video.src = src; 
+      Object.assign(video, { muted: true, playsInline: true, autoplay: loop, loop });
+      Object.assign(video.style, { 
+        width: '100%', height: '100%', objectFit: 'fill', 
+        filter: 'contrast(110%) brightness(105%)', position: 'relative', zIndex: '10' 
+      });
+      return video;
+    };
 
-    const vIdle = document.createElement('video');
-    vIdle.src = petIdleVideo; vIdle.muted = vIdle.playsInline = vIdle.autoplay = vIdle.loop = true;
-    vIdle.style.width = vIdle.style.height = '100%'; vIdle.style.objectFit = 'fill';
-    vIdle.style.filter = 'contrast(110%) brightness(105%)';
-    vIdle.style.position = 'relative'; vIdle.style.zIndex = '10';
-    if (isIOS) vIdle.style.mixBlendMode = 'screen';
-
-    const vPlay = document.createElement('video');
-    vPlay.src = petPlayVideo; vPlay.muted = vPlay.playsInline = true;
-    vPlay.style.width = vPlay.style.height = '100%'; vPlay.style.objectFit = 'fill';
-    vPlay.style.filter = 'contrast(110%) brightness(105%)'; vPlay.style.display = 'none';
-    vPlay.style.position = 'relative'; vPlay.style.zIndex = '10';
-    if (isIOS) vPlay.style.mixBlendMode = 'screen';
+    const vIdle = createVideo(currentIdleSrc, true);
+    const vPlay = createVideo(currentPlaySrc);
+    vPlay.style.display = 'none';
     vPlay.onended = () => useMemoryGameStore.getState().setWash(false);
 
     const petBox = document.createElement('div');
     petBox.id = 'memory-pet-box-target';
-    petBox.style.position = 'absolute'; petBox.style.display = 'flex';
-    petBox.style.alignItems = petBox.style.justifyContent = 'center';
-    petBox.style.overflow = isIOS ? 'visible' : 'hidden'; petBox.style.borderRadius = '50%';
+    Object.assign(petBox.style, { position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: '50%' });
     petBox.appendChild(vIdle); petBox.appendChild(vPlay);
 
     const innerWrapper = document.createElement('div');
     innerWrapper.id = 'memory-pet-inner-wrapper'; innerWrapper.style.position = 'relative';
-    innerWrapper.appendChild(bgBacking);
     innerWrapper.appendChild(petBox);
 
     const element = document.createElement('div');
@@ -61,66 +52,34 @@ export const MemoryPet = () => {
       const w = window.innerWidth, h = window.innerHeight, port = h > w;
 
       if (port) {
-        innerWrapper.style.width = innerWrapper.style.height = '100%';
-        innerWrapper.style.transform = 'none';
-        if (h < 700) { element.style.display = 'none'; return; }
+        Object.assign(innerWrapper.style, { width: '100%', height: '100%', transform: 'none' });
+        if (h < 700) return void (element.style.display = 'none');
         element.style.display = 'flex';
 
         const size = 160;
-        petBox.style.width = petBox.style.height = `${size}px`;
-        petBox.style.left = '50%'; petBox.style.transform = 'translateX(-50%)';
-        petBox.style.right = petBox.style.bottom = 'auto';
+        Object.assign(petBox.style, { width: `${size}px`, height: `${size}px`, left: '50%', transform: 'translateX(-50%)', right: 'auto', bottom: 'auto' });
 
         const isEasy = useMemoryGameStore.getState().deck.length === 8;
         const gridH = isEasy ? 340 : 480;
         const scaleY = Math.min((w * 0.96) / (isEasy ? 340 : 440), (h - 300) / gridH, 1);
-        const startY = Math.floor((h - gridH * scaleY) / 2);
-
-        petBox.style.top = `${startY - size - 25}px`;
+        petBox.style.top = `${Math.floor((h - gridH * scaleY) / 2) - size - 25}px`;
       } else {
         element.style.display = 'flex';
-        const isTabOrMob = w < 1300;
-
-        if (isTabOrMob) {
-          innerWrapper.style.width = innerWrapper.style.height = '100%';
-          innerWrapper.style.transform = 'none';
-
+        if (w < 1300) {
+          Object.assign(innerWrapper.style, { width: '100%', height: '100%', transform: 'none' });
           const isTablet = (w / h) < 1.75;
-          
           const size = isTablet ? 240 : 160;
-          petBox.style.width = petBox.style.height = `${size}px`;
-          petBox.style.transform = 'translateY(-50%)';
-          petBox.style.right = petBox.style.bottom = 'auto';
+          Object.assign(petBox.style, { width: `${size}px`, height: `${size}px`, transform: 'translateY(-50%)', right: 'auto', bottom: 'auto' });
 
           const gridW = Math.min(w - 340, h - 180, 520);
-          const startX = Math.floor((w - gridW) / 2);
-          const startY = Math.floor((h - gridW) / 2);
-
-          const currentGap = isTablet ? 100 : 120;
-          petBox.style.left = `${startX - (size / 2) - currentGap}px`;
-          
-          const currentTopOffset = isTablet ? 60 : 20;
-          petBox.style.top = `${startY + (gridW / 2) + currentTopOffset}px`;
+          petBox.style.left = `${Math.floor((w - gridW) / 2) - (size / 2) - (isTablet ? 100 : 120)}px`;
+          petBox.style.top = `${Math.floor((h - gridW) / 2) + (gridW / 2) + (isTablet ? 60 : 20)}px`;
         } else {
           const scale = Math.min(w / 1920, h / 1080, 1);
-          innerWrapper.style.width = '1920px'; innerWrapper.style.height = '1080px';
-          innerWrapper.style.transform = `scale(${scale})`; innerWrapper.style.transformOrigin = 'center center';
-
-          const size = 340;
-          petBox.style.width = petBox.style.height = `${size}px`; petBox.style.transform = 'none';
-          petBox.style.top = petBox.style.right = 'auto';
-          petBox.style.bottom = `${60 - 40 + 260}px`; petBox.style.left = '160px';
+          Object.assign(innerWrapper.style, { width: '1920px', height: '1080px', transform: `scale(${scale})`, transformOrigin: 'center center' });
+          Object.assign(petBox.style, { width: '340px', height: '340px', transform: 'none', top: 'auto', right: 'auto', bottom: '280px', left: '160px' });
         }
       }
-
-      const backingSize = parseFloat(petBox.style.width) * 0.75;
-      bgBacking.style.width = `${backingSize}px`;
-      bgBacking.style.height = `${backingSize}px`;
-      bgBacking.style.left = `calc(${petBox.style.left} + (parseInt('${petBox.style.width}') - ${backingSize}px) / 2)`;
-      bgBacking.style.top = `calc(${petBox.style.top} + (parseInt('${petBox.style.width}') - ${backingSize}px) / 2)`;
-      bgBacking.style.transform = petBox.style.transform;
-      bgBacking.style.bottom = petBox.style.bottom;
-      bgBacking.style.right = petBox.style.right;
     };
 
     executeResize();
@@ -130,15 +89,23 @@ export const MemoryPet = () => {
 
   useEffect(() => {
     const petBox = document.getElementById('memory-pet-box-target');
-    if (!petBox) return;
-    const videos = petBox.getElementsByTagName('video');
+    const videos = petBox?.getElementsByTagName('video');
+    
     if (videos && videos.length >= 2) {
+      const vIdle = videos[0]; 
+      const vPlay = videos[1]; 
+
       if (isWash) {
-        videos[0].style.display = 'none'; videos[1].style.display = 'block';
-        videos[0].pause(); videos[1].currentTime = 0; videos[1].play().catch(() => {});
+        vIdle.style.display = 'none'; 
+        vPlay.style.display = 'block';
+        vIdle.pause(); 
+        vPlay.currentTime = 0; 
+        vPlay.play().catch(() => {});
       } else {
-        videos[1].style.display = 'none'; videos[0].style.display = 'block';
-        videos[1].pause(); videos[0].play().catch(() => {});
+        vPlay.style.display = 'none'; 
+        vIdle.style.display = 'block';
+        vPlay.pause(); 
+        vIdle.play().catch(() => {});
       }
     }
   }, [isWash]);

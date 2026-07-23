@@ -2,16 +2,44 @@ import { useEffect, useRef, useState } from 'react';
 import { usePetCareStore } from '../usePetCareStore';
 import { PET_ANIMS_CONFIG } from './basePet';
 
-const ANIMS_SOURCES: Record<string, string> = {
-  wash: new URL('/src/assets/resources/1stpet-animation/wash-converted.webm', import.meta.url).href,
-  play: new URL('/src/assets/resources/1stpet-animation/play_ball.webm', import.meta.url).href,
-  eat: new URL('/src/assets/resources/1stpet-animation/eat-converted.webm', import.meta.url).href,
-  sad_state: new URL('/src/assets/resources/1stpet-animation/sad_state.webm', import.meta.url).href,
-  sleep_begin: new URL('/src/assets/resources/1stpet-animation/sleep_begin.webm', import.meta.url).href,
-  sleep_circle: new URL('/src/assets/resources/1stpet-animation/sleep_circle.webm', import.meta.url).href,
-  sleep_awake: new URL('/src/assets/resources/1stpet-animation/sleep_awake.webm', import.meta.url).href,
-  prostoi2: new URL('/src/assets/resources/1stpet-animation/prostoi2.webm', import.meta.url).href,
-  prostoi1: new URL('/src/assets/resources/1stpet-animation/prostoi-converted.webm', import.meta.url).href,
+// Ресурсы содержат ссылки на .mov для iOS и .webm для остальных платформ
+const ANIMS_SOURCES: Record<string, { mov: string; webm: string }> = {
+  wash: {
+    mov: new URL('/src/assets/resources/1stpet-animation/wash-converted.mov', import.meta.url).href,
+    webm: new URL('/src/assets/resources/1stpet-animation/wash-converted.webm', import.meta.url).href,
+  },
+  play: {
+    mov: new URL('/src/assets/resources/1stpet-animation/play_ball.mov', import.meta.url).href,
+    webm: new URL('/src/assets/resources/1stpet-animation/play_ball.webm', import.meta.url).href,
+  },
+  eat: {
+    mov: new URL('/src/assets/resources/1stpet-animation/eat-converted.mov', import.meta.url).href,
+    webm: new URL('/src/assets/resources/1stpet-animation/eat-converted.webm', import.meta.url).href,
+  },
+  sad_state: {
+    mov: new URL('/src/assets/resources/1stpet-animation/sad_state.mov', import.meta.url).href,
+    webm: new URL('/src/assets/resources/1stpet-animation/sad_state.webm', import.meta.url).href,
+  },
+  sleep_begin: {
+    mov: new URL('/src/assets/resources/1stpet-animation/sleep_begin.mov', import.meta.url).href,
+    webm: new URL('/src/assets/resources/1stpet-animation/sleep_begin.webm', import.meta.url).href,
+  },
+  sleep_circle: {
+    mov: new URL('/src/assets/resources/1stpet-animation/sleep_circle.mov', import.meta.url).href,
+    webm: new URL('/src/assets/resources/1stpet-animation/sleep_circle.webm', import.meta.url).href,
+  },
+  sleep_awake: {
+    mov: new URL('/src/assets/resources/1stpet-animation/sleep_awake.mov', import.meta.url).href,
+    webm: new URL('/src/assets/resources/1stpet-animation/sleep_awake.webm', import.meta.url).href,
+  },
+  prostoi2: {
+    mov: new URL('/src/assets/resources/1stpet-animation/prostoi2.mov', import.meta.url).href,
+    webm: new URL('/src/assets/resources/1stpet-animation/prostoi2.webm', import.meta.url).href,
+  },
+  prostoi1: {
+    mov: new URL('/src/assets/resources/1stpet-animation/prostoi-converted.mov', import.meta.url).href,
+    webm: new URL('/src/assets/resources/1stpet-animation/prostoi-converted.webm', import.meta.url).href,
+  },
 };
 
 const LOOPS = new Set<string>(['sleep_circle', 'sad_state', 'prostoi1', 'prostoi2']);
@@ -29,9 +57,6 @@ export const PetCharacter = ({ onAnimationComplete }: PetCharacterProps) => {
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
   const [prevAnim, setPrevAnim] = useState<string | null>(null);
   const [isNewPlaying, setIsNewPlaying] = useState<boolean>(false);
-
-  // Проверка устройства на Apple iOS
-  const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
 
   useEffect(() => {
     const active = videoRefs.current[currentAnim];
@@ -69,15 +94,10 @@ export const PetCharacter = ({ onAnimationComplete }: PetCharacterProps) => {
 
   return (
     <div className="w-[644px] max-w-[644px] h-[644px] max-h-[644px] relative overflow-visible select-none flex items-center justify-center">
-      {/* Рендерим белую подложку ТОЛЬКО на iPhone/Safari */}
-      {isIOS && (
-        <div className="absolute w-[450px] h-[450px] bg-white rounded-full blur-md z-0 pointer-events-none opacity-95" />
-      )}
-      
       {ANIMS_KEYS.map((key) => {
-        const src = ANIMS_SOURCES[key];
+        const srcs = ANIMS_SOURCES[key];
         const config = PET_ANIMS_CONFIG[key];
-        if (!src || !config) return null;
+        if (!srcs || !config) return null;
 
         const isCurrent = key === currentAnim;
         const isPrevious = key === prevAnim;
@@ -87,7 +107,6 @@ export const PetCharacter = ({ onAnimationComplete }: PetCharacterProps) => {
           <video
             key={key}
             ref={(el) => { videoRefs.current[key] = el; }}
-            src={src}
             loop={LOOPS.has(key)}
             muted
             preload="auto"
@@ -99,15 +118,16 @@ export const PetCharacter = ({ onAnimationComplete }: PetCharacterProps) => {
               transform: `translate(-50%, ${config.translateY})`,
               objectFit: 'cover',
             }}
-            /* Смешивание mix-blend-screen применяется ТОЛЬКО на iOS устройствax */
             className={`pet-anim-${key} absolute left-1/2 bottom-0 brightness-[0.95] contrast-[1.2] w-[644px] ${
-              isIOS ? 'mix-blend-screen relative z-10' : ''
-            } ${
               key === 'wash' 
                 ? 'max-w-[644px]' 
                 : 'max-w-[644px] h-[644px] max-h-[644px]'
             } ${isVisible ? 'visible opacity-100 z-10' : 'invisible opacity-0 z-0'}`}
-          />
+          >
+            {/* Кроссплатформенные источники прозрачного видео */}
+            <source src={srcs.mov} type='video/mp4; codecs="hvc1"' />
+            <source src={srcs.webm} type="video/webm" />
+          </video>
         );
       })}
     </div>
