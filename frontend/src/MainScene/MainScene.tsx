@@ -3,6 +3,14 @@ import { createRoot, Root } from "react-dom/client";
 import React from "react";
 import { MainSceneUI } from "./MainSceneUI";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
+import { 
+  PET_ANIMATION_URLS, 
+  EAT_SOUND_URL, 
+  PLAY_SOUND_URL, 
+  WASH_SOUND_URL, 
+  SLEEP_SOUND_URL 
+} from "@/MainScene/components/PetCharacter/petCharacter.constants"; 
+
 import fonGorizUrl from "../assets/background/fon_goriz.png";
 import fonVertUrl from "../assets/background/fon_vert.png";
 
@@ -16,22 +24,37 @@ export class MainScene extends Phaser.Scene {
   public init(): void { 
     document.querySelectorAll("#phaser-native-step1-bubble, #phaser-native-success-bubble").forEach(e => e.remove()); 
   }
+
   public preload(): void { 
     this.load.image("ui_bg_fon_goriz", fonGorizUrl); 
     this.load.image("ui_bg_fon_vert", fonVertUrl); 
+
+    this.load.audio("pet_sound_eat", EAT_SOUND_URL);
+    this.load.audio("pet_sound_play", PLAY_SOUND_URL);
+    this.load.audio("pet_sound_wash", WASH_SOUND_URL);
+    this.load.audio("pet_sound_sleep", SLEEP_SOUND_URL);
+
+    Object.entries(PET_ANIMATION_URLS).forEach(([animKey, sources]) => {
+      const s = sources as { mov: string; webm: string };
+      this.load.binary(`cache_mov_${animKey}`, s.mov);
+      this.load.binary(`cache_webm_${animKey}`, s.webm);
+    });
   }
 
   public create(): void {
     if (this.game.canvas) this.game.canvas.className = "absolute inset-0 w-full h-full z-1";
     const { width: w, height: h } = this.scale;
-    const isVert = h > w;
     
     useMainGameStore.getState().setDimensions(w, h);
-
+    
+    const isVert = h > w;
     this.backgroundIm = this.add.image(w / 2, h / 2, isVert ? "ui_bg_fon_vert" : "ui_bg_fon_goriz").setOrigin(0.5).setDepth(-2).setDisplaySize(w, h);
+
     this.uiContainer = document.createElement("div");
     this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden";
     (document.getElementById("game-container") || document.body).appendChild(this.uiContainer);
+
+    this.triggerResize();
 
     this.reactRoot = createRoot(this.uiContainer);
     this.reactRoot.render(React.createElement(MainSceneUI));
@@ -40,10 +63,6 @@ export class MainScene extends Phaser.Scene {
     this.events.on("wake", this.handleWake, this);
     this.events.on("sleep", this.handleSleep, this);
     this.events.once("shutdown", this.cleanUp, this);
-    
-    if (this.sys?.isActive()) {
-      this.triggerResize();
-    }
   }
 
   public triggerResize(): void {

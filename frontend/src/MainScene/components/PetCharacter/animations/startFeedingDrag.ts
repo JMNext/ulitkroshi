@@ -2,6 +2,11 @@ import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetSto
 import { createBaseDrag } from "@/MainScene/components/PetCharacter/animations/createBaseDrag";
 import { FOOD_CONFIGS, DEFAULT_FOOD_CONFIG, EAT_SOUND_URL } from "@/MainScene/components/PetCharacter/petCharacter.constants";
 
+const cachedEatAudio = typeof window !== "undefined" ? new Audio(EAT_SOUND_URL) : null;
+if (cachedEatAudio) {
+  cachedEatAudio.volume = 0.5;
+}
+
 export const startFeedingDrag = (
   initialEvent: React.PointerEvent<HTMLDivElement> | PointerEvent,
   foodKey: string,
@@ -39,9 +44,10 @@ export const startFeedingDrag = (
           detail: { text: "Спасибо, я сейчас не голоден!", type: "error" } 
         }));
       } else if (result === "SUCCESS") {
-        const audio = new Audio(EAT_SOUND_URL);
-        audio.volume = 0.5;
-        audio.play().catch(() => {});
+        if (cachedEatAudio) {
+          cachedEatAudio.currentTime = 0;
+          cachedEatAudio.play().catch(() => {});
+        }
 
         store.triggerCareAction(fruitId ? "eat_fruit" : "eat");
       }

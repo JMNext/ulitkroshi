@@ -54,24 +54,35 @@ export const usePetStore = create<PetState>((set, get) => ({
     return SLEEP_ANIMATIONS.includes(currentAnim) ? t === 'sleep' : BASE_ANIMATIONS.includes(currentAnim);
   },
   
-  triggerCareAction: (a) => set({ currentAnim: a, washState: 'hidden' }),
+  triggerCareAction: (a) => {
+    requestAnimationFrame(() => {
+      set({ currentAnim: a, washState: 'hidden' });
+    });
+  },
   
   completeCareAction: () => {
     const { currentAnim, hp } = get();
-    if (currentAnim === 'sleep_begin') return set({ currentAnim: 'sleep_circle' });
+    if (currentAnim === 'sleep_begin') {
+      return set({ currentAnim: 'sleep_circle' });
+    }
     
     if (currentAnim === 'sleep_awake') {
       window.dispatchEvent(new CustomEvent("ui_show_bubble", { detail: { text: null } }));
       return set({ currentAnim: hp <= 25 ? 'sad_state' : 'prostoi1', washState: 'idle' });
     }
     
-    set({ currentAnim: hp <= 25 ? 'sad_state' : (Math.random() < 0.3 ? 'prostoi2' : 'prostoi1'), washState: 'idle' });
+    requestAnimationFrame(() => {
+      set({ currentAnim: hp <= 25 ? 'sad_state' : (Math.random() < 0.3 ? 'prostoi2' : 'prostoi1'), washState: 'idle' });
+    });
   },
   
   triggerSleepAction: () => {
     const a = get().currentAnim;
-    if (BASE_ANIMATIONS.includes(a)) set({ currentAnim: 'sleep_begin', washState: 'hidden' });
-    else if (a === 'sleep_circle') set({ currentAnim: 'sleep_awake', washState: 'hidden' });
+    if (BASE_ANIMATIONS.includes(a)) {
+      set({ currentAnim: 'sleep_begin', washState: 'hidden' });
+    } else if (a === 'sleep_circle') {
+      set({ currentAnim: 'sleep_awake', washState: 'hidden' });
+    }
   },
   
   incrementMiniGamesClick: () => {
@@ -110,18 +121,20 @@ export const usePetStore = create<PetState>((set, get) => ({
     const nextHp = Math.min(100, hp + (actualStd ? (hp < 10 ? 1 : 0) : (actualRHp ? actualVal : 0)));
     const updatedCount = cnt - 1;
     
-    set({
-      hp: nextHp, 
-      isMiniGamesBlocked: false, 
-      miniGamesClickCount: 0,
-      currentAnim: nextHp > 25 && currentAnim === 'sad_state' ? 'prostoi1' : currentAnim,
-      fruitsCounts: actualStd ? fruitsCounts : { ...fruitsCounts, [id]: updatedCount },
-      fruitsCooldowns: actualStd ? fruitsCooldowns : { ...fruitsCooldowns, [id]: now + cd }
-    });
+    requestAnimationFrame(() => {
+      set({
+        hp: nextHp, 
+        isMiniGamesBlocked: false, 
+        miniGamesClickCount: 0,
+        currentAnim: nextHp > 25 && currentAnim === 'sad_state' ? 'prostoi1' : currentAnim,
+        fruitsCounts: actualStd ? fruitsCounts : { ...fruitsCounts, [id]: updatedCount },
+        fruitsCooldowns: actualStd ? fruitsCooldowns : { ...fruitsCooldowns, [id]: now + cd }
+      });
 
-    if (id && (actualStd ? cnt : updatedCount) <= 0) {
-      set({ currentFruitId: '' });
-    }
+      if (id && (actualStd ? cnt : updatedCount) <= 0) {
+        set({ currentFruitId: '' });
+      }
+    });
 
     return 'SUCCESS';
   },

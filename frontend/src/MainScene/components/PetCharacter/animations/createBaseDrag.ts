@@ -41,7 +41,9 @@ export const handleCareActionDown = (
     const targetId = hasFruit ? fId : undefined;
 
     const handlePointerMove = (me: PointerEvent) => {
-      if (Math.hypot(me.clientX - startX, me.clientY - startY) > 10) {
+      const dx = me.clientX - startX;
+      const dy = me.clientY - startY;
+      if (dx * dx + dy * dy > 100) {
         cleanup();
         startFeedingDrag(e, icon, targetId, undefined, scale, s);
       }
@@ -49,7 +51,9 @@ export const handleCareActionDown = (
 
     const handlePointerUp = (ue: PointerEvent) => {
       cleanup();
-      if (Math.hypot(ue.clientX - startX, ue.clientY - startY) <= 10) {
+      const dx = ue.clientX - startX;
+      const dy = ue.clientY - startY;
+      if (dx * dx + dy * dy <= 100) {
         gameStore.setIsFoodOpen((p) => !p);
       }
     };
@@ -59,8 +63,8 @@ export const handleCareActionDown = (
       window.removeEventListener("pointerup", handlePointerUp);
     };
 
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    window.addEventListener("pointerup", handlePointerUp, { passive: true });
     return;
   }
 
@@ -100,6 +104,11 @@ export const createBaseDrag = (
   const mode = ratio < 1 ? (ratio < 0.42 ? "u" : "v") : "d";
   const conf = { u: { c: "w-12 h-12", r: 75 }, v: { c: "w-14 h-14", r: 110 }, d: { c: "w-20 h-20", r: 140 } }[mode];
 
+  const rect = document.getElementById("phaser-native-html-pet")?.getBoundingClientRect();
+  const targetX = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
+  const targetY = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
+  const radiusSq = conf.r * conf.r;
+
   const ghost = document.createElement("div");
   ghost.className = `fixed top-0 left-0 pointer-events-none ${conf.c} z-50 [will-change:transform]`;
   
@@ -114,7 +123,17 @@ export const createBaseDrag = (
   ghost.appendChild(img);
   document.body.appendChild(ghost);
 
-  const handleDragMove = (e: PointerEvent) => updateTransform(e.clientX, e.clientY);
+  let transformTicking = false;
+  const handleDragMove = (e: PointerEvent) => {
+    if (!transformTicking) {
+      requestAnimationFrame(() => {
+        updateTransform(e.clientX, e.clientY);
+        transformTicking = false;
+      });
+      transformTicking = true;
+    }
+  };
+
   const handleDragUp = (e: PointerEvent) => {
     window.removeEventListener("pointermove", handleDragMove);
     window.removeEventListener("pointerup", handleDragUp);
@@ -127,13 +146,14 @@ export const createBaseDrag = (
 
     ghost.remove();
 
-    const rect = document.getElementById("phaser-native-html-pet")?.getBoundingClientRect();
-    if (rect && Math.hypot(e.clientX - (rect.left + rect.width / 2), e.clientY - (rect.top + rect.height / 2)) <= conf.r) {
+    const dx = e.clientX - targetX;
+    const dy = e.clientY - targetY;
+    if (dx * dx + dy * dy <= radiusSq) {
       config.onSuccess();
     }
     config.onEnd?.();
   };
 
-  window.addEventListener("pointermove", handleDragMove);
-  window.addEventListener("pointerup", handleDragUp);
+  window.addEventListener("pointermove", handleDragMove, { passive: true });
+  window.addEventListener("pointerup", handleDragUp, { passive: true });
 };

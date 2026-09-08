@@ -1,7 +1,11 @@
 import { SLEEP_SOUND_URL } from "@/MainScene/components/PetCharacter/petCharacter.constants";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 
-let sleepAudio: HTMLAudioElement | null = null;
+const cachedSleepAudio = typeof window !== "undefined" ? new Audio(SLEEP_SOUND_URL) : null;
+if (cachedSleepAudio) {
+  cachedSleepAudio.loop = true;
+}
+
 let lastAnim: string | null = null;
 
 usePetStore.subscribe((state) => {
@@ -14,14 +18,12 @@ usePetStore.subscribe((state) => {
   if (previous === null) return;
 
   if (current === "sleep_circle") {
-    if (!sleepAudio) {
-      sleepAudio = new Audio(SLEEP_SOUND_URL);
-      sleepAudio.loop = true;
+    if (cachedSleepAudio) {
+      cachedSleepAudio.play().catch(() => {});
     }
-    sleepAudio.play().catch(() => {});
-  } else if (current !== "sleep_begin" && sleepAudio) {
-    sleepAudio.pause();
-    sleepAudio.currentTime = 0;
+  } else if (current !== "sleep_begin" && cachedSleepAudio) {
+    cachedSleepAudio.pause();
+    cachedSleepAudio.currentTime = 0;
   }
 });
 

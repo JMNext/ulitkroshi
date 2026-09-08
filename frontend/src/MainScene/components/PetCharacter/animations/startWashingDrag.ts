@@ -12,6 +12,8 @@ if (typeof document !== "undefined" && !document.getElementById("react-wash-keyf
   document.head.appendChild(style);
 }
 
+const cachedWashAudio = typeof window !== "undefined" ? new Audio(WASH_SOUND_URL) : null;
+
 export const startWashingDrag = (
   initialEvent: React.PointerEvent<HTMLDivElement> | PointerEvent,
   washKey: string,
@@ -31,7 +33,8 @@ export const startWashingDrag = (
     action: "wash",
     onSuccess: () => {
       const pet = document.getElementById("phaser-native-html-pet");
-      const currentScale = pet ? pet.getBoundingClientRect().width / 644 : 1;
+      const petRect = pet?.getBoundingClientRect();
+      const currentScale = petRect ? petRect.width / 644 : 1;
 
       const sponge = document.createElement("img");
       sponge.src = washKey;
@@ -51,7 +54,10 @@ export const startWashingDrag = (
 
       setTimeout(() => {
         sponge.remove();
-        new Audio(WASH_SOUND_URL).play().catch(() => {});
+        if (cachedWashAudio) {
+          cachedWashAudio.currentTime = 0;
+          cachedWashAudio.play().catch(() => {});
+        }
 
         const container = document.createElement("div");
         Object.assign(container.style, { 
@@ -61,6 +67,10 @@ export const startWashingDrag = (
 
         let bubbleCount = 0;
         const totalBubbles = 3200 / 25;
+        
+        const staticRect = pet?.getBoundingClientRect();
+        const cx = staticRect ? staticRect.left + staticRect.width / 2 : window.innerWidth / 2;
+        const cy = staticRect ? staticRect.top + staticRect.height / 2 : window.innerHeight / 2;
 
         const interval = setInterval(() => {
           bubbleCount++;
@@ -70,10 +80,6 @@ export const startWashingDrag = (
             setTimeout(() => container.remove(), 300);
             return;
           }
-
-          const rect = pet?.getBoundingClientRect();
-          const cx = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
-          const cy = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
 
           const b = document.createElement("div");
           const size = (Math.floor(Math.random() * 31) + 25) * currentScale;

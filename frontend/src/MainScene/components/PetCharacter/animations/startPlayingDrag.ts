@@ -2,6 +2,11 @@ import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetSto
 import { createBaseDrag } from "@/MainScene/components/PetCharacter/animations/createBaseDrag";
 import { PLAY_SOUND_URL } from "@/MainScene/components/PetCharacter/petCharacter.constants";
 
+const cachedBounceAudio = typeof window !== "undefined" ? new Audio(PLAY_SOUND_URL) : null;
+if (cachedBounceAudio) {
+  cachedBounceAudio.volume = 1.0;
+}
+
 export const startPlayingDrag = (
   initialEvent: React.PointerEvent<HTMLDivElement> | PointerEvent,
   ballKey: string,
@@ -18,10 +23,6 @@ export const startPlayingDrag = (
   const finalX = bounds.right - bounds.left;
   const finalY = 1080 - bounds.up + bounds.down;
 
-  const bounceAudio = new Audio(PLAY_SOUND_URL);
-  bounceAudio.volume = 1.0;
-  bounceAudio.preload = "auto";
-
   let isFinalized = false;
   const handleDragEnd = () => {
     if (isFinalized) return;
@@ -36,8 +37,9 @@ export const startPlayingDrag = (
       const pet = document.getElementById("phaser-native-html-pet");
       const canvas = document.querySelector("#game-container canvas");
       const cRect = canvas?.getBoundingClientRect() || { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+      const petRect = pet?.getBoundingClientRect();
 
-      const baseSize = (isPort ? 95 : 120) * (pet ? pet.getBoundingClientRect().width / 644 : 1);
+      const baseSize = (isPort ? 95 : 120) * (petRect ? petRect.width / 644 : 1);
 
       const ballImg = document.createElement("img");
       ballImg.src = ballKey;
@@ -58,10 +60,14 @@ export const startPlayingDrag = (
       const startWorldY = ((initialEvent.clientY - cRect.top) / cRect.height) * 1080;
       
       const dummy = { x: startWorldX, y: startWorldY, scale: 1, angle: 0 };
+      const cLeft = cRect.left;
+      const cTop = cRect.top;
+      const cWidth = cRect.width;
+      const cHeight = cRect.height;
 
       const sync = () => {
-        const posX = cRect.left + (dummy.x / 1920) * cRect.width;
-        const posY = cRect.top + (dummy.y / 1080) * cRect.height;
+        const posX = cLeft + (dummy.x / 1920) * cWidth;
+        const posY = cTop + (dummy.y / 1080) * cHeight;
         ballImg.style.transform = `translate3d(${posX}px, ${posY}px, 0) translate(-50%, -50%) scale(${dummy.scale}) rotate(${dummy.angle}deg)`;
       };
 
@@ -84,7 +90,10 @@ export const startPlayingDrag = (
         } else if (elapsed <= 1770) {
           if (!hasPlayedSound) {
             hasPlayedSound = true;
-            bounceAudio.play().catch(() => {});
+            if (cachedBounceAudio) {
+              cachedBounceAudio.currentTime = 0;
+              cachedBounceAudio.play().catch(() => {});
+            }
           }
         } else if (elapsed <= 2970) {
           const p = (elapsed - 1770) / 1200;
