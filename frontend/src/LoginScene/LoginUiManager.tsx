@@ -1,0 +1,45 @@
+import { useLoginStore } from './store/useLoginStore';
+import { useRegistrationStep3Store } from "@/Registration/Step_3/store/useRegistrationStep3Store";
+import { LoginButton } from "./components/LoginButton";
+import { RegisterLink } from "./components/RegisterLink";
+import { LoginLoader } from "./components/LoginLoader";
+import { LoginScene } from './LoginScene';
+
+interface LoginUiProps {
+  phaserScene: LoginScene;
+  scale: number;
+  paddingBottom: string;
+}
+
+export function LoginUiManager({ phaserScene, scale, paddingBottom }: LoginUiProps) {
+  const { status, startLoading } = useLoginStore();
+
+  const handleSceneSwitch = (action: 'login' | 'register') => {
+    if (phaserScene.sys?.isActive()) {
+      phaserScene.events.emit('switch_scene', action);
+    }
+  };
+
+  const handleLoginClick = () => {
+    useRegistrationStep3Store.getState().setIsLogin(true);
+    startLoading(() => handleSceneSwitch('login'));
+  };
+
+  return (
+    <div className="pointer-events-none absolute inset-0 h-full w-full flex items-end justify-center">
+      <div 
+        className="pointer-events-none z-10 flex flex-col items-center gap-4 box-border origin-bottom w-[460px] transition-transform duration-150" 
+        style={{ transform: `scale(${scale})`, paddingBottom }}
+      >
+        {status === 'button' ? (
+          <div className="flex flex-col items-center gap-4 pointer-events-auto w-full justify-center">
+            <LoginButton onClick={handleLoginClick} />
+            <RegisterLink onClick={() => handleSceneSwitch('register')} />
+          </div>
+        ) : (
+          <LoginLoader />
+        )}
+      </div>
+    </div>
+  );
+}
