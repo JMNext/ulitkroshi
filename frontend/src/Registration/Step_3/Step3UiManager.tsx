@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import React, { createContext } from 'react';
+import React, { createContext, useEffect, useState } from 'react';
 import { useRegistrationStep3Store } from "@/Registration/Step_3/store/useRegistrationStep3Store";
 import { CaptchaHeaderPanel } from "./components/CaptchaHeaderPanel";
 import { CaptchaFruitGrid } from "./components/CaptchaFruitGrid";
@@ -18,8 +18,6 @@ export interface LayoutContext {
 interface Step3UiManagerProps {
   phaserScene: Step3Scene;
   sessionId: string;
-  layoutContext: LayoutContext;
-  computedScale: number;
 }
 
 export const ReactLayoutContext = createContext<LayoutContext>({ 
@@ -27,9 +25,29 @@ export const ReactLayoutContext = createContext<LayoutContext>({
 });
 export const PhaserGameContext = createContext<Step3Scene | null>(null);
 
-export function Step3UiManager({ phaserScene, sessionId, layoutContext, computedScale }: Step3UiManagerProps) {
+export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) {
   const { mode, attempts, isLogin } = useRegistrationStep3Store();
-  
+  const [layout, setLayout] = useState<{ layoutContext: LayoutContext; computedScale: number } | null>(null);
+
+  useEffect(() => {
+    const handleLayoutUpdate = (e: Event) => {
+      setLayout((e as CustomEvent).detail);
+    };
+
+    window.addEventListener('step3_layout_update', handleLayoutUpdate);
+    
+    if (phaserScene && phaserScene.sys?.isActive()) {
+      phaserScene.triggerResize();
+    }
+
+    return () => {
+      window.removeEventListener('step3_layout_update', handleLayoutUpdate);
+    };
+  }, [phaserScene]);
+
+  if (!layout) return null;
+
+  const { layoutContext, computedScale } = layout;
   const showBlockModal = attempts >= 3;
 
   return (

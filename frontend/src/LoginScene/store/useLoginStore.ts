@@ -3,6 +3,11 @@ import { create } from 'zustand';
 interface LoginState {
   status: 'button' | 'loading';
   progress: number;
+  width: number;
+  height: number;
+  scale: number;
+  isVert: boolean;
+  updateField: <K extends keyof LoginState>(field: K, value: LoginState[K]) => void;
   startLoading: (onCompleteAction: () => void) => void;
   resetStore: () => void;
 }
@@ -10,6 +15,10 @@ interface LoginState {
 const initialValues = {
   status: 'button' as const,
   progress: 0,
+  width: 0,
+  height: 0,
+  scale: 1,
+  isVert: true,
 };
 
 let activeAnimationFrameId: number | null = null;
@@ -28,6 +37,8 @@ const clearActiveTimers = () => {
 
 export const useLoginStore = create<LoginState>((set) => ({
   ...initialValues,
+
+  updateField: (field, value) => set((state) => ({ ...state, [field]: value })),
 
   startLoading: (onCompleteAction) => {
     clearActiveTimers();

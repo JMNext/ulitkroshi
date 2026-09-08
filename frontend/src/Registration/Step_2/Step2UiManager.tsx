@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import React, { createContext } from 'react';
+import React, { createContext, useEffect, useState } from 'react';
 import { useRegistrationStep2Store } from "@/Registration/Step_2/store/useRegistrationStep2Store";
 import { HeaderBlock } from "./components/HeaderBlock";
 import { DisplayFields } from "./components/DisplayFields";
@@ -17,8 +17,6 @@ export interface LayoutContext {
 
 interface Step2UiManagerProps {
   phaserScene: Step2Scene;
-  layoutContext: LayoutContext;
-  computedScale: number;
 }
 
 export const ReactLayoutContext = createContext<LayoutContext>({ 
@@ -26,8 +24,29 @@ export const ReactLayoutContext = createContext<LayoutContext>({
 });
 export const PhaserGameContext = createContext<Step2Scene | null>(null);
 
-export function Step2UiManager({ phaserScene, layoutContext, computedScale }: Step2UiManagerProps) {
+export function Step2UiManager({ phaserScene }: Step2UiManagerProps) {
   const storeMode = useRegistrationStep2Store((state) => state.mode);
+  const [layout, setLayout] = useState<{ layoutContext: LayoutContext; computedScale: number } | null>(null);
+
+  useEffect(() => {
+    const handleLayoutUpdate = (e: Event) => {
+      setLayout((e as CustomEvent).detail);
+    };
+
+    window.addEventListener('step2_layout_update', handleLayoutUpdate);
+    
+    if (phaserScene && phaserScene.sys?.isActive()) {
+      phaserScene.triggerResize();
+    }
+
+    return () => {
+      window.removeEventListener('step2_layout_update', handleLayoutUpdate);
+    };
+  }, [phaserScene]);
+
+  if (!layout) return null;
+
+  const { layoutContext, computedScale } = layout;
   const { isVert } = layoutContext;
 
   return (

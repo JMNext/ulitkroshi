@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
-import { AvatarId } from "@/MainScene/Avatars/Avatars";
+
 import { useAuthStore } from "@/api/store/useAuthStore";
 import { authApi } from "@/api/authApi";
+import { AvatarId } from "@/MainScene/components/Avatars/Avatars";
 
 interface MainGameState {
   coins: number;

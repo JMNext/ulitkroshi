@@ -11,23 +11,44 @@ interface PetCharacterProps {
 
 export const PetCharacter = ({ styles, alertText, onAnimationEnd }: PetCharacterProps) => {
   const { hp = 0, petName = "Булька", currentAnim = "prostoi1" } = usePetStore();
-
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
+  const backupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    Object.entries(videoRefs.current).forEach(([animKey, video]) => {
-      if (!video) return;
-      if (animKey === currentAnim) {
-        video.currentTime = 0;
-        video.play().catch(() => {});
-      } else {
-        video.pause();
-      }
+    if (backupTimeoutRef.current) {
+      clearTimeout(backupTimeoutRef.current);
+      backupTimeoutRef.current = null;
+    }
+
+    // Откладываем запуск видео на следующий кадр, чтобы Phaser успел переключить сцену без фризов
+    requestAnimationFrame(() => {
+      Object.entries(videoRefs.current).forEach(([animKey, video]) => {
+        if (!video) return;
+        if (animKey === currentAnim) {
+          video.currentTime = 0;
+          
+          video.play().catch(() => {
+            setTimeout(() => video.play().catch(() => {}), 50);
+          });
+
+          const isLoop = LOOPING_ANIMATIONS.includes(currentAnim);
+          if (!isLoop) {
+            backupTimeoutRef.current = setTimeout(() => {
+              onAnimationEnd(currentAnim);
+            }, 4500);
+          }
+        } else {
+          video.pause();
+        }
+      });
     });
-  }, [currentAnim]);
+
+    return () => {
+      if (backupTimeoutRef.current) clearTimeout(backupTimeoutRef.current);
+    };
+  }, [currentAnim, onAnimationEnd]);
 
   const isLowHp = hp < 10;
-  const isLoop = LOOPING_ANIMATIONS.includes(currentAnim);
 
   return (
     <div 
@@ -72,9 +93,10 @@ export const PetCharacter = ({ styles, alertText, onAnimationEnd }: PetCharacter
             <video 
               key={animKey} 
               ref={(el) => { videoRefs.current[animKey] = el; }} 
-              muted 
-              playsInline 
-              preload="auto" 
+              muted={true} 
+              playsInline={true} 
+              autoPlay={isCurrent} 
+              preload={isCurrent ? "auto" : "metadata"} 
               loop={isVideoLoop} 
               onEnded={() => !isVideoLoop && isCurrent && onAnimationEnd(animKey)} 
               className={`pointer-events-auto absolute left-1/2 -translate-x-1/2 block h-auto w-full border-none bg-transparent outline-none object-bottom object-contain transition-opacity duration-75 ${
@@ -85,8 +107,8 @@ export const PetCharacter = ({ styles, alertText, onAnimationEnd }: PetCharacter
                 imageRendering: "crisp-edges" 
               }}
             >
-              <source src={`${s.mov}?v=94178c42`} type='video/quicktime; codecs="hvc1"' /> 
-              <source src={`${s.webm}?v=94178c42`} type="video/webm; codecs=vp9,vorbis" />
+              <source src={`${s.mov}`} type='video/quicktime; codecs="hvc1"' /> 
+              <source src={`${s.webm}`} type="video/webm; codecs=vp9,vorbis" />
             </video>
           );
         })}

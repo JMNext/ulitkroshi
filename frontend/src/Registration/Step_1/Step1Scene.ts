@@ -16,7 +16,7 @@ export class Step1Scene extends Phaser.Scene {
   }
 
   public init(): void {
-    document.querySelectorAll('#phaser-native-html-pet, #phaser-native-step1-bubble, #phaser-native-success-bubble')
+    document.querySelectorAll('#phaser-native-step1-bubble, #phaser-native-success-bubble')
       .forEach(e => e.remove());
   }
 
@@ -46,6 +46,9 @@ export class Step1Scene extends Phaser.Scene {
     gameContainer.appendChild(this.uiContainer);
 
     this.reactRoot = createRoot(this.uiContainer);
+    this.reactRoot.render(
+      React.createElement(Step1UiManager, { phaserScene: this })
+    );
 
     this.scale.on('resize', this.triggerResize, this);
     this.events.on('wake', this.handleWake, this);
@@ -71,13 +74,6 @@ export class Step1Scene extends Phaser.Scene {
     }
     
     this.updateBackgroundScale(width, height);
-    this.renderReactUI(width, height, isVert);
-
-    window.dispatchEvent(new CustomEvent('phaser_scene_resize', { detail: { width, height, isVert } }));
-  }
-
-  private renderReactUI(width: number, height: number, isVert: boolean): void {
-    if (!this.reactRoot) return;
 
     const scaleToFitWidth = (width - width * 0.1) / 540;
     const scaleToFitHeight = (height - height * 0.1) / 960;
@@ -99,16 +95,12 @@ export class Step1Scene extends Phaser.Scene {
       : (aspect < 1.6 ? 'tablet' : 'desktop');
 
     const finalScale = screenMode === 'mobile' && height / width > 1.65 ? computedScale * 1.35 : computedScale;
-
     const layoutContext: LayoutContext = { screenMode, viewW, scale: computedScale, isVert };
 
-    this.reactRoot.render(
-      React.createElement(Step1UiManager, {
-        phaserScene: this,
-        layoutContext,
-        finalScale
-      })
-    );
+    window.dispatchEvent(new CustomEvent('step1_layout_update', { 
+      detail: { layoutContext, finalScale } 
+    }));
+    window.dispatchEvent(new CustomEvent('phaser_scene_resize', { detail: { width, height, isVert } }));
   }
 
   private updateBackgroundScale(width: number, height: number): void {

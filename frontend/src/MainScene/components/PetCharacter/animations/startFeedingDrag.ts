@@ -10,7 +10,12 @@ export const startFeedingDrag = (
   scale = 1,
   s = 1
 ) => {
+  let isFinalized = false;
+
   const checkAndResetEmptyFruit = () => {
+    if (isFinalized) return;
+    isFinalized = true;
+
     const store = usePetStore.getState();
     if (fruitId && (store.fruitsCounts[fruitId] ?? 0) <= 0 && store.currentFruitId === fruitId) {
       store.setCurrentFruitId("");
@@ -40,8 +45,6 @@ export const startFeedingDrag = (
 
         store.triggerCareAction(fruitId ? "eat_fruit" : "eat");
       }
-      
-      checkAndResetEmptyFruit();
     },
     onEnd: checkAndResetEmptyFruit
   }, scale, s);

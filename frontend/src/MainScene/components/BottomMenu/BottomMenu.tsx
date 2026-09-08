@@ -37,11 +37,10 @@ export const BottomMenu = ({ styles }: BottomMenuProps) => {
             return (
               <div 
                 key={type} 
-                data-ui-bottom-action={isSelectable ? type : undefined} 
+                data-ui-bottom-action={canExecuteAction?.(type) ? type : undefined} 
                 data-ui-default-icon={icon} 
-                className={`flex w-[110px] touch-none flex-col items-center select-none transition-all duration-150 ${
-                  isSelectable ? "cursor-pointer opacity-100" : "opacity-40 pointer-events-none"
-                }`}
+                className={`flex w-[110px] touch-none flex-col items-center select-none transition-all duration-150 cursor-pointer`}
+                style={{ opacity: isSelectable ? 1 : 0.4 }}
               >
                 <div className="relative flex h-[95px] w-[95px] items-center justify-center transition-transform duration-100">
                   <div 

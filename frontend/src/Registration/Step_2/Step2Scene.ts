@@ -16,7 +16,7 @@ export class Step2Scene extends Phaser.Scene {
   }
 
   public init(): void {
-    document.querySelectorAll('#phaser-native-step1-bubble, #phaser-native-success-bubble, #phaser-native-html-pet')
+    document.querySelectorAll('#phaser-native-step1-bubble, #phaser-native-success-bubble')
       .forEach(e => e.remove());
   }
 
@@ -46,6 +46,9 @@ export class Step2Scene extends Phaser.Scene {
     gameContainer.appendChild(this.uiContainer);
 
     this.reactRoot = createRoot(this.uiContainer);
+    this.reactRoot.render(
+      React.createElement(Step2UiManager, { phaserScene: this })
+    );
 
     this.scale.on('resize', this.triggerResize, this);
     this.events.on('wake', this.handleWake, this);
@@ -71,13 +74,6 @@ export class Step2Scene extends Phaser.Scene {
     }
     
     this.updateBackgroundScale(width, height);
-    this.renderReactUI(width, height, isVert);
-
-    window.dispatchEvent(new CustomEvent('phaser_scene_resize', { detail: { width, height, isVert } }));
-  }
-
-  private renderReactUI(width: number, height: number, isVert: boolean): void {
-    if (!this.reactRoot) return;
 
     const aspect = width / height;
     let computedScale = 1;
@@ -102,13 +98,10 @@ export class Step2Scene extends Phaser.Scene {
 
     const layoutContext: LayoutContext = { screenMode, viewW, scale: computedScale, isVert };
 
-    this.reactRoot.render(
-      React.createElement(Step2UiManager, {
-        phaserScene: this,
-        layoutContext,
-        computedScale
-      })
-    );
+    window.dispatchEvent(new CustomEvent('step2_layout_update', { 
+      detail: { layoutContext, computedScale } 
+    }));
+    window.dispatchEvent(new CustomEvent('phaser_scene_resize', { detail: { width, height, isVert } }));
   }
 
   private updateBackgroundScale(width: number, height: number): void {

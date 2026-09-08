@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { PET_LOCK_BUBBLES } from "@/MainScene/components/PetCharacter/petCharacter.constants";
 import { authApi } from '@/api/authApi';
@@ -8,6 +7,7 @@ export interface PetState {
   updateField: <K extends keyof PetState>(field: K, value: PetState[K]) => void;
   setPetTargetCoordinates: (x: number, y: number) => void;
   setCurrentFruitId: (id: string) => void;
+  selectFruitId: (id: string) => void;
   canExecuteAction: (type: 'feed' | 'wash' | 'play' | 'sleep') => boolean;
   triggerCareAction: (action: 'wash' | 'play' | 'eat' | 'eat_fruit') => void; 
   completeCareAction: () => void;
@@ -43,6 +43,11 @@ export const usePetStore = create<PetState>((set, get) => ({
   setPetTargetCoordinates: (x, y) => set({ petTargetX: x, petTargetY: y }),
   
   setCurrentFruitId: (id) => set({ currentFruitId: id }),
+
+  selectFruitId: (id) => set((state) => {
+    if (state.currentFruitId === id) return { currentFruitId: "" };
+    return { currentFruitId: id };
+  }),
   
   canExecuteAction: (t) => {
     const { currentAnim } = get();
@@ -60,9 +65,7 @@ export const usePetStore = create<PetState>((set, get) => ({
       return set({ currentAnim: hp <= 25 ? 'sad_state' : 'prostoi1', washState: 'idle' });
     }
     
-    if (![...SLEEP_ANIMATIONS, 'sad_state', 'prostoi1', 'prostoi2'].includes(currentAnim)) {
-      set({ currentAnim: hp <= 25 ? 'sad_state' : (Math.random() < 0.3 ? 'prostoi2' : 'prostoi1'), washState: 'idle' });
-    }
+    set({ currentAnim: hp <= 25 ? 'sad_state' : (Math.random() < 0.3 ? 'prostoi2' : 'prostoi1'), washState: 'idle' });
   },
   
   triggerSleepAction: () => {

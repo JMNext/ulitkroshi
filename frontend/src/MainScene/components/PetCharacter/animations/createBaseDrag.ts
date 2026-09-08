@@ -89,6 +89,13 @@ export const createBaseDrag = (
     return config.onEnd?.();
   }
 
+  const targetElement = ie.target as HTMLElement;
+  try {
+    if (targetElement && typeof targetElement.setPointerCapture === "function") {
+      targetElement.setPointerCapture(ie.pointerId);
+    }
+  } catch (err) {}
+
   const ratio = window.innerWidth / window.innerHeight;
   const mode = ratio < 1 ? (ratio < 0.42 ? "u" : "v") : "d";
   const conf = { u: { c: "w-12 h-12", r: 75 }, v: { c: "w-14 h-14", r: 110 }, d: { c: "w-20 h-20", r: 140 } }[mode];
@@ -111,6 +118,13 @@ export const createBaseDrag = (
   const handleDragUp = (e: PointerEvent) => {
     window.removeEventListener("pointermove", handleDragMove);
     window.removeEventListener("pointerup", handleDragUp);
+    
+    try {
+      if (targetElement && typeof targetElement.releasePointerCapture === "function") {
+        targetElement.releasePointerCapture(e.pointerId);
+      }
+    } catch (err) {}
+
     ghost.remove();
 
     const rect = document.getElementById("phaser-native-html-pet")?.getBoundingClientRect();

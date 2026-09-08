@@ -46,7 +46,22 @@ export class LoginScene extends Phaser.Scene {
     this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden";
     container.appendChild(this.uiContainer);
 
+    // Считаем масштаб один раз при старте
+    const initialScale = this.computeUiScale(width, height, isVertInit);
+    
+    // Записываем размеры и масштаб в Zustand (добавьте эти методы в ваш useLoginStore, если их там нет)
+    try {
+      useLoginStore.getState().updateField('width', width);
+      useLoginStore.getState().updateField('height', height);
+      useLoginStore.getState().updateField('scale', initialScale);
+      useLoginStore.getState().updateField('isVert', isVertInit);
+    } catch {}
+
     this.reactRoot = createRoot(this.uiContainer);
+    // Рендерим компонент строго ОДИН раз. Внутри себя он будет слушать изменения из стора!
+    this.reactRoot.render(
+      React.createElement(LoginUiManager, { phaserScene: this })
+    );
 
     this.scale.on('resize', this.triggerResize, this);
     this.events.on('switch_scene', this.handleSwitchScene, this);
@@ -75,13 +90,21 @@ export class LoginScene extends Phaser.Scene {
     }
     
     this.updateBackgroundScale(width, height);
-    this.renderReactUI(width, height, isVert);
+
+    // Вместо деструктивного перерендера .render(), просто обновляем данные в Zustand-сторе
+    const nextScale = this.computeUiScale(width, height, isVert);
+    try {
+      const store = useLoginStore.getState();
+      store.updateField('width', width);
+      store.updateField('height', height);
+      store.updateField('scale', nextScale);
+      store.updateField('isVert', isVert);
+    } catch {}
+
     window.dispatchEvent(new CustomEvent('phaser_scene_resize', { detail: { width, height, isVert } }));
   }
 
-  private renderReactUI(width: number, height: number, isVert: boolean): void {
-    if (!this.reactRoot) return;
-
+  private computeUiScale(width: number, height: number, isVert: boolean): number {
     const scaleX = width / 460;
     const scaleY = height / (isVert ? 780 : 1000);
     const aspect = width / height;
@@ -93,15 +116,7 @@ export class LoginScene extends Phaser.Scene {
     } else if (aspect < 1.45) {
       computedScale = Math.min(scaleX * 0.92, scaleY * 0.95);
     }
-    computedScale = Math.max(0.35, Math.min(1.25, computedScale));
-
-    this.reactRoot.render(
-      React.createElement(LoginUiManager, {
-        phaserScene: this,
-        scale: computedScale,
-        paddingBottom: isVert ? "50px" : "85px"
-      })
-    );
+    return Math.max(0.35, Math.min(1.25, computedScale));
   }
 
   private updateBackgroundScale(width: number, height: number): void {

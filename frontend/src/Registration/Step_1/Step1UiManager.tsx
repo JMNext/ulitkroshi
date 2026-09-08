@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import React, { createContext, useEffect } from 'react';
+import React, { createContext, useEffect, useState } from 'react';
 import { useRegistrationStep1Store } from "@/Registration/Step_1/store/useRegistrationStep1Store";
 import { BubbleBlock } from "./components/BubbleBlock";
 import { PetVideoBlock } from "./components/PetVideoBlock";
@@ -18,8 +18,6 @@ export interface LayoutContext {
 
 interface Step1UiManagerProps {
   phaserScene: Step1Scene;
-  layoutContext: LayoutContext;
-  finalScale: number;
 }
 
 export const ReactLayoutContext = createContext<LayoutContext>({ 
@@ -27,11 +25,30 @@ export const ReactLayoutContext = createContext<LayoutContext>({
 });
 export const PhaserGameContext = createContext<Step1Scene | null>(null);
 
-export function Step1UiManager({ phaserScene, layoutContext, finalScale }: Step1UiManagerProps) {
+export function Step1UiManager({ phaserScene }: Step1UiManagerProps) {
   const stage = useRegistrationStep1Store((state) => state.stage);
+  const [layout, setLayout] = useState<{ layoutContext: LayoutContext; finalScale: number } | null>(null);
 
-  useEffect(() => () => useRegistrationStep1Store.getState().setStage(1), []);
+  useEffect(() => {
+    const handleLayoutUpdate = (e: Event) => {
+      setLayout((e as CustomEvent).detail);
+    };
 
+    window.addEventListener('step1_layout_update', handleLayoutUpdate);
+    
+    if (phaserScene && phaserScene.sys?.isActive()) {
+      phaserScene.triggerResize();
+    }
+
+    return () => {
+      window.removeEventListener('step1_layout_update', handleLayoutUpdate);
+      useRegistrationStep1Store.getState().setStage(1);
+    };
+  }, [phaserScene]);
+
+  if (!layout) return null;
+
+  const { layoutContext, finalScale } = layout;
   const { screenMode } = layoutContext;
   const isMobile = screenMode === 'mobile' || screenMode === 'fold';
   const bonusScale = isMobile ? 1.2 : 1;

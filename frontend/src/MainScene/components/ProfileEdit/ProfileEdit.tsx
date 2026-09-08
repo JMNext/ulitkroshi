@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { CloseButton } from "@/ModalWrapper/CloseButton";
-import { AVAILABLE_AVATARS } from "../../Avatars/Avatars";
+
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
 import { EDIT_BTN_ICON_URL } from "./profileEdit.constants";
+import { AVAILABLE_AVATARS } from "@/MainScene/components/Avatars/Avatars";
 
 interface ProfileEditProps {
   onClose: () => void;

@@ -8,7 +8,6 @@ import { SideButtonsMenu } from "@/MainScene/components/SideButtonsMenu/SideButt
 import { MiniGamesModal } from "@/MainScene/components/SideButtonsMenuModal/MiniGamesModal/MiniGamesModal";
 import { PetsModal } from "@/MainScene/components/SideButtonsMenuModal/PetsModal/PetsModal";
 import { ShopModal } from "@/MainScene/components/SideButtonsMenuModal/ShopModal/ShopModal";
-import { AvatarSelectModal } from "@/MainScene/Avatars/AvatarSelectModal";
 import { HelpModal } from "@/MainScene/components/HelpModal/HelpModal";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
@@ -17,9 +16,9 @@ import { calculateLayout } from "./utils/screenLayout";
 import { ProfileEdit } from "@/MainScene/components/ProfileEdit/ProfileEdit";
 import {
   CareActionType,
-  handleCareActionDown,
-  handleFruitActionDown
+  handleCareActionDown
 } from "@/MainScene/components/PetCharacter/animations/createBaseDrag";
+import { AvatarSelectModal } from "@/MainScene/components/Avatars/AvatarSelectModal";
 
 export const MainSceneUI = () => {
   const {
@@ -64,13 +63,15 @@ export const MainSceneUI = () => {
     const foodCard = target.closest<HTMLElement>("[data-ui-food-id]");
     if (foodCard) {
       e.stopPropagation();
-      return handleFruitActionDown(
-        foodCard.getAttribute("data-ui-food-id")!,
-        foodCard.getAttribute("data-ui-food-zero") === "true",
-        ctx.scale,
-        ctx.s,
-        e.nativeEvent
-      );
+      const id = foodCard.getAttribute("data-ui-food-id")!;
+      const isZero = foodCard.getAttribute("data-ui-food-zero") === "true";
+      
+      if (isZero) {
+        return useMainGameStore.getState().setModal("shop");
+      }
+      
+      usePetStore.getState().selectFruitId(id);
+      return;
     }
 
     const btn = target.closest<HTMLElement>(
@@ -124,6 +125,10 @@ export const MainSceneUI = () => {
 
   const closeModal = () => setModal(null);
   const isOpen = modal !== null;
+
+  if (!width || !height || width === 0 || height === 0) {
+    return null;
+  }
 
   return (
     <div

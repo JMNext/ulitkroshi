@@ -1,5 +1,5 @@
+import { AVAILABLE_AVATARS } from "@/MainScene/components/Avatars/Avatars";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
-import { AVAILABLE_AVATARS } from "@/MainScene/Avatars/Avatars";
 import coinImg from "@/assets/buttom_menu-icons/eat.svg";
 import plusImg from "@/assets/interface-icons/plus.svg";
 

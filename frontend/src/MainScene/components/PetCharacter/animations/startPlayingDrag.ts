@@ -22,6 +22,13 @@ export const startPlayingDrag = (
   bounceAudio.volume = 1.0;
   bounceAudio.preload = "auto";
 
+  let isFinalized = false;
+  const handleDragEnd = () => {
+    if (isFinalized) return;
+    isFinalized = true;
+    onDragEndCallback?.();
+  };
+
   createBaseDrag(initialEvent, {
     url: ballKey,
     action: "play",
@@ -77,7 +84,7 @@ export const startPlayingDrag = (
         } else if (elapsed <= 1770) {
           if (!hasPlayedSound) {
             hasPlayedSound = true;
-            bounceAudio.play().catch((err) => console.log("Аудио заблокировано:", err));
+            bounceAudio.play().catch(() => {});
           }
         } else if (elapsed <= 2970) {
           const p = (elapsed - 1770) / 1200;
@@ -97,6 +104,6 @@ export const startPlayingDrag = (
       requestAnimationFrame(animate);
       usePetStore.getState().triggerCareAction("play");
     },
-    onEnd: onDragEndCallback
+    onEnd: handleDragEnd
   }, scale, s);
 };

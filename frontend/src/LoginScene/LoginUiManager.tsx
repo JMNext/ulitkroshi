@@ -7,12 +7,14 @@ import { LoginScene } from './LoginScene';
 
 interface LoginUiProps {
   phaserScene: LoginScene;
-  scale: number;
-  paddingBottom: string;
 }
 
-export function LoginUiManager({ phaserScene, scale, paddingBottom }: LoginUiProps) {
+export function LoginUiManager({ phaserScene }: LoginUiProps) {
   const { status, startLoading } = useLoginStore();
+  
+  const scale = useLoginStore((state: any) => state.scale ?? 1);
+  const isVert = useLoginStore((state: any) => state.isVert ?? true);
+  const paddingBottom = isVert ? "50px" : "85px";
 
   const handleSceneSwitch = (action: 'login' | 'register') => {
     if (phaserScene.sys?.isActive()) {

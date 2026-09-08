@@ -28,6 +28,10 @@ usePetStore.subscribe((state) => {
 export const triggerSleepingClick = () => {
   const { currentAnim, triggerSleepAction } = usePetStore.getState();
   
+  if (["sleep_begin", "sleep_awake"].includes(currentAnim)) {
+    return;
+  }
+
   if (["sleep_circle", "prostoi1", "prostoi2", "sad_state"].includes(currentAnim)) {
     triggerSleepAction();
   }

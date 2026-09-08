@@ -14,7 +14,7 @@ export class MainScene extends Phaser.Scene {
   constructor() { super({ key: "MainScene" }); }
 
   public init(): void { 
-    document.querySelectorAll("#phaser-native-html-pet, #phaser-native-step1-bubble, #phaser-native-success-bubble").forEach(e => e.remove()); 
+    document.querySelectorAll("#phaser-native-step1-bubble, #phaser-native-success-bubble").forEach(e => e.remove()); 
   }
   public preload(): void { 
     this.load.image("ui_bg_fon_goriz", fonGorizUrl); 
@@ -26,6 +26,8 @@ export class MainScene extends Phaser.Scene {
     const { width: w, height: h } = this.scale;
     const isVert = h > w;
     
+    useMainGameStore.getState().setDimensions(w, h);
+
     this.backgroundIm = this.add.image(w / 2, h / 2, isVert ? "ui_bg_fon_vert" : "ui_bg_fon_goriz").setOrigin(0.5).setDepth(-2).setDisplaySize(w, h);
     this.uiContainer = document.createElement("div");
     this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden";
@@ -38,7 +40,10 @@ export class MainScene extends Phaser.Scene {
     this.events.on("wake", this.handleWake, this);
     this.events.on("sleep", this.handleSleep, this);
     this.events.once("shutdown", this.cleanUp, this);
-    setTimeout(() => this.sys?.isActive() && this.triggerResize(), 0);
+    
+    if (this.sys?.isActive()) {
+      this.triggerResize();
+    }
   }
 
   public triggerResize(): void {

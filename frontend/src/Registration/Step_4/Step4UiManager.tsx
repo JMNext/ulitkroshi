@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import React, { createContext } from 'react';
+import React, { createContext, useEffect, useState } from 'react';
 import { SuccessBubble } from './components/SuccessBubble';
 import { HappyPetVideo } from './components/HappyPetVideo';
 import { FinalPlayButton } from './components/FinalPlayButton';
@@ -14,8 +14,6 @@ export interface LayoutContext {
 
 interface Step4UiManagerProps {
   phaserScene: Step4Scene;
-  layoutContext: LayoutContext;
-  finalScale: number;
 }
 
 export const ReactLayoutContext = createContext<LayoutContext>({ 
@@ -23,7 +21,28 @@ export const ReactLayoutContext = createContext<LayoutContext>({
 });
 export const PhaserGameContext = createContext<Step4Scene | null>(null);
 
-export function Step4UiManager({ phaserScene, layoutContext, finalScale }: Step4UiManagerProps) {
+export function Step4UiManager({ phaserScene }: Step4UiManagerProps) {
+  const [layout, setLayout] = useState<{ layoutContext: LayoutContext; finalScale: number } | null>(null);
+
+  useEffect(() => {
+    const handleLayoutUpdate = (e: Event) => {
+      setLayout((e as CustomEvent).detail);
+    };
+
+    window.addEventListener('step4_layout_update', handleLayoutUpdate);
+    
+    if (phaserScene && phaserScene.sys?.isActive()) {
+      phaserScene.triggerResize();
+    }
+
+    return () => {
+      window.removeEventListener('step4_layout_update', handleLayoutUpdate);
+    };
+  }, [phaserScene]);
+
+  if (!layout) return null;
+
+  const { layoutContext, finalScale } = layout;
   const { screenMode } = layoutContext;
 
   const handlePlayClick = () => {

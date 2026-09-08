@@ -19,6 +19,13 @@ export const startWashingDrag = (
   scale: number = 1,
   s: number = 1
 ) => {
+  let isFinalized = false;
+  const handleDragEnd = () => {
+    if (isFinalized) return;
+    isFinalized = true;
+    onDragEndCallback?.();
+  };
+
   createBaseDrag(initialEvent, {
     url: washKey,
     action: "wash",
@@ -89,6 +96,6 @@ export const startWashingDrag = (
         }, 25);
       }, 400);
     },
-    onEnd: onDragEndCallback
+    onEnd: handleDragEnd
   }, scale, s);
 };

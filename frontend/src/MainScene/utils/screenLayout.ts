@@ -9,6 +9,23 @@ export interface LayoutContext {
 }
 
 export const calculateLayout = (wW: number, wH: number, isVert: boolean): { layoutContext: LayoutContext; finalScale: number } => {
+  if (!wW || !wH || wW === 0 || wH === 0 || isNaN(wW) || isNaN(wH)) {
+    return {
+      finalScale: 1,
+      layoutContext: {
+        screenMode: "desktop", viewW: 1920, scale: 1, isVert, exH: 0, exW: 0, s: 1,
+        headerStyles: { top: "90px", transform: "translate(-50%, -50%) scale(1)", width: "100%" },
+        sideMenuStyles: {
+          left: { left: "calc(50% - 240px)", top: "450px", transform: "translate(-50%, -50%) scale(1)" },
+          right: { left: "calc(50% + 240px)", top: "450px", transform: "translate(-50%, -50%) scale(1)" }
+        },
+        foodPanelStyles: { bottom: "215px", transform: "translate(-50%, 0) scale(1)" },
+        bottomMenuStyles: { left: "50%", top: "1080px", transform: "translate(-50%, -50%) scale(1)" },
+        petStyles: { top: "460px", transform: "translate(-50%, -50%) scale(1)" }
+      }
+    };
+  }
+
   const ratio = wW / wH;
   const scale = isVert ? wH / 1080 : Math.min(wW / 1920, wH / 1080);
   const viewW = wW / scale;
