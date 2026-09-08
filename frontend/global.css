@@ -1,0 +1,98 @@
+@layer antd, tailwind, base, utilities;
+
+@layer tailwind {
+  @import "tailwindcss";
+}
+
+@theme {
+  --font-sans: "Arteks-Forced", sans-serif;
+  --keyword-fade-in: fadeIn;
+  --animate-fade-in: fadeIn 0.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  --animate-shake: shake 0.25s ease-in-out;
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+  }
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #1a1a1a; 
+    font-family: var(--font-sans);
+    
+    /* Блокировка системного зума браузера */
+    touch-action: none; 
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@font-face {
+  font-family: "Arteks-Forced";
+  src: local("Arteks Regular"), local("ArteksRegular"), url("/fonts/Arteks%20Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Arteks-Forced";
+  src: local("Arteks Medium"), local("ArteksMedium"), url("/fonts/Arteks%20Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Arteks-Forced";
+  src: local("Arteks Bold"), local("ArteksBold"), url("/fonts/Arteks%20Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Arteks-Forced";
+  src: local("Arteks Black"), local("ArteksBlack"), url("/fonts/Arteks%20Black.otf") format("opentype");
+  font-weight: 900;
+  font-style: normal;
+}
+
+/* Главный игровой контейнер */
+#game-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Никаких жестких картинок фона здесь нет, всё управляется компонентами */
+
+  /* Исправлено: Phaser сам выставит инлайн-стили для width/height, CSS больше их не перезаписывает */
+  & canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  /* Слой для HTML/React элементов UI поверх холста */
+  & > div {
+    position: absolute;
+    top: 0;
+    left: 0;
+    /* Размеры (width/height) и маргины теперь динамически контролируются функцией syncUiLayerSize из JS */
+    pointer-events: none;
+    overflow: hidden;
+    will-change: opacity;
+  }
+}

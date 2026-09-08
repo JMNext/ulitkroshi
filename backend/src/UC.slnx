@@ -1,7 +1,0 @@
-<Solution>
-  <Folder Name="/Modules/">
-    <Project Path="UC.Auth/UC.Auth.csproj" />
-  </Folder>
-  <Project Path="UC.Infrastructure/UC.Infrastructure.csproj" />
-  <Project Path="UC.Presentation/UC.Presentation.csproj" />
-</Solution>
