@@ -4,7 +4,6 @@ import React from "react";
 import { MainSceneUI } from "./MainSceneUI";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
 import { 
-  PET_ANIMATION_URLS, 
   EAT_SOUND_URL, 
   PLAY_SOUND_URL, 
   WASH_SOUND_URL, 
@@ -33,12 +32,6 @@ export class MainScene extends Phaser.Scene {
     this.load.audio("pet_sound_play", PLAY_SOUND_URL);
     this.load.audio("pet_sound_wash", WASH_SOUND_URL);
     this.load.audio("pet_sound_sleep", SLEEP_SOUND_URL);
-
-    Object.entries(PET_ANIMATION_URLS).forEach(([animKey, sources]) => {
-      const s = sources as { mov: string; webm: string };
-      this.load.binary(`cache_mov_${animKey}`, s.mov);
-      this.load.binary(`cache_webm_${animKey}`, s.webm);
-    });
   }
 
   public create(): void {
