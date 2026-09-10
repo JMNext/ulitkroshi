@@ -22,7 +22,7 @@ const initialValues = {
 };
 
 let activeAnimationFrameId: number | null = null;
-let activeTimeoutId: ReturnType<typeof setTimeout> | null = null;
+let activeTimeoutId: any = null;
 
 const clearActiveTimers = () => {
   if (activeAnimationFrameId) {
@@ -42,7 +42,6 @@ export const useLoginStore = create<LoginState>((set) => ({
 
   startLoading: (onCompleteAction) => {
     clearActiveTimers();
-
     set({ status: 'loading', progress: 0 });
     const startTime = performance.now();
 
@@ -60,7 +59,6 @@ export const useLoginStore = create<LoginState>((set) => ({
         }, 50);
       }
     };
-
     activeAnimationFrameId = requestAnimationFrame(animate);
   },
 

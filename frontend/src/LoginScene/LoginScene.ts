@@ -5,6 +5,7 @@ import { LoginUiManager } from './LoginUiManager';
 import loadGorizUrl from '../assets/login_assets/load_goriz.png';
 import loadVertUrl from '../assets/login_assets/load_vert.png';
 import { useLoginStore } from './store/useLoginStore';
+import { isMock, gatewayApi } from '@/api/api';
 
 export class LoginScene extends Phaser.Scene {
   public backgroundIm!: Phaser.GameObjects.Image;
@@ -19,7 +20,7 @@ export class LoginScene extends Phaser.Scene {
 
   public init(data?: { onStepComplete?: (action: "login" | "register") => void }): void {
     this.onStepCompleteCallback = data?.onStepComplete || ((action) => {
-      this.scene.start(action === 'login' ? 'Step3Scene' : 'Step1Scene', { sessionId: 'mock-session-id' });
+      this.scene.start(action === 'login' ? 'Step2Scene' : 'Step1Scene', { sessionId: 'mock-session-id' });
     });
   }
 
@@ -29,6 +30,27 @@ export class LoginScene extends Phaser.Scene {
   }
 
   public create(): void {
+    if (!isMock) {
+      const pendingPhone = localStorage.getItem("login_phone_buffer") || localStorage.getItem("saved_user_phone");
+      if (pendingPhone) {
+        gatewayApi.post("/auth/login/cleanup-registration", { phone: pendingPhone }).catch(() => {});
+        localStorage.removeItem("login_phone_buffer");
+      }
+    }
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("beforeunload", () => {
+        const pendingPhone = localStorage.getItem("login_phone_buffer");
+        const token = localStorage.getItem("accessToken");
+        if (!isMock && pendingPhone && !token) {
+          navigator.sendBeacon(
+            "http://localhost:3001/auth/login/cleanup-registration",
+            JSON.stringify({ phone: pendingPhone })
+          );
+        }
+      });
+    }
+
     if (this.game.canvas) this.game.canvas.className = "absolute inset-0 w-full h-full z-1";
 
     const { width, height } = this.scale;
@@ -46,10 +68,8 @@ export class LoginScene extends Phaser.Scene {
     this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden";
     container.appendChild(this.uiContainer);
 
-    // Считаем масштаб один раз при старте
     const initialScale = this.computeUiScale(width, height, isVertInit);
     
-    // Записываем размеры и масштаб в Zustand (добавьте эти методы в ваш useLoginStore, если их там нет)
     try {
       useLoginStore.getState().updateField('width', width);
       useLoginStore.getState().updateField('height', height);
@@ -58,7 +78,6 @@ export class LoginScene extends Phaser.Scene {
     } catch {}
 
     this.reactRoot = createRoot(this.uiContainer);
-    // Рендерим компонент строго ОДИН раз. Внутри себя он будет слушать изменения из стора!
     this.reactRoot.render(
       React.createElement(LoginUiManager, { phaserScene: this })
     );
@@ -91,7 +110,6 @@ export class LoginScene extends Phaser.Scene {
     
     this.updateBackgroundScale(width, height);
 
-    // Вместо деструктивного перерендера .render(), просто обновляем данные в Zustand-сторе
     const nextScale = this.computeUiScale(width, height, isVert);
     try {
       const store = useLoginStore.getState();

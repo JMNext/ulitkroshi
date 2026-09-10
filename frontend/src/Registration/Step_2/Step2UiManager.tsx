@@ -26,6 +26,7 @@ export const PhaserGameContext = createContext<Step2Scene | null>(null);
 
 export function Step2UiManager({ phaserScene }: Step2UiManagerProps) {
   const storeMode = useRegistrationStep2Store((state) => state.mode);
+  const isLogin = useRegistrationStep2Store((state) => state.isLogin);
   const [layout, setLayout] = useState<{ layoutContext: LayoutContext; computedScale: number } | null>(null);
 
   useEffect(() => {
@@ -49,6 +50,14 @@ export function Step2UiManager({ phaserScene }: Step2UiManagerProps) {
   const { layoutContext, computedScale } = layout;
   const { isVert } = layoutContext;
 
+  const handleNextTransition = (sessionId: string) => {
+    if (!phaserScene.sys?.isActive()) return; 
+    phaserScene.cameras.main.fadeOut(200, 0, 0, 0); 
+    phaserScene.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      phaserScene.scene.start("Step3Scene", { sessionId });
+    });
+  };
+
   return (
     <PhaserGameContext.Provider value={phaserScene}>
       <ReactLayoutContext.Provider value={layoutContext}>
@@ -59,8 +68,9 @@ export function Step2UiManager({ phaserScene }: Step2UiManagerProps) {
           >
             <HeaderBlock />
             <DisplayFields />
-            {storeMode === "phone" && <SubmitButton />}
-            <PinPad onSuccess={(sessionId) => { if (!phaserScene.sys?.isActive()) return; phaserScene.cameras.main.fadeOut(200, 0, 0, 0); phaserScene.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => phaserScene.scene.start("Step3Scene", { sessionId })); }} />
+            
+            {storeMode === "phone" && !isLogin && <SubmitButton />}
+            <PinPad onSuccess={handleNextTransition} />
             {storeMode === "sent" && <SentModal />}
           </div>
         </div>

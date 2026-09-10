@@ -50,6 +50,8 @@ export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) 
   const { layoutContext, computedScale } = layout;
   const showBlockModal = attempts >= 3;
 
+  const activeSessionId = sessionId || localStorage.getItem("active_reg_session_id") || "direct_login_session";
+
   return (
     <PhaserGameContext.Provider value={phaserScene}>
       <ReactLayoutContext.Provider value={layoutContext}>
@@ -60,13 +62,18 @@ export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) 
           >
             <CaptchaHeaderPanel />
             <CaptchaFruitGrid 
-              sessionId={sessionId} 
+              sessionId={activeSessionId} 
               onSuccess={() => { 
                 if (!phaserScene.sys?.isActive()) return; 
                 phaserScene.cameras.main.fadeOut(200, 0, 0, 0); 
-                phaserScene.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => 
-                  phaserScene.scene.start(isLogin ? "MainScene" : "Step4Scene", { sessionId })
-                ); 
+                phaserScene.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+                  localStorage.removeItem("active_reg_session_id");
+                  
+                  // Сбрасываем стор с флагом true, чтобы бэкенд НЕ стирал успешного юзера из Postgres базы!
+                  useRegistrationStep3Store.getState().resetStore(false, true);
+                  
+                  phaserScene.scene.start(isLogin ? "MainScene" : "Step4Scene", { sessionId: activeSessionId });
+                }); 
               }} 
             />
             <CaptchaResetButton />

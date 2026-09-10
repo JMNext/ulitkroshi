@@ -3,24 +3,32 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-export const dbClient = new pg.Client({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: Number(process.env.DB_PORT) || 5432,
+const cleanEnv = (val: string | undefined): string | undefined => {
+  if (!val) return undefined;
+  return val.replace(/['"]/g, '').trim();
+};
+
+export const dbPool = new pg.Pool({
+  user: cleanEnv(process.env.DB_USER),
+  host: cleanEnv(process.env.DB_HOST),
+  database: cleanEnv(process.env.DB_NAME),
+  password: cleanEnv(process.env.DB_PASSWORD),
+  port: Number(cleanEnv(process.env.DB_PORT)) || 5432,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
 export async function initDatabase() {
   const createUsersTable = `
-    CREATE TABLE IF NOT EXISTS users (
+    CREATE TABLE IF NOT EXISTS public.users (
       id SERIAL PRIMARY KEY,
       name VARCHAR(50) UNIQUE,
       phone VARCHAR(20) UNIQUE,
       password VARCHAR(100),
       roles TEXT[] DEFAULT '{user}',
       coins INT DEFAULT 0,
-      unlocked_pets INT[] DEFAULT '{}',
+      unlocked_pets INT[] DEFAULT '{0}',
       pet_name VARCHAR(50) DEFAULT 'Булька',
       pet_status VARCHAR(20) DEFAULT 'alive',
       pet_satiety INT DEFAULT 100,
@@ -29,11 +37,10 @@ export async function initDatabase() {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `;
-
   try {
-    await dbClient.query(createUsersTable);
-    console.log('🎰 [DB] Таблица "users" готова.');
+    await dbPool.query(createUsersTable);
+    console.log('🎰 [DB] Таблица пользователей Улиткрошей готова.');
   } catch (error) {
-    console.error('❌ [DB] Ошибка инициализации БД:', error);
+    console.error('❌ [DB] Ошибка инициализации базы данных:', error);
   }
 }

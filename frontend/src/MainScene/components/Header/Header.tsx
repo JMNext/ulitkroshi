@@ -1,3 +1,4 @@
+import React from "react";
 import { AVAILABLE_AVATARS } from "@/MainScene/components/Avatars/Avatars";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
 import coinImg from "@/assets/buttom_menu-icons/eat.svg";
@@ -8,8 +9,10 @@ export const Header = ({
 }: {
   styles: React.CSSProperties;
 }) => {
-  const { coins = 0, avatarId: currentAvatarId = "default" } =
-    useMainGameStore();
+  const { coins, avatarId: currentAvatarId = "default" } = useMainGameStore();
+
+  const isNewAccount = localStorage.getItem("active_reg_session_id") !== null;
+  const displayCoins = (isNewAccount && coins === 100) ? 0 : (coins ?? 0);
 
   const AvatarComponent = (
     AVAILABLE_AVATARS.find((a) => a.id === currentAvatarId) ||
@@ -29,7 +32,7 @@ export const Header = ({
             alt=""
           />
           <span className="mx-2 flex-1 truncate text-center text-[24px] font-black text-[#334155]">
-            {coins}
+            {displayCoins}
           </span>
           <button
             type="button"

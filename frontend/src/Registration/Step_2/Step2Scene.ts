@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { createRoot, Root } from 'react-dom/client';
 import React from 'react';
 import { Step2UiManager, LayoutContext } from './Step2UiManager';
+import { useRegistrationStep2Store } from '@/Registration/Step_2/store/useRegistrationStep2Store';
 import fonGorizUrl from '../../assets/background/fon_goriz.png';
 import fonVertUrl from '../../assets/background/fon_vert.png';
 
@@ -18,6 +19,13 @@ export class Step2Scene extends Phaser.Scene {
   public init(): void {
     document.querySelectorAll('#phaser-native-step1-bubble, #phaser-native-success-bubble')
       .forEach(e => e.remove());
+    (window as any).currentPhaserScene = this;
+
+    const store = useRegistrationStep2Store.getState();
+    store.clearError();
+    store.checkSavedDevicePhone(() => {
+      this.triggerResize();
+    });
   }
 
   public preload(): void {
@@ -111,7 +119,13 @@ export class Step2Scene extends Phaser.Scene {
 
   private handleWake(): void { 
     this.uiContainer?.classList.remove("hidden"); 
-    this.triggerResize(); 
+    (window as any).currentPhaserScene = this;
+    
+    const store = useRegistrationStep2Store.getState();
+    store.clearError();
+    store.checkSavedDevicePhone(() => {
+      this.triggerResize();
+    });
   }
   
   private handleSleep(): void { 
@@ -122,6 +136,9 @@ export class Step2Scene extends Phaser.Scene {
     this.scale.off('resize', this.triggerResize, this);
     this.events.off('wake', this.handleWake, this);
     this.events.off('sleep', this.handleSleep, this);
+    if ((window as any).currentPhaserScene === this) {
+      (window as any).currentPhaserScene = null;
+    }
     
     this.reactRoot?.unmount();
     this.reactRoot = null;

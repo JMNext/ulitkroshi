@@ -44,7 +44,7 @@ export const useSnakeGameStore = create<SnakeGameState>()(
       renderCallback();
 
       if (isWin) {
-        useMainGameStore.getState().addTestCoins(10);
+        useMainGameStore.getState().addTestCoins();
       }
     },
 
@@ -66,8 +66,7 @@ export const useSnakeGameStore = create<SnakeGameState>()(
       renderCallback();
 
       if (isOver) {
-        const rewardCoins = isWin ? 10 : 3;
-        useMainGameStore.getState().addTestCoins(rewardCoins);
+        useMainGameStore.getState().addTestCoins();
         if (!isWin) {
           usePetStore.getState().handleGameLoss();
         }

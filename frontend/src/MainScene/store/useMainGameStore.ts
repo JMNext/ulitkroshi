@@ -1,9 +1,8 @@
 import { create } from "zustand";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
-
-import { useAuthStore } from "@/api/store/useAuthStore";
-import { authApi } from "@/api/authApi";
 import { AvatarId } from "@/MainScene/components/Avatars/Avatars";
+import { api } from "@/api/api";
+import { useApiStore } from "@/api/store/useApiStore";
 
 interface MainGameState {
   coins: number;
@@ -16,49 +15,34 @@ interface MainGameState {
   height: number;
   isVert: boolean;
   gameOverResult: { isWin: boolean; rewardText: string } | null;
-  setCoins: (coins: number) => Promise<void>;
-  addTestCoins: (amount: number) => Promise<void>;
-  buyFruit: (
-    slotId: string,
-    fruitId: number,
-    qty: number,
-    cost: number
-  ) => Promise<boolean>;
+  addTestCoins: () => Promise<void>;
+  buyFruit: (slotId: string, fruitId: number, qty: number, cost: number) => Promise<boolean>;
   setUsername: (name: string) => Promise<void>;
   setAvatarId: (id: AvatarId) => void;
   addPetByCode: (code: string) => boolean;
   resetStore: () => Promise<void>;
   setModal: (modal: string | null) => void;
   setAlertText: (text: string | null) => void;
-  setIsFoodOpen: (
-    open: boolean | ((prev: boolean) => boolean)
-  ) => void;
+  setIsFoodOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
   setDimensions: (w: number, h: number) => void;
-  setGameOver: (
-    score: number | undefined,
-    difficulty: "easy" | "medium" | "hard" | undefined,
-    initialIsWin: boolean
-  ) => void;
+  setGameOver: (score: number | undefined, difficulty: "easy" | "medium" | "hard" | undefined, initialIsWin: boolean) => Promise<void>;
   clearGameOver: () => void;
 }
 
-const DEFAULT_NAME = "Player001";
 export const BASE_WIDTH = 1920;
 export const BASE_HEIGHT = 1080;
+const DEFAULT_NAME = "Player001";
 
-const updateMockAndStoreName = (name: string) => {
-  if (typeof (authApi as any).setMockName === "function") {
-    (authApi as any).setMockName(name);
-  }
-  const auth = useAuthStore.getState();
+const updateStoreName = (name: string) => {
+  const auth = useApiStore.getState();
   if (auth.user) {
-    useAuthStore.setState({ user: { ...auth.user, name } });
+    useApiStore.setState({ user: { ...auth.user, name } });
   }
 };
 
 export const useMainGameStore = create<MainGameState>((set, get) => ({
-  username: useAuthStore.getState().user?.name || DEFAULT_NAME,
-  coins: useAuthStore.getState().coins,
+  username: useApiStore.getState().user?.name || DEFAULT_NAME,
+  coins: useApiStore.getState().coins ?? 0,
   avatarId: "default",
   modal: "help",
   alertText: null,
@@ -68,20 +52,16 @@ export const useMainGameStore = create<MainGameState>((set, get) => ({
   isVert: false,
   gameOverResult: null,
 
-  setCoins: async (targetCoins) => {
-    const diff =
-      Math.max(0, targetCoins) - useAuthStore.getState().coins;
-    if (diff !== 0) await useAuthStore.getState().addCoins(diff);
-  },
-
-  addTestCoins: async (amount) => {
-    await useAuthStore.getState().addCoins(amount);
+  addTestCoins: async () => {
+    await useApiStore.getState().executeAction('mini_game_reward');
   },
 
   buyFruit: async (slotId, fruitId, qty, cost) => {
-    const auth = useAuthStore.getState();
-    if (auth.coins < cost || !(await auth.spendCoins(cost)))
-      return false;
+    const auth = useApiStore.getState();
+    if ((auth.coins ?? 0) < cost) return false;
+
+    const success = await auth.executeAction('buy_shop_items', cost);
+    if (!success) return false;
 
     usePetStore.getState().addFruitsToInventory(slotId, fruitId, qty);
     return true;
@@ -92,12 +72,12 @@ export const useMainGameStore = create<MainGameState>((set, get) => ({
     if (!cleanName) return;
 
     try {
-      const check = await authApi.checkName(cleanName);
+      const check = await api.checkName(cleanName);
       if (!check.available) {
         set({ alertText: "Этот никнейм уже занят в базе данных!" });
         return;
       }
-      updateMockAndStoreName(cleanName);
+      updateStoreName(cleanName);
     } catch {
       set({ alertText: "Ошибка соединения с сервером базы данных." });
     }
@@ -110,16 +90,14 @@ export const useMainGameStore = create<MainGameState>((set, get) => ({
     if (!cleanCode) return false;
 
     const parsed = parseInt(cleanCode.replace(/\D/g, ""), 10);
-    const petIndex = !isNaN(parsed)
-      ? parsed % 20
-      : (cleanCode.length % 19) + 1;
+    const petIndex = !isNaN(parsed) ? parsed % 20 : (cleanCode.length % 19) + 1;
 
     usePetStore.getState().unlockPet(petIndex);
     return true;
   },
 
   resetStore: async () => {
-    updateMockAndStoreName(DEFAULT_NAME);
+    updateStoreName(DEFAULT_NAME);
     set({
       avatarId: "default",
       modal: "help",
@@ -127,7 +105,7 @@ export const useMainGameStore = create<MainGameState>((set, get) => ({
       isFoodOpen: false,
       gameOverResult: null
     });
-    await useAuthStore.getState().fetchCoins();
+    await useApiStore.getState().fetchCoins();
   },
 
   setModal: (modal) => set({ modal }),
@@ -136,14 +114,13 @@ export const useMainGameStore = create<MainGameState>((set, get) => ({
 
   setIsFoodOpen: (open) =>
     set((s) => ({
-      isFoodOpen:
-        typeof open === "function" ? open(s.isFoodOpen) : open
+      isFoodOpen: typeof open === "function" ? open(s.isFoodOpen) : open
     })),
 
   setDimensions: (w, h) =>
     set({ width: w, height: h, isVert: h > w }),
 
-  setGameOver: (score, difficulty, initialIsWin) => {
+  setGameOver: async (score, difficulty, initialIsWin) => {
     const isWin = difficulty
       ? initialIsWin
       : score !== undefined
@@ -165,14 +142,18 @@ export const useMainGameStore = create<MainGameState>((set, get) => ({
           : "+3";
 
     set({ gameOverResult: { isWin, rewardText } });
+
+    if (isWin || score !== undefined) {
+      await useApiStore.getState().executeAction('mini_game_reward');
+    }
   },
 
   clearGameOver: () => set({ gameOverResult: null })
 }));
 
-useAuthStore.subscribe((state) => {
+useApiStore.subscribe((state) => {
   useMainGameStore.setState({
-    coins: state.coins,
+    coins: state.coins ?? 0,
     username: state.user?.name || DEFAULT_NAME
   });
 });

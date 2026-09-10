@@ -61,8 +61,7 @@ export class MemoryGameScene extends Scene {
       (s) => s.isGameOver,
       (isGameOver) => {
         if (isGameOver) {
-          const coinsToGive = this.difficulty === "hard" ? 2 : 1;
-          useMainGameStore.getState().addTestCoins(coinsToGive);
+          useMainGameStore.getState().addTestCoins();
         }
       }
     );

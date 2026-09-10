@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 import { DYNAMIC_BOOSTS, INVENTORY_SLOT_MAP } from "../shop.constants";
-import { useAuthStore } from "@/api/store/useAuthStore";
+import { useApiStore } from "@/api/store/useApiStore";
 
 export interface BoostItem {
   id: number;
@@ -91,8 +91,7 @@ export const useShopStore = create<ShopState>((set, get) => ({
   resetStore: () => set(initialValues),
   getTotalPrice: () =>
     Object.entries(get().cart).reduce(
-      (sum, [id, qty]) =>
-        sum + (DYNAMIC_BOOSTS.find((b) => b.id === Number(id))?.price || 0) * qty,
+      (sum, [id, qty]) => sum + (DYNAMIC_BOOSTS.find((b) => b.id === Number(id))?.price || 0) * qty,
       0
     ),
 
@@ -105,14 +104,18 @@ export const useShopStore = create<ShopState>((set, get) => ({
       return;
     }
 
-    const auth = useAuthStore.getState();
+    const auth = useApiStore.getState();
     if (auth.coins < total) {
       set({ purchaseStatus: { success: false, text: ERROR_NO_COINS } });
       return;
     }
 
     try {
-      if (!(await auth.spendCoins(total))) {
+      // Используем новый безопасный метод executeAction вместо прямого spendCoins
+      // Передаем тип действия. Сервер/мок спишет монеты на основе переданных метаданных или корзины
+      const success = await auth.executeAction('buy_shop_items');
+      
+      if (!success) {
         set({ purchaseStatus: { success: false, text: ERROR_NO_COINS } });
         return;
       }

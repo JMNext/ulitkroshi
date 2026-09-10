@@ -1,4 +1,6 @@
+import React from 'react';
 import { useLoginStore } from './store/useLoginStore';
+import { useRegistrationStep2Store } from "@/Registration/Step_2/store/useRegistrationStep2Store";
 import { useRegistrationStep3Store } from "@/Registration/Step_3/store/useRegistrationStep3Store";
 import { LoginButton } from "./components/LoginButton";
 import { RegisterLink } from "./components/RegisterLink";
@@ -12,8 +14,8 @@ interface LoginUiProps {
 export function LoginUiManager({ phaserScene }: LoginUiProps) {
   const { status, startLoading } = useLoginStore();
   
-  const scale = useLoginStore((state: any) => state.scale ?? 1);
-  const isVert = useLoginStore((state: any) => state.isVert ?? true);
+  const scale = useLoginStore((state) => state.scale ?? 1);
+  const isVert = useLoginStore((state) => state.isVert ?? true);
   const paddingBottom = isVert ? "50px" : "85px";
 
   const handleSceneSwitch = (action: 'login' | 'register') => {
@@ -23,8 +25,17 @@ export function LoginUiManager({ phaserScene }: LoginUiProps) {
   };
 
   const handleLoginClick = () => {
+    // ВХОД: активируем флаги входа
+    useRegistrationStep2Store.getState().setIsLogin(true);
     useRegistrationStep3Store.getState().setIsLogin(true);
     startLoading(() => handleSceneSwitch('login'));
+  };
+
+  const handleRegisterClick = () => {
+    // РЕГИСТРАЦИЯ: жестко гасим флаги входа, включаем чистую регистрацию
+    useRegistrationStep2Store.getState().setIsLogin(false);
+    useRegistrationStep3Store.getState().setIsLogin(false);
+    handleSceneSwitch('register');
   };
 
   return (
@@ -36,7 +47,7 @@ export function LoginUiManager({ phaserScene }: LoginUiProps) {
         {status === 'button' ? (
           <div className="flex flex-col items-center gap-4 pointer-events-auto w-full justify-center">
             <LoginButton onClick={handleLoginClick} />
-            <RegisterLink onClick={() => handleSceneSwitch('register')} />
+            <RegisterLink onClick={handleRegisterClick} />
           </div>
         ) : (
           <LoginLoader />

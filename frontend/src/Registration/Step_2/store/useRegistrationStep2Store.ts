@@ -1,146 +1,190 @@
 import { create } from "zustand";
 import { useRegistrationStep1Store } from "@/Registration/Step_1/store/useRegistrationStep1Store";
-import { useAuthStore } from "@/api/store/useAuthStore";
-import { isMock } from "@/api/authApi";
+import { useRegistrationStep3Store } from "@/Registration/Step_3/store/useRegistrationStep3Store";
+import { useApiStore } from "@/api/store/useApiStore";
+import { isMock, api, gatewayApi } from "@/api/api";
 
 interface Step2State {
-  phone: string;
-  code: string;
-  mode: "phone" | "sent" | "code";
-  secs: number;
-  rawPhone: string;
-  attempts: number;
-  errorMessage: string;
-  isVerifying: boolean;
+  phone: string; code: string; mode: "phone" | "sent" | "code"; secs: number;
+  rawPhone: string; attempts: number; errorMessage: "system_error" | "expired" | "too_many_attempts" | "wrong_code" | "user_not_found" | ""; isVerifying: boolean;
+  isLogin: boolean;
+  setIsLogin: (isLogin: boolean) => void;
+  clearError: () => void;
   setMode: (mode: "phone" | "sent" | "code") => void;
-  sendPhone: () => Promise<void>;
-  startTimer: () => void;
-  handleKeyboardInput: (key: string, onSuccessCode?: (sessionId: string) => void) => void;
+  sendPhone: (onSuccessCode?: (sessionId: string) => void) => Promise<void>;
+  confirmSent: () => void; startTimer: () => void;
+  handleKeyboardInput: (key: string) => void;
   verifySmsCode: (onSuccess: (sessionId: string) => void) => Promise<void>;
+  checkSavedDevicePhone: (onSuccess: () => void) => void;
   resetStore: () => void;
 }
 
-const initialValues = {
-  phone: "+7 ( _ _ _ ) _ _ _ - _ _ - _ _",
-  code: "",
-  mode: "phone" as const,
-  secs: 60,
-  rawPhone: "",
-  attempts: 0,
-  errorMessage: "",
-  isVerifying: false,
-};
+let activeTimerId: any = null;
+let mvpPollingId: any = null;
+let savedSessionId: string | null = null;
+let savedOnSuccess: ((sessionId: string) => void) | null = null;
 
-let activeTimerId: ReturnType<typeof setInterval> | null = null;
-
-const clearActiveTimer = () => {
-  if (activeTimerId) {
-    clearInterval(activeTimerId);
-    activeTimerId = null;
-  }
+const clearTimers = () => {
+  if (activeTimerId) clearInterval(activeTimerId);
+  if (mvpPollingId) clearTimeout(mvpPollingId);
+  activeTimerId = mvpPollingId = null;
 };
 
 export const useRegistrationStep2Store = create<Step2State>((set, get) => ({
-  ...initialValues,
+  phone: "", code: "", mode: "phone", secs: 60, rawPhone: "", attempts: 0, errorMessage: "", isVerifying: false,
+  isLogin: false,
 
-  setMode: (mode) => {
-    set({ mode });
-    if (mode === "code" && !activeTimerId) get().startTimer();
+  setIsLogin: (isLogin) => set({ isLogin }),
+
+  clearError: () => set({ errorMessage: "" }),
+
+  setMode: (mode) => { set({ mode }); if (mode === "code" && !activeTimerId) get().startTimer(); },
+
+  checkSavedDevicePhone: (onSuccess) => {
+    if (typeof window === "undefined") return;
+    const savedPhone = localStorage.getItem("saved_user_phone");
+    if (savedPhone) {
+      localStorage.setItem("login_phone_buffer", savedPhone);
+      onSuccess();
+    }
   },
 
-  sendPhone: async () => {
-    const { rawPhone } = get();
-    if (!isMock && rawPhone.length !== 10) return;
+  sendPhone: async (onSuccessCode) => {
+    const { rawPhone, isLogin } = get(); if (!isMock && rawPhone.length !== 10) return;
+    clearTimers(); set({ errorMessage: "" }); savedOnSuccess = onSuccessCode || null;
+    const fullPhone = `+7${rawPhone}`;
 
-    clearActiveTimer();
-    set({ mode: "sent", code: "", errorMessage: "" });
+    if (isLogin) {
+      try {
+        const res = await api.checkLoginPhone(fullPhone);
+        if (res?.isLogin) {
+          localStorage.setItem("saved_user_phone", fullPhone);
+          localStorage.setItem("login_phone_buffer", fullPhone);
+          useRegistrationStep3Store.getState().setIsLogin(true);
+          
+          if (savedOnSuccess) savedOnSuccess("direct_login_session");
+          else (window as any).currentPhaserScene?.scene?.start("Step3Scene", { sessionId: "direct_login_session" });
+          return;
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "";
+        if (msg.includes("Зарегистрируйся")) {
+          set({ mode: "sent", errorMessage: "user_not_found" });
+          return;
+        }
+        set({ mode: "phone", errorMessage: "system_error" });
+        return;
+      }
+    }
 
     try {
-      if (isMock) {
-        await new Promise((resolve) => setTimeout(resolve, 800));
+      const res = await api.loginPhone(fullPhone, useRegistrationStep1Store.getState().name || "Булька");
+      if (res?.sessionId) { 
+        savedSessionId = res.sessionId; 
+        useRegistrationStep3Store.getState().setIsLogin(false); 
+        set({ mode: "sent" });
       }
-
-      await useAuthStore
-        .getState()
-        .loginPhone(`+7${rawPhone}`, useRegistrationStep1Store.getState().name || "Булька");
-    } catch (err: any) {
-      set({ mode: "phone", errorMessage: err.response?.data?.error || "Ошибка отправки СМС." });
+    } catch {
+      set({ mode: "phone", errorMessage: "system_error" });
     }
+  },
+
+  confirmSent: () => {
+    if (!savedSessionId) return; 
+    set({ mode: "code" }); 
+    if (!activeTimerId) get().startTimer();
+
+    const poll = async () => {
+      try {
+        const res = (await gatewayApi.get<{ code: string | null }>(`/auth/login/get-mvp-code?sessionId=${savedSessionId}`)).data;
+        if (!res?.code) { 
+          mvpPollingId = setTimeout(poll, 1000); 
+          return; 
+        }
+        
+        let i = 0;
+        const codeStr = res.code;
+        const typing = setInterval(() => {
+          if (i < codeStr.length) { 
+            get().handleKeyboardInput(codeStr[i++]); 
+          } else { 
+            clearInterval(typing); 
+            
+            // АВТОМАТИЧЕСКИЙ ПЕРЕХОД: Код заполнился до конца, и система сама триггерит редирект на фрукты!
+            setTimeout(() => {
+              get().verifySmsCode((id) => {
+                const fullPhone = `+7${get().rawPhone}`;
+                localStorage.setItem("saved_user_phone", fullPhone);
+                localStorage.setItem("login_phone_buffer", fullPhone);
+                if (savedOnSuccess) savedOnSuccess(id);
+                else (window as any).currentPhaserScene?.scene?.start("Step3Scene");
+              });
+            }, 300);
+          }
+        }, 250);
+      } catch { 
+        mvpPollingId = setTimeout(poll, 1000); 
+      }
+    };
+    poll();
   },
 
   startTimer: () => {
-    clearActiveTimer();
+    if (activeTimerId) clearInterval(activeTimerId);
     set({ secs: 60 });
-
     activeTimerId = setInterval(() => {
-      const currentSecs = get().secs;
-      if (currentSecs <= 1) {
-        clearActiveTimer();
-        set({ secs: 0, code: "", attempts: 0, errorMessage: "Время действия кода истекло." });
-      } else {
-        set({ secs: currentSecs - 1 });
-      }
+      const current = get().secs;
+      if (current <= 1) { clearTimers(); set({ secs: 0, code: "", attempts: 0, errorMessage: "expired" }); }
+      else set({ secs: current - 1 });
     }, 1000);
   },
 
-  handleKeyboardInput: (key, onSuccessCode) => {
-    const { mode, code, rawPhone, verifySmsCode, isVerifying } = get();
-    if (mode === "sent" || isVerifying) return;
+  handleKeyboardInput: (key) => {
+    const { mode, code, rawPhone, isVerifying } = get(); if (mode === "sent" || isVerifying) return;
+    let cur = mode === "code" ? code : rawPhone;
+    if (/backspace|delete/i.test(key)) cur = cur.slice(0, -1);
+    else if (/^\d$/.test(key) && cur.length < (mode === "code" ? 4 : 10)) cur += key;
+    else return;
 
-    const isCode = mode === "code";
-    let cur = isCode ? code : rawPhone;
-
-    if (/backspace|delete/i.test(key)) {
-      cur = cur.slice(0, -1);
-    } else if (/^\d$/.test(key) && cur.length < (isCode ? 4 : 10)) {
-      cur += key;
-    } else {
-      return;
-    }
-
-    if (isCode) {
+    if (mode === "code") {
       set({ code: cur });
-      if (cur.length === 4 && onSuccessCode) verifySmsCode(onSuccessCode);
     } else {
-      let f = "+7 ( ";
-      for (let i = 0; i < 10; i++) {
-        f += cur[i] || "_";
-        if (i === 2) f += " ) ";
-        if (i === 5 || i === 7) f += " - ";
+      set({ rawPhone: cur, phone: `+7${cur}` });
+      if (cur.length === 10 && get().isLogin) {
+        setTimeout(() => get().sendPhone(), 50);
       }
-      set({ rawPhone: cur, phone: f });
     }
   },
 
   verifySmsCode: async (onSuccess) => {
-    const { rawPhone, code, attempts, isVerifying } = get();
-    if (isVerifying || (!isMock && code.length !== 4)) return;
-
+    const { rawPhone, code, attempts, isVerifying } = get(); if (isVerifying || code.length !== 4) return;
     set({ isVerifying: true, errorMessage: "" });
-
     try {
-      if (isMock) {
-        await new Promise((resolve) => setTimeout(resolve, 600));
-      }
+      const res = await useApiStore.getState().verifySms(`+7${rawPhone}`, code);
+      clearTimers(); 
+      set({ isVerifying: false }); 
+      
+      const fullPhone = `+7${rawPhone}`;
+      localStorage.setItem("active_reg_session_id", res.sessionId); 
+      localStorage.setItem("login_phone_buffer", fullPhone);
+      localStorage.setItem("saved_user_phone", fullPhone);
 
-      const res = await useAuthStore.getState().verifySms(`+7${rawPhone}`, code);
-      clearActiveTimer();
-      set({ isVerifying: false });
       onSuccess(res.sessionId);
     } catch {
-      const next = attempts + 1;
-      clearActiveTimer();
-      if (next >= 3) {
-        set({ code: "", isVerifying: false, attempts: 0, errorMessage: "Превышено количество попыток." });
-        await get().sendPhone();
-      } else {
-        set({ code: "", isVerifying: false, attempts: next, errorMessage: `Неверный код. Осталось попыток: ${3 - next}` });
-      }
+      const next = attempts + 1; clearTimers();
+      set({ 
+        code: "", 
+        isVerifying: false, 
+        attempts: next >= 3 ? 0 : next, 
+        errorMessage: next >= 3 ? "too_many_attempts" : "wrong_code" 
+      });
+      if (next >= 3) await get().sendPhone(savedOnSuccess || undefined);
     }
   },
 
-  resetStore: () => {
-    clearActiveTimer();
-    set(initialValues);
+  resetStore: () => { 
+    clearTimers(); 
+    savedSessionId = savedOnSuccess = null; 
+    set({ phone: "", code: "", mode: "phone", secs: 60, rawPhone: "", attempts: 0, errorMessage: "", isVerifying: false, isLogin: false }); 
   }
 }));

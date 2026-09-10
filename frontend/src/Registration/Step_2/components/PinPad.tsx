@@ -16,14 +16,14 @@ export const PinPad = ({ onSuccess }: PinPadProps) => {
     const handlePhysicalKeyDown = (e: KeyboardEvent) => {
       if (mode === "sent") return;
       if (/^\d$/.test(e.key) || e.key === "+") {
-        handleKeyboardInput(e.key, onSuccess);
+        handleKeyboardInput(e.key);
       } else if (e.key === "Backspace" || e.key === "Delete") {
-        handleKeyboardInput("delete", onSuccess);
+        handleKeyboardInput("delete");
       }
     };
     window.addEventListener("keydown", handlePhysicalKeyDown);
     return () => window.removeEventListener("keydown", handlePhysicalKeyDown);
-  }, [mode, handleKeyboardInput, onSuccess]);
+  }, [mode, handleKeyboardInput]);
 
   const isDisabled = mode === "sent";
 
@@ -39,7 +39,7 @@ export const PinPad = ({ onSuccess }: PinPadProps) => {
               disabled={isDisabled}
               onPointerDown={(e) => {
                 e.preventDefault();
-                handleKeyboardInput(key, onSuccess);
+                handleKeyboardInput(key);
                 if (document.activeElement instanceof HTMLElement) {
                   document.activeElement.blur();
                 }

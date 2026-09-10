@@ -4,7 +4,6 @@ import React from 'react';
 import { Step3UiManager, LayoutContext } from './Step3UiManager';
 import fonGorizUrl from '../../assets/background/fon_goriz.png';
 import fonVertUrl from '../../assets/background/fon_vert.png';
-import { useRegistrationStep3Store } from "@/Registration/Step_3/store/useRegistrationStep3Store";
 
 export class Step3Scene extends Phaser.Scene {
   public backgroundIm!: Phaser.GameObjects.Image;
@@ -21,7 +20,6 @@ export class Step3Scene extends Phaser.Scene {
     this.sessionId = data?.sessionId || "";
     document.querySelectorAll('#phaser-native-step1-bubble, #phaser-native-success-bubble')
       .forEach(el => el.remove());
-    useRegistrationStep3Store.getState().resetStore(true);
   }
 
   public preload(): void {

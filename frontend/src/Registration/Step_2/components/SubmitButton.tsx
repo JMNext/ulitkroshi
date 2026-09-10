@@ -1,9 +1,11 @@
-import React, { useContext } from "react";
+import React from "react";
 import { useRegistrationStep2Store } from "../store/useRegistrationStep2Store";
-import { ReactLayoutContext } from "../Step2UiManager";
+
+const MESSAGES = {
+  btnSend: "Отправить"
+};
 
 export const SubmitButton = () => {
-  const ctx = useContext(ReactLayoutContext);
   const { rawPhone = "", sendPhone } = useRegistrationStep2Store();
   const isReady = rawPhone.length === 10;
 
@@ -27,7 +29,7 @@ export const SubmitButton = () => {
             : "cursor-not-allowed opacity-40 outline-none"
         }`}
       >
-        Отправить
+        {MESSAGES.btnSend}
       </button>
     </div>
   );

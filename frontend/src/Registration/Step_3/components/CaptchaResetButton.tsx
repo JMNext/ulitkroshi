@@ -2,17 +2,14 @@ import React from "react";
 import { useRegistrationStep3Store } from "../store/useRegistrationStep3Store";
 
 export const CaptchaResetButton = () => {
+  const resetStore = useRegistrationStep3Store((state) => state.resetStore);
+
   const handleResetClick = (e: React.MouseEvent) => {
     e.preventDefault();
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
-
-    useRegistrationStep3Store.setState({ 
-      sel: [], 
-      errorMessage: "",
-      isSubmitting: false 
-    });
+    resetStore(true);
   };
 
   return (

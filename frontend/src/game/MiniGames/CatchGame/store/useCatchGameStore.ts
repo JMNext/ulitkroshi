@@ -33,7 +33,7 @@ export const useCatchGameStore = create<CatchGameState>()(
       renderCallback();
 
       if (isWin) {
-        useMainGameStore.getState().addTestCoins(10);
+        useMainGameStore.getState().addTestCoins();
       }
     },
 
@@ -47,7 +47,7 @@ export const useCatchGameStore = create<CatchGameState>()(
       renderCallback();
 
       if (isOver) {
-        useMainGameStore.getState().addTestCoins(3);
+        useMainGameStore.getState().addTestCoins();
         usePetStore.getState().handleGameLoss();
       }
     },
@@ -62,7 +62,7 @@ export const useCatchGameStore = create<CatchGameState>()(
       renderCallback();
 
       if (isOver) {
-        useMainGameStore.getState().addTestCoins(3);
+        useMainGameStore.getState().addTestCoins();
         usePetStore.getState().handleGameLoss();
       }
     },

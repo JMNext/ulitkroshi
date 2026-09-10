@@ -1,9 +1,18 @@
-import React, { useContext } from "react";
+import React from "react";
 import { useRegistrationStep2Store } from "../store/useRegistrationStep2Store";
-import { ReactLayoutContext } from "../Step2UiManager";
+
+const MESSAGES = {
+  enterPhone: "Набери свой номер телефона!",
+  enterCode: "Введи номер из смс!",
+  systemError: "Ошибка проверки номера телефона.",
+  codeExpired: "Время действия кода истекло.",
+  tooManyAttempts: "Превышено количество попыток.",
+  wrongCode: (left: number) => `Неверный код. Осталось попыток: ${left}`,
+  resendWithTimer: (secs: number) => `Отправить повторно через ${secs} сек`,
+  resendReady: "Отправить повторно"
+};
 
 export const HeaderBlock = () => {
-  const ctx = useContext(ReactLayoutContext);
   const {
     mode,
     secs,
@@ -17,20 +26,24 @@ export const HeaderBlock = () => {
     if (secs <= 0) sendPhone().then(() => startTimer());
   };
 
-  const titleStr =
-    errorMessage ||
-    (mode === "code"
-      ? attempts > 0 && attempts < 3
-        ? `Неверный код. Осталось попыток: ${3 - attempts}`
-        : "Введи номер из смс!"
-      : "Набери свой номер телефона!");
-
   const isTimerActive = secs > 0;
+
+  let titleStr = mode === "code" ? MESSAGES.enterCode : MESSAGES.enterPhone;
+
+  if (errorMessage === "system_error") {
+    titleStr = MESSAGES.systemError;
+  } else if (errorMessage === "expired") {
+    titleStr = MESSAGES.codeExpired;
+  } else if (errorMessage === "too_many_attempts") {
+    titleStr = MESSAGES.tooManyAttempts;
+  } else if (errorMessage === "wrong_code") {
+    titleStr = MESSAGES.wrongCode(3 - attempts);
+  }
 
   return (
     <div className="relative flex h-[140px] w-[460px] shrink-0 items-center justify-center font-black pointer-events-none select-none transition-all duration-150 origin-center">
       <div className="box-border flex h-full w-full flex-col items-center justify-center rounded-[32px] border border-slate-200/50 bg-white p-6 text-center shadow-md">
-        <h2 className={`m-0 text-[21px] leading-snug font-black ${errorMessage ? "text-red-500" : "text-slate-700"}`}>
+        <h2 className={`m-0 text-[21px] leading-snug font-black whitespace-pre-line ${errorMessage && errorMessage !== "user_not_found" ? "text-red-500" : "text-slate-700"}`}>
           {titleStr}
         </h2>
         {mode === "code" && (
@@ -42,7 +55,7 @@ export const HeaderBlock = () => {
               isTimerActive ? "cursor-not-allowed text-slate-400" : "cursor-pointer text-emerald-600 hover:text-emerald-700"
             }`}
           >
-            {isTimerActive ? `Отправить повторно через ${secs} сек` : "Отправить повторно"}
+            {isTimerActive ? MESSAGES.resendWithTimer(secs) : MESSAGES.resendReady}
           </button>
         )}
       </div>

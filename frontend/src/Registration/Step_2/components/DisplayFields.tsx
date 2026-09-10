@@ -1,14 +1,22 @@
-import React, { useContext } from "react";
+import React from "react";
 import { useRegistrationStep2Store } from "../store/useRegistrationStep2Store";
-import { ReactLayoutContext } from "../Step2UiManager";
 
 export const DisplayFields = () => {
-  const ctx = useContext(ReactLayoutContext);
-  const { mode, phone, code } = useRegistrationStep2Store();
+  const { mode, code, rawPhone, errorMessage } = useRegistrationStep2Store();
 
-  const displayText = mode === "code" 
-    ? code.padEnd(4, "_").split("").join(" ") 
-    : phone;
+  let displayText = "";
+
+  if (mode === "code" && errorMessage !== "user_not_found") {
+    displayText = code.padEnd(4, "_").split("").join(" ");
+  } else {
+    let f = "+7 ( ";
+    for (let i = 0; i < 10; i++) {
+      f += rawPhone[i] || "_";
+      if (i === 2) f += " ) ";
+      if (i === 5 || i === 7) f += " - ";
+    }
+    displayText = f;
+  }
 
   return (
     <div className="relative flex h-[76px] w-[460px] shrink-0 items-center justify-center font-black pointer-events-none select-none text-slate-700 transition-all duration-150 origin-center">
