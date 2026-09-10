@@ -2,6 +2,7 @@ import axios from "axios";
 import { UserProfile, AuthResponse } from "./types";
 import { mockApi } from "./api.mock";
 
+// ТВОЙ ПЕРЕКЛЮЧАТЕЛЬ: true — моки для заказчика, false — реальный сервер
 export const isMock = true; 
 
 export const gatewayApi = axios.create({
@@ -9,9 +10,15 @@ export const gatewayApi = axios.create({
   headers: { "Content-Type": "application/json" }
 });
 
+// Интерцептор ответов, адаптированный под билд с моками
 gatewayApi.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Если включены моки, гасим сетевые ошибки localhost, чтобы билд не падал
+    if (isMock) {
+      console.warn("Сетевой запрос проигнорирован (включен режим моков):", error.message);
+      return Promise.resolve({ data: {} } as any); 
+    }
     const message = error.response?.data?.error || "Произошла сетевая ошибка";
     return Promise.reject(new Error(message));
   }
