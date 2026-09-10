@@ -2,7 +2,7 @@ import axios from "axios";
 import { UserProfile, AuthResponse } from "./types";
 import { mockApi } from "./api.mock";
 
-export const isMock = false; 
+export const isMock = true; 
 
 export const gatewayApi = axios.create({
   baseURL: "http://localhost:3001",
@@ -25,11 +25,19 @@ gatewayApi.interceptors.request.use((config) => {
 
 export const api = {
   async checkLoginPhone(phone: string): Promise<{ success: boolean; isLogin: boolean }> {
+    if (isMock) return mockApi.checkLoginPhone(phone);
     return (await gatewayApi.post<{ success: boolean; isLogin: boolean }>("/auth/login/phone-check", { phone })).data;
   },
 
   async login(email: string, password: string): Promise<AuthResponse> {
-    if (isMock) return mockApi.login();
+    if (isMock) {
+      const data = await mockApi.login();
+      if (data?.accessToken) {
+        localStorage.setItem("accessToken", data.accessToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
+      }
+      return data;
+    }
     const data = (await gatewayApi.post<AuthResponse>("/auth/login", { emailOrPhone: email, password })).data;
     if (data?.accessToken) {
       localStorage.setItem("accessToken", data.accessToken);
@@ -39,8 +47,9 @@ export const api = {
   },
 
   async logout(): Promise<void> {
-    if (isMock) return;
-    await gatewayApi.post("/auth/logout");
+    if (!isMock) {
+      await gatewayApi.post("/auth/logout");
+    }
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
   },
@@ -56,7 +65,14 @@ export const api = {
   },
 
   async register(data: { name: string; phone: string }): Promise<AuthResponse> {
-    if (isMock) return mockApi.register(data);
+    if (isMock) {
+      const res = await mockApi.register(data);
+      if (res?.accessToken) {
+        localStorage.setItem("accessToken", res.accessToken);
+        localStorage.setItem("refreshToken", res.refreshToken);
+      }
+      return res;
+    }
     return (await gatewayApi.post<AuthResponse>("/auth/register", data)).data;
   },
 
@@ -66,12 +82,19 @@ export const api = {
   },
 
   async verifySms(phone: string, code: string): Promise<{ sessionId: string }> {
-    if (isMock) return mockApi.verifySms();
+    if (isMock) return mockApi.verifySms(phone, code);
     return (await gatewayApi.post<{ sessionId: string }>("/auth/login/verify-sms", { phone, code })).data;
   },
 
   async verifyFruit(sessionId: string, fruits: string, phone?: string, isLoginFlow?: boolean): Promise<AuthResponse> {
-    if (isMock) return mockApi.verifyFruit();
+    if (isMock) {
+      const data = await mockApi.verifyFruit();
+      if (data?.accessToken) {
+        localStorage.setItem("accessToken", data.accessToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
+      }
+      return data;
+    }
     const data = (await gatewayApi.post<AuthResponse>("/auth/login/fruit", { sessionId, fruitCode: fruits, phone, isLoginFlow })).data;
     if (data?.accessToken) {
       localStorage.setItem("accessToken", data.accessToken);
@@ -81,7 +104,14 @@ export const api = {
   },
 
   async loginQr(qrData: string): Promise<AuthResponse> {
-    if (isMock) return mockApi.loginQr();
+    if (isMock) {
+      const data = await mockApi.loginQr();
+      if (data?.accessToken) {
+        localStorage.setItem("accessToken", data.accessToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
+      }
+      return data;
+    }
     return (await gatewayApi.post<AuthResponse>("/auth/login/qr", { qrData })).data;
   },
 

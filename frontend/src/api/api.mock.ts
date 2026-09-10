@@ -25,6 +25,11 @@ const generateMockAuth = (prefix: string, name?: string, phone?: string): AuthRe
 });
 
 export const mockApi = {
+  async checkLoginPhone(phone: string): Promise<{ success: boolean; isLogin: boolean }> {
+    mockPhoneMemory = phone;
+    return { success: true, isLogin: true };
+  },
+
   async login(): Promise<AuthResponse> {
     return generateMockAuth("mock");
   },
@@ -43,11 +48,11 @@ export const mockApi = {
 
   async loginPhone(phone: string): Promise<{ success: boolean; sessionId: string; isLogin: boolean }> {
     mockPhoneMemory = phone;
-    return { success: true, sessionId: "mock_sess_" + Date.now(), isLogin: false };
+    return { success: true, sessionId: "mock_sess_" + Date.now(), isLogin: true };
   },
 
-  async verifySms(): Promise<{ sessionId: string }> {
-    return { sessionId: "mock_sess_verified" };
+  async verifySms(phone: string, code: string): Promise<{ sessionId: string }> {
+    return { sessionId: "mock_sess_verified_" + Date.now() };
   },
 
   async verifyFruit(): Promise<AuthResponse> {
