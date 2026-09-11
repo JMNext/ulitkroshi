@@ -1,4 +1,4 @@
-import { UserProfile, AuthResponse } from "./types";
+import { AuthResponse, UserProfile } from "./types";
 
 let mockCoinsMemory = 5000;
 let mockUnlockedPetsMemory: number[] = [];
@@ -12,10 +12,10 @@ const createMockUser = (name = "Player001", phone = ""): UserProfile => ({
   roles: ["user"],
   coins: mockCoinsMemory,
   unlockedPets: mockUnlockedPetsMemory,
-  petName: name,                        
-  petStatus: "alive",                   
-  petSatiety: 85,                       
-  petHappiness: 90                      
+  petName: name,
+  petStatus: "alive",
+  petSatiety: 85,
+  petHappiness: 90
 });
 
 const generateMockAuth = (prefix: string, name?: string, phone?: string): AuthResponse => ({
@@ -72,10 +72,10 @@ export const mockApi = {
     return { coins: mockCoinsMemory };
   },
 
-  async updateCoins(actionType: 'buy_medicine' | 'mini_game_reward' | 'buy_shop_items', total?: number): Promise<{ coins: number }> {
-    if (actionType === 'buy_medicine') mockCoinsMemory -= 30;
-    if (actionType === 'mini_game_reward') mockCoinsMemory += 15;
-    if (actionType === 'buy_shop_items' && total) mockCoinsMemory -= total;
+  async updateCoins(actionType: "buy_medicine" | "mini_game_reward" | "buy_shop_items", total?: number): Promise<{ coins: number }> {
+    if (actionType === "buy_medicine") mockCoinsMemory -= 30;
+    if (actionType === "mini_game_reward") mockCoinsMemory += 15;
+    if (actionType === "buy_shop_items" && total) mockCoinsMemory -= total;
     return { coins: Math.max(0, mockCoinsMemory) };
   },
 

@@ -16,6 +16,20 @@ import fruit15 from "@/assets/fruits/fruits_15.png";
 import fruit16 from "@/assets/fruits/fruits_16.png";
 
 export const FRUIT_URLS: string[] = [
-  fruit01, fruit02, fruit03, fruit04, fruit05, fruit06, fruit07, fruit08,
-  fruit09, fruit10, fruit11, fruit12, fruit13, fruit14, fruit15, fruit16
+  fruit01,
+  fruit02,
+  fruit03,
+  fruit04,
+  fruit05,
+  fruit06,
+  fruit07,
+  fruit08,
+  fruit09,
+  fruit10,
+  fruit11,
+  fruit12,
+  fruit13,
+  fruit14,
+  fruit15,
+  fruit16
 ];

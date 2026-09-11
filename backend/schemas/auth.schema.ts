@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const loginSchema = z.object({
   phone: z.string().min(6, "Неверный формат телефона"),

@@ -1,7 +1,7 @@
+import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
+import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
-import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 
 interface CatchGameState {
   score: number;
@@ -28,7 +28,7 @@ export const useCatchGameStore = create<CatchGameState>()(
     addScore: (renderCallback) => {
       const nextScore = get().score + 1;
       const isWin = nextScore >= 20;
-      
+
       set({ score: nextScore, isGameOver: isWin, isWin: isWin });
       renderCallback();
 

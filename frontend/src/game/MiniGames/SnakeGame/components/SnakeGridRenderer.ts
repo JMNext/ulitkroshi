@@ -1,13 +1,16 @@
-import Phaser from 'phaser';
-import { SnakeGameLogicManager } from './SnakeGameLogicManager';
-import { getSnakeResizeMetrics } from "./snakeGame.constants";
+import Phaser from "phaser";
+import { getSnakeResizeMetrics } from "../constants/snakeGame.constants";
+import { SnakeGameLogicManager } from "./SnakeGameLogicManager";
 
 export class SnakeGridRenderer {
   public mainGridContainer!: Phaser.GameObjects.Container;
   private gridGraphics: Phaser.GameObjects.Graphics | null = null;
   private snakeGraphics: Phaser.GameObjects.Graphics | null = null;
 
-  constructor(private scene: Phaser.Scene, private manager: SnakeGameLogicManager) {}
+  constructor(
+    private scene: Phaser.Scene,
+    private manager: SnakeGameLogicManager
+  ) {}
 
   public init(): void {
     this.mainGridContainer = this.scene.add.container(0, 0).setDepth(10);
@@ -22,8 +25,13 @@ export class SnakeGridRenderer {
     if (!this.gridGraphics) return;
     this.gridGraphics.clear();
     const half = this.manager.gridDim / 2;
-    this.gridGraphics.fillStyle(0xffffff, 0.4).fillRoundedRect(-half - 6, -half - 6, this.manager.gridDim + 12, this.manager.gridDim + 12, 24);
-    this.gridGraphics.lineStyle(4, 0x61aa05, 1).strokeRoundedRect(-half - 6, -half - 6, this.manager.gridDim + 12, this.manager.gridDim + 12, 24).lineStyle(1, 0x61aa05, 0.15);
+    this.gridGraphics
+      .fillStyle(0xffffff, 0.4)
+      .fillRoundedRect(-half - 6, -half - 6, this.manager.gridDim + 12, this.manager.gridDim + 12, 24);
+    this.gridGraphics
+      .lineStyle(4, 0x61aa05, 1)
+      .strokeRoundedRect(-half - 6, -half - 6, this.manager.gridDim + 12, this.manager.gridDim + 12, 24)
+      .lineStyle(1, 0x61aa05, 0.15);
     for (let i = 1; i < 12; i++) {
       this.gridGraphics.lineBetween(-half + i * this.manager.cellSize, -half, -half + i * this.manager.cellSize, half);
       this.gridGraphics.lineBetween(-half, -half + i * this.manager.cellSize, half, -half + i * this.manager.cellSize);
@@ -33,20 +41,33 @@ export class SnakeGridRenderer {
   public drawSnake = (): void => {
     if (!this.snakeGraphics) return;
     this.snakeGraphics.clear();
-    
+
     const start = -this.manager.gridDim / 2;
     this.manager.snake.forEach((block, index) => {
       const bx = start + block.x * this.manager.cellSize;
       const by = start + block.y * this.manager.cellSize;
-      
-      this.snakeGraphics!.fillStyle(index === 0 ? 0x4c9203 : 0x61aa05, 1)
-        .fillRoundedRect(bx + 1, by + 2, this.manager.cellSize - 2, this.manager.cellSize - 4, 8);
-        
+
+      this.snakeGraphics!.fillStyle(index === 0 ? 0x4c9203 : 0x61aa05, 1).fillRoundedRect(
+        bx + 1,
+        by + 2,
+        this.manager.cellSize - 2,
+        this.manager.cellSize - 4,
+        8
+      );
+
       if (index === 0) {
         this.snakeGraphics!.fillStyle(0, 1);
-        const isVert = this.manager.dir === 'UP' || this.manager.dir === 'DOWN';
-        this.snakeGraphics!.fillCircle(bx + this.manager.cellSize * (isVert ? 0.3 : 0.5), by + this.manager.cellSize * (isVert ? 0.5 : 0.3), 3);
-        this.snakeGraphics!.fillCircle(bx + this.manager.cellSize * (isVert ? 0.7 : 0.5), by + this.manager.cellSize * (isVert ? 0.5 : 0.7), 3);
+        const isVert = this.manager.dir === "UP" || this.manager.dir === "DOWN";
+        this.snakeGraphics!.fillCircle(
+          bx + this.manager.cellSize * (isVert ? 0.3 : 0.5),
+          by + this.manager.cellSize * (isVert ? 0.5 : 0.3),
+          3
+        );
+        this.snakeGraphics!.fillCircle(
+          bx + this.manager.cellSize * (isVert ? 0.7 : 0.5),
+          by + this.manager.cellSize * (isVert ? 0.5 : 0.7),
+          3
+        );
       }
     });
 

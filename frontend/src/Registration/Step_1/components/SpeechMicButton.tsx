@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useRegistrationStep1Store } from "../store/useRegistrationStep1Store";
 import micBtnImg from "/src/assets/registration/microphone_button.png";
 
@@ -18,9 +18,7 @@ export const SpeechMicButton = () => {
   };
 
   useEffect(() => {
-    const SpeechRecognitionClass =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
+    const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognitionClass) return;
 
     const rec = new SpeechRecognitionClass();
@@ -29,13 +27,13 @@ export const SpeechMicButton = () => {
     rec.interimResults = false;
     rec.maxAlternatives = 1;
 
-    rec.onstart = () => { 
-      isListeningRef.current = true; 
+    rec.onstart = () => {
+      isListeningRef.current = true;
       toggleGlobalAudio(false);
     };
-    
-    rec.onend = () => { 
-      isListeningRef.current = false; 
+
+    rec.onend = () => {
+      isListeningRef.current = false;
     };
 
     rec.onerror = (e: any) => {
@@ -107,13 +105,9 @@ export const SpeechMicButton = () => {
     <button
       type="button"
       onClick={handleMicClick}
-      className="touch-manipulation pointer-events-auto m-0 box-border flex h-[100px] w-[100px] cursor-pointer items-center justify-center border-0 bg-transparent p-0 transition-all duration-75 outline-none active:scale-95"
+      className="pointer-events-auto m-0 box-border flex h-[100px] w-[100px] cursor-pointer touch-manipulation items-center justify-center border-0 bg-transparent p-0 transition-all duration-75 outline-none active:scale-95"
     >
-      <img
-        src={micBtnImg}
-        className="pointer-events-none block h-full w-full object-contain"
-        alt="Микрофон"
-      />
+      <img src={micBtnImg} className="pointer-events-none block h-full w-full object-contain" alt="Микрофон" />
     </button>
   );
 };

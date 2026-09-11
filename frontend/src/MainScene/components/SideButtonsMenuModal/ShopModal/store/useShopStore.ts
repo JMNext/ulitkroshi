@@ -1,7 +1,7 @@
-import { create } from "zustand";
-import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
-import { DYNAMIC_BOOSTS, INVENTORY_SLOT_MAP } from "../shop.constants";
 import { useApiStore } from "@/api/store/useApiStore";
+import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
+import { create } from "zustand";
+import { DYNAMIC_BOOSTS, INVENTORY_SLOT_MAP } from "../constants/shop.constants";
 
 export interface BoostItem {
   id: number;
@@ -56,7 +56,9 @@ export const useShopStore = create<ShopState>((set, get) => ({
 
   addToCart: (id, qty) => {
     if (checkCartConflict(id, get().cart)) {
-      set({ purchaseStatus: { success: false, text: ERROR_CONFLICT } });
+      set({
+        purchaseStatus: { success: false, text: ERROR_CONFLICT }
+      });
       return false;
     }
     set((s) => ({
@@ -68,7 +70,9 @@ export const useShopStore = create<ShopState>((set, get) => ({
 
   updateCartQuantity: (id, qty) => {
     if (qty > (get().cart[id] || 0) && checkCartConflict(id, get().cart)) {
-      set({ purchaseStatus: { success: false, text: ERROR_CONFLICT } });
+      set({
+        purchaseStatus: { success: false, text: ERROR_CONFLICT }
+      });
       return false;
     }
     set((s) => {
@@ -90,33 +94,36 @@ export const useShopStore = create<ShopState>((set, get) => ({
   clearCart: () => set({ cart: {} }),
   resetStore: () => set(initialValues),
   getTotalPrice: () =>
-    Object.entries(get().cart).reduce(
-      (sum, [id, qty]) => sum + (DYNAMIC_BOOSTS.find((b) => b.id === Number(id))?.price || 0) * qty,
-      0
-    ),
+    Object.entries(get().cart).reduce((sum, [id, qty]) => sum + (DYNAMIC_BOOSTS.find((b) => b.id === Number(id))?.price || 0) * qty, 0),
 
   checkout: async () => {
     const { cart, getTotalPrice, clearCart, setSelectedItem } = get();
     const total = getTotalPrice();
 
     if (!Object.keys(cart).length) {
-      set({ purchaseStatus: { success: false, text: "В корзине пусто!" } });
+      set({
+        purchaseStatus: { success: false, text: "В корзине пусто!" }
+      });
       return;
     }
 
     const auth = useApiStore.getState();
     if (auth.coins < total) {
-      set({ purchaseStatus: { success: false, text: ERROR_NO_COINS } });
+      set({
+        purchaseStatus: { success: false, text: ERROR_NO_COINS }
+      });
       return;
     }
 
     try {
       // Используем новый безопасный метод executeAction вместо прямого spendCoins
       // Передаем тип действия. Сервер/мок спишет монеты на основе переданных метаданных или корзины
-      const success = await auth.executeAction('buy_shop_items');
-      
+      const success = await auth.executeAction("buy_shop_items");
+
       if (!success) {
-        set({ purchaseStatus: { success: false, text: ERROR_NO_COINS } });
+        set({
+          purchaseStatus: { success: false, text: ERROR_NO_COINS }
+        });
         return;
       }
 
@@ -140,10 +147,20 @@ export const useShopStore = create<ShopState>((set, get) => ({
 
       clearCart();
       setSelectedItem(null);
-      set({ purchaseStatus: { success: true, text: `Успешно куплено! Списано: ${total}` } });
+      set({
+        purchaseStatus: {
+          success: true,
+          text: `Успешно куплено! Списано: ${total}`
+        }
+      });
       auth.fetchCoins();
     } catch {
-      set({ purchaseStatus: { success: false, text: "Ошибка при списании монет." } });
+      set({
+        purchaseStatus: {
+          success: false,
+          text: "Ошибка при списании монет."
+        }
+      });
     }
   }
 }));

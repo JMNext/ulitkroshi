@@ -11,14 +11,27 @@
   --animate-shake: shake 0.25s ease-in-out;
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-6px); }
-    40%, 80% { transform: translateX(6px); }
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    20%,
+    60% {
+      transform: translateX(-6px);
+    }
+    40%,
+    80% {
+      transform: translateX(6px);
+    }
   }
 }
 
@@ -31,11 +44,11 @@
     margin: 0;
     padding: 0;
     overflow: hidden;
-    background-color: #1a1a1a; 
+    background-color: #1a1a1a;
     font-family: var(--font-sans);
-    
+
     /* Блокировка системного зума браузера */
-    touch-action: none; 
+    touch-action: none;
     user-select: none;
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
@@ -44,25 +57,37 @@
 
 @font-face {
   font-family: "Arteks-Forced";
-  src: local("Arteks Regular"), local("ArteksRegular"), url("/fonts/Arteks%20Regular.otf") format("opentype");
+  src:
+    local("Arteks Regular"),
+    local("ArteksRegular"),
+    url("/fonts/Arteks%20Regular.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
 }
 @font-face {
   font-family: "Arteks-Forced";
-  src: local("Arteks Medium"), local("ArteksMedium"), url("/fonts/Arteks%20Medium.otf") format("opentype");
+  src:
+    local("Arteks Medium"),
+    local("ArteksMedium"),
+    url("/fonts/Arteks%20Medium.otf") format("opentype");
   font-weight: 500;
   font-style: normal;
 }
 @font-face {
   font-family: "Arteks-Forced";
-  src: local("Arteks Bold"), local("ArteksBold"), url("/fonts/Arteks%20Bold.otf") format("opentype");
+  src:
+    local("Arteks Bold"),
+    local("ArteksBold"),
+    url("/fonts/Arteks%20Bold.otf") format("opentype");
   font-weight: 700;
   font-style: normal;
 }
 @font-face {
   font-family: "Arteks-Forced";
-  src: local("Arteks Black"), local("ArteksBlack"), url("/fonts/Arteks%20Black.otf") format("opentype");
+  src:
+    local("Arteks Black"),
+    local("ArteksBlack"),
+    url("/fonts/Arteks%20Black.otf") format("opentype");
   font-weight: 900;
   font-style: normal;
 }

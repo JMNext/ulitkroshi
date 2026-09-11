@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface LoginButtonProps {
   onClick: () => void;
@@ -14,11 +14,11 @@ export const LoginButton = React.memo(({ onClick }: LoginButtonProps) => {
   };
 
   return (
-    <div className="scale-100 origin-center pointer-events-none z-10 flex items-center justify-center w-[260px] h-[65px] relative">
+    <div className="pointer-events-none relative z-10 flex h-[65px] w-[260px] origin-center scale-100 items-center justify-center">
       <button
         type="button"
         onClick={handleButtonClick}
-        className="w-full h-full font-black text-white flex items-center justify-center border-none uppercase tracking-wide shadow-md active:scale-95 transition-transform duration-100 ease-out outline-none rounded-full text-[26px] px-6 box-border cursor-pointer bg-gradient-to-b from-[#81c714] to-[#60aa05] pointer-events-auto touch-manipulation select-none"
+        className="pointer-events-auto box-border flex h-full w-full cursor-pointer touch-manipulation items-center justify-center rounded-full border-none bg-gradient-to-b from-[#81c714] to-[#60aa05] px-6 text-[26px] font-black tracking-wide text-white uppercase shadow-md transition-transform duration-100 ease-out outline-none select-none active:scale-95"
       >
         Войти
       </button>

@@ -1,6 +1,6 @@
+import { Point, SnakeGameLogicManager } from "@/game/MiniGames/SnakeGame/components/SnakeGameLogicManager";
+import { useSnakeGameStore } from "@/game/MiniGames/SnakeGame/store/useSnakeGameStore";
 import Phaser from "phaser";
-import { useSnakeGameStore } from "./store/useSnakeGameStore";
-import { SnakeGameLogicManager, Point } from "./SnakeGameLogicManager";
 
 export class SnakeBombManager {
   public bomb: Point = { x: -1, y: -1 };
@@ -9,7 +9,10 @@ export class SnakeBombManager {
   private container!: Phaser.GameObjects.Container;
   private bombTimer: Phaser.Time.TimerEvent | null = null;
 
-  constructor(private scene: Phaser.Scene, private manager: SnakeGameLogicManager) {}
+  constructor(
+    private scene: Phaser.Scene,
+    private manager: SnakeGameLogicManager
+  ) {}
 
   public init(container: Phaser.GameObjects.Container): void {
     this.container = container;
@@ -31,8 +34,10 @@ export class SnakeBombManager {
       for (let x = Math.max(0, headX - 3); x <= Math.min(11, headX + 3); x++) {
         for (let y = Math.max(0, headY - 3); y <= Math.min(11, headY + 3); y++) {
           if (Math.abs(x - headX) <= 1 && Math.abs(y - headY) <= 1) continue;
-          if (!this.manager.snake.some((s) => s.x === x && s.y === y) && 
-              !(x === this.manager.fruitSpawner.fruit.x && y === this.manager.fruitSpawner.fruit.y)) {
+          if (
+            !this.manager.snake.some((s) => s.x === x && s.y === y) &&
+            !(x === this.manager.fruitSpawner.fruit.x && y === this.manager.fruitSpawner.fruit.y)
+          ) {
             valid.push({ x, y });
           }
         }
@@ -46,7 +51,7 @@ export class SnakeBombManager {
 
         const start = -this.manager.gridDim / 2;
         const fontSz = Math.floor(this.manager.cellSize * 0.65);
-        
+
         this.textObj = this.scene.add
           .text(
             start + this.bomb.x * this.manager.cellSize + this.manager.cellSize / 2,
@@ -55,7 +60,7 @@ export class SnakeBombManager {
             { fontSize: `${fontSz}px`, fontFamily: "Arial" }
           )
           .setOrigin(0.5);
-          
+
         this.textObj.setData("isBomb", true);
         this.container.add(this.textObj);
 

@@ -17,7 +17,7 @@ export const SNAKE_ASSETS = {
     fruit_13: new URL("@/assets/fruits/fruits_13.png", import.meta.url).href,
     fruit_14: new URL("@/assets/fruits/fruits_14.png", import.meta.url).href,
     fruit_15: new URL("@/assets/fruits/fruits_15.png", import.meta.url).href,
-    fruit_16: new URL("@/assets/fruits/fruits_16.png", import.meta.url).href,
+    fruit_16: new URL("@/assets/fruits/fruits_16.png", import.meta.url).href
   }
 };
 

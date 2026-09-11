@@ -1,9 +1,9 @@
-import { Scene } from "phaser";
-import { useSnakeGameStore } from "./store/useSnakeGameStore";
-import { SnakeGameOverlay } from "./SnakeGameOverlay";
-import { SnakeGameLogicManager } from "./SnakeGameLogicManager";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
-import { SNAKE_ASSETS } from "./snakeGame.constants";
+import { Scene } from "phaser";
+import { SnakeGameLogicManager } from "./components/SnakeGameLogicManager";
+import { SnakeGameOverlay } from "./components/SnakeGameOverlay";
+import { SNAKE_ASSETS } from "./constants/snakeGame.constants";
+import { useSnakeGameStore } from "./store/useSnakeGameStore";
 
 export class SnakeGameScene extends Scene {
   public difficulty = "medium";
@@ -17,9 +17,11 @@ export class SnakeGameScene extends Scene {
   private touchStartX?: number;
   private touchStartY?: number;
 
-  constructor() { super("SnakeGameScene"); }
+  constructor() {
+    super("SnakeGameScene");
+  }
 
-  public init(data: { difficulty?: "easy" | "medium" | "hard"; }): void {
+  public init(data: { difficulty?: "easy" | "medium" | "hard" }): void {
     this.difficulty = data.difficulty || "medium";
     this.score = 0;
     this.hp = 100;
@@ -93,8 +95,12 @@ export class SnakeGameScene extends Scene {
     this.logicManager.handleTicks(time);
   }
 
-  public addScore = (): void => { useSnakeGameStore.getState().addScore(() => {}); };
-  public triggerCrash = (): void => { useSnakeGameStore.getState().applyPenalty(() => {}); };
+  public addScore = (): void => {
+    useSnakeGameStore.getState().addScore(() => {});
+  };
+  public triggerCrash = (): void => {
+    useSnakeGameStore.getState().applyPenalty(() => {});
+  };
 
   private handleResize = (): void => {
     if (!this.sys?.isActive()) return;

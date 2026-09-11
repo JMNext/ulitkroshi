@@ -1,23 +1,23 @@
-import React, { useState } from 'react';
 import happyMov from "@/assets/resources/1stpet-animation/happy.mov";
 import happyWebm from "@/assets/resources/1stpet-animation/happy.webm";
+import { useState } from "react";
 
 export const HappyPetVideo = () => {
   const [isLoaded, setIsLoaded] = useState(false);
 
   return (
-    <div 
-      className="absolute left-1/2 top-[460px] -translate-x-1/2 -translate-y-1/2 scale-100 w-[644px] h-[644px] z-0 bg-transparent overflow-visible pointer-events-none transition-all duration-150 origin-center select-none" 
+    <div
+      className="pointer-events-none absolute top-[460px] left-1/2 z-0 h-[644px] w-[644px] origin-center -translate-x-1/2 -translate-y-1/2 scale-100 overflow-visible bg-transparent transition-all duration-150 select-none"
       style={{ opacity: isLoaded ? 1 : 0 }}
     >
       <video
-        autoPlay 
-        muted 
-        playsInline 
+        autoPlay
+        muted
+        playsInline
         loop
         onLoadedData={() => setIsLoaded(true)}
-        className="block w-full h-auto pointer-events-none outline-none border-none bg-transparent absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 object-bottom object-contain"
-        style={{ imageRendering: 'crisp-edges' }}
+        className="pointer-events-none absolute top-1/2 left-1/2 block h-auto w-full -translate-x-1/2 -translate-y-1/2 border-none bg-transparent object-contain object-bottom outline-none"
+        style={{ imageRendering: "crisp-edges" }}
       >
         <source src={happyMov} type="video/quicktime" />
         <source src={happyWebm} type="video/webm; codecs=vp9,vorbis" />

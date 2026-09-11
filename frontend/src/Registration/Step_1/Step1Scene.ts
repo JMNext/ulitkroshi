@@ -1,59 +1,60 @@
-import Phaser from 'phaser';
-import { createRoot, Root } from 'react-dom/client';
-import React from 'react';
-import { Step1UiManager, LayoutContext } from './Step1UiManager';
-import fonGorizUrl from '../../assets/background/fon_goriz.png';
-import fonVertUrl from '../../assets/background/fon_vert.png';
+import { useRegistrationStep1Store } from "@/Registration/Step_1/store/useRegistrationStep1Store";
+import Phaser from "phaser";
+import React from "react";
+import { createRoot, Root } from "react-dom/client";
+import fonGorizUrl from "../../assets/background/fon_goriz.png";
+import fonVertUrl from "../../assets/background/fon_vert.png";
+import { Step1UiManager } from "./Step1UiManager";
+
+const CONFIG = {
+  BASE_W: 540,
+  BASE_H: 960,
+  MIN_SCALE: 0.3,
+  MAX_SCALE: 1.25,
+  PADDING: 0.9
+};
 
 export class Step1Scene extends Phaser.Scene {
   public backgroundIm!: Phaser.GameObjects.Image;
   private uiContainer: HTMLDivElement | null = null;
-  private currentOrientation: 'vert' | 'goriz' | null = null;
+  private currentOrientation: "vert" | "goriz" | null = null;
   private reactRoot: Root | null = null;
 
-  constructor() { 
-    super({ key: 'Step1Scene' }); 
+  constructor() {
+    super({ key: "Step1Scene" });
   }
 
   public init(): void {
-    document.querySelectorAll('#phaser-native-step1-bubble, #phaser-native-success-bubble')
-      .forEach(e => e.remove());
+    document.querySelectorAll("#phaser-native-step1-bubble, #phaser-native-success-bubble").forEach((e) => e.remove());
   }
 
   public preload(): void {
-    this.load.image('reg_bg_fon_goriz', fonGorizUrl);
-    this.load.image('reg_bg_fon_vert', fonVertUrl);
+    this.load.image("reg_bg_fon_goriz", fonGorizUrl);
+    this.load.image("reg_bg_fon_vert", fonVertUrl);
   }
 
   public create(): void {
-    if (this.game.canvas) {
-      this.game.canvas.className = "absolute inset-0 w-full h-full z-1";
-    }
+    if (this.game.canvas) this.game.canvas.className = "absolute inset-0 w-full h-full z-1";
 
     const { width, height } = this.scale;
-    const isVertInit = height > width;
-    this.currentOrientation = isVertInit ? 'vert' : 'goriz';
-    
-    this.backgroundIm = this.add.image(width / 2, height / 2, isVertInit ? 'reg_bg_fon_vert' : 'reg_bg_fon_goriz')
-      .setOrigin(0.5, 0.5)
+    this.backgroundIm = this.add
+      .image(width / 2, height / 2, "reg_bg_fon_goriz")
+      .setOrigin(0.5)
       .setDepth(-2);
-      
-    this.updateBackgroundScale(width, height);
 
-    const gameContainer = document.getElementById("game-container") || document.body;
-    this.uiContainer = document.createElement('div');
+    this.uiContainer = document.createElement("div");
     this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden";
-    gameContainer.appendChild(this.uiContainer);
+    (document.getElementById("game-container") || document.body).appendChild(this.uiContainer);
+
+    if (width > 0 && height > 0) this.executeResizeLogic(width, height);
 
     this.reactRoot = createRoot(this.uiContainer);
-    this.reactRoot.render(
-      React.createElement(Step1UiManager, { phaserScene: this })
-    );
+    this.reactRoot.render(React.createElement(Step1UiManager, { phaserScene: this }));
 
-    this.scale.on('resize', this.triggerResize, this);
-    this.events.on('wake', this.handleWake, this);
+    this.scale.on("resize", this.triggerResize, this);
+    this.events.on("wake", this.handleWake, this);
     this.events.on("sleep", this.handleSleep, this);
-    this.events.once('shutdown', this.cleanUp, this);
+    this.events.once("shutdown", this.cleanUp, this);
 
     setTimeout(() => {
       if (this.sys?.isActive()) this.triggerResize();
@@ -63,71 +64,54 @@ export class Step1Scene extends Phaser.Scene {
   public triggerResize(): void {
     if (!this.sys?.isActive() || !this.scale) return;
     const { width, height } = this.scale;
-    if (width === 0 || height === 0) return;
+    if (width && height) this.executeResizeLogic(width, height);
+  }
 
+  private executeResizeLogic(width: number, height: number): void {
     const isVert = height > width;
-    const nextOrientation = isVert ? 'vert' : 'goriz';
+    const nextOrientation = isVert ? "vert" : "goriz";
 
     if (this.currentOrientation !== nextOrientation) {
       this.currentOrientation = nextOrientation;
-      this.backgroundIm.setTexture(isVert ? 'reg_bg_fon_vert' : 'reg_bg_fon_goriz');
+      this.backgroundIm.setTexture(`reg_bg_fon_${nextOrientation}`);
     }
-    
-    this.updateBackgroundScale(width, height);
+    this.backgroundIm.setPosition(width / 2, height / 2).setDisplaySize(width, height);
 
-    const scaleToFitWidth = (width - width * 0.1) / 540;
-    const scaleToFitHeight = (height - height * 0.1) / 960;
-    
-    let computedScale = Math.min(scaleToFitWidth, scaleToFitHeight);
+    const scaleX = (width * CONFIG.PADDING) / CONFIG.BASE_W;
+    const scaleY = (height * CONFIG.PADDING) / CONFIG.BASE_H;
+    let scale = Math.min(scaleX, scaleY);
     const aspect = width / height;
 
     if (!isVert && aspect < 1.45) {
-      computedScale = Math.min(scaleToFitWidth * 0.92, scaleToFitHeight * 0.95);
+      scale = Math.min(scaleX * 0.92, scaleY * 0.95);
+    } else if (isVert && height < 700) {
+      scale *= 0.93;
     }
-    if (isVert && height < 700) {
-      computedScale *= 0.93;
-    }
-    computedScale = Math.max(0.30, Math.min(1.25, computedScale));
+    scale = Math.max(CONFIG.MIN_SCALE, Math.min(CONFIG.MAX_SCALE, scale));
 
-    const viewW = width / computedScale;
-    const screenMode: 'fold' | 'mobile' | 'tablet' | 'desktop' = isVert 
-      ? (viewW < 750 ? 'fold' : 'mobile') 
-      : (aspect < 1.6 ? 'tablet' : 'desktop');
+    const viewW = width / scale;
+    const screenMode = isVert ? (viewW < 750 ? "fold" : "mobile") : aspect < 1.6 ? "tablet" : "desktop";
+    const finalScale = screenMode === "mobile" && aspect < 1 / 1.65 ? scale * 1.35 : scale;
 
-    const finalScale = screenMode === 'mobile' && height / width > 1.65 ? computedScale * 1.35 : computedScale;
-    const layoutContext: LayoutContext = { screenMode, viewW, scale: computedScale, isVert };
-
-    window.dispatchEvent(new CustomEvent('step1_layout_update', { 
-      detail: { layoutContext, finalScale } 
-    }));
-    window.dispatchEvent(new CustomEvent('phaser_scene_resize', { detail: { width, height, isVert } }));
+    useRegistrationStep1Store.getState().setLayout({ screenMode, viewW, scale, isVert }, finalScale);
+    window.dispatchEvent(new CustomEvent("phaser_scene_resize", { detail: { width, height, isVert } }));
   }
 
-  private updateBackgroundScale(width: number, height: number): void {
-    if (!this.backgroundIm) return;
-    this.backgroundIm.setPosition(width / 2, height / 2).setDisplaySize(width, height);
+  private handleWake(): void {
+    this.uiContainer?.classList.remove("hidden");
+    this.triggerResize();
   }
 
-  private handleWake(): void { 
-    this.uiContainer?.classList.remove("hidden"); 
-    this.triggerResize(); 
-  }
-  
-  private handleSleep(): void { 
-    this.uiContainer?.classList.add("hidden"); 
+  private handleSleep(): void {
+    this.uiContainer?.classList.add("hidden");
   }
 
   private cleanUp(): void {
-    this.scale.off('resize', this.triggerResize, this);
-    this.events.off('wake', this.handleWake, this);
-    this.events.off('sleep', this.handleSleep, this);
-    
+    this.scale.off("resize", this.triggerResize, this);
+    this.events.off("wake", this.handleWake, this);
+    this.events.off("sleep", this.handleSleep, this);
     this.reactRoot?.unmount();
-    this.reactRoot = null;
-
-    if (this.uiContainer?.parentElement) {
-      this.uiContainer.parentElement.removeChild(this.uiContainer);
-      this.uiContainer = null;
-    }
+    this.uiContainer?.remove();
+    this.reactRoot = this.uiContainer = null;
   }
 }

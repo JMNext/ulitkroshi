@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
 import { CloseButton } from "@/ModalWrapper/CloseButton";
+import * as Dialog from "@radix-ui/react-dialog";
+import { useEffect, useRef, useState } from "react";
 
-import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
-import { EDIT_BTN_ICON_URL } from "./profileEdit.constants";
 import { AVAILABLE_AVATARS } from "@/MainScene/components/Avatars/Avatars";
+import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
+import { EDIT_BTN_ICON_URL } from "./constants/profileEdit.constants";
 
 interface ProfileEditProps {
   onClose: () => void;
@@ -36,16 +36,10 @@ export const ProfileEdit = ({ onClose }: ProfileEditProps) => {
     inputRef.current?.blur();
   };
 
-  const AvatarComponent = (
-    AVAILABLE_AVATARS.find((a) => a.id === currentAvatarId) ||
-    AVAILABLE_AVATARS[0]
-  )?.Component;
+  const AvatarComponent = (AVAILABLE_AVATARS.find((a) => a.id === currentAvatarId) || AVAILABLE_AVATARS[0])?.Component;
 
   return (
-    <Dialog.Root
-      open={true}
-      onOpenChange={(open) => !open && onClose()}
-    >
+    <Dialog.Root open={true} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" />
 
@@ -55,16 +49,12 @@ export const ProfileEdit = ({ onClose }: ProfileEditProps) => {
               <CloseButton className="absolute top-3 right-3" />
             </Dialog.Close>
 
-            <Dialog.Title className="sr-only">
-              Редактирование профиля
-            </Dialog.Title>
+            <Dialog.Title className="sr-only">Редактирование профиля</Dialog.Title>
 
             <div
               data-ui-action="avatar_select"
               className={`pointer-events-auto relative mx-auto mt-8 h-[105px] w-[105px] shrink-0 cursor-pointer rounded-full bg-white shadow-sm transition-transform select-none hover:scale-105 active:scale-95 ${
-                currentAvatarId === "default"
-                  ? "border-0 p-0"
-                  : "border-2 border-[#e2e8f0] p-1"
+                currentAvatarId === "default" ? "border-0 p-0" : "border-2 border-[#e2e8f0] p-1"
               }`}
             >
               <div className="pointer-events-none flex h-full w-full items-center justify-center overflow-hidden rounded-full">
@@ -86,11 +76,7 @@ export const ProfileEdit = ({ onClose }: ProfileEditProps) => {
                     onClick={handleStartEdit}
                     className="m-0 flex h-[32px] w-[32px] shrink-0 -translate-x-0.5 -translate-y-1 cursor-pointer items-center justify-center border-none bg-transparent p-0 transition-transform outline-none active:scale-90"
                   >
-                    <img
-                      src={EDIT_BTN_ICON_URL}
-                      className="pointer-events-none block h-[26px] w-[26px] object-contain"
-                      alt=""
-                    />
+                    <img src={EDIT_BTN_ICON_URL} className="pointer-events-none block h-[26px] w-[26px] object-contain" alt="" />
                   </button>
                 </div>
               ) : (

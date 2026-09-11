@@ -1,4 +1,4 @@
-import { SLEEP_SOUND_URL } from "@/MainScene/components/PetCharacter/petCharacter.constants";
+import { SLEEP_SOUND_URL } from "@/MainScene/components/PetCharacter/constants/petCharacter.constants";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 
 const cachedSleepAudio = typeof window !== "undefined" ? new Audio(SLEEP_SOUND_URL) : null;
@@ -29,7 +29,7 @@ usePetStore.subscribe((state) => {
 
 export const triggerSleepingClick = () => {
   const { currentAnim, triggerSleepAction } = usePetStore.getState();
-  
+
   if (["sleep_begin", "sleep_awake"].includes(currentAnim)) {
     return;
   }

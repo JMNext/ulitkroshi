@@ -47,14 +47,16 @@ export const usePetNavigationStore = create<PetNavigationState>((set, get) => {
 
       const diff = touchStartX - x;
       if (Math.abs(diff) > 50) {
-        if (diff > 0) handleNext(); else handlePrev();
+        if (diff > 0) handleNext();
+        else handlePrev();
         set({ isDragging: false });
       }
     },
 
     handleWheel: (e) => {
       if (Math.abs(e.deltaX) > 10 || Math.abs(e.deltaY) > 10) {
-        if (e.deltaX > 0 || e.deltaY > 0) get().handleNext(); else get().handlePrev();
+        if (e.deltaX > 0 || e.deltaY > 0) get().handleNext();
+        else get().handlePrev();
       }
     }
   };

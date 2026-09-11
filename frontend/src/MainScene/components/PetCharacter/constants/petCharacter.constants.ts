@@ -35,7 +35,7 @@ export const PET_ANIMATION_URLS: Record<string, VideoSources> = {
     mov: formatUrl(new URL("/src/assets/resources/1stpet-animation/play_ball.mov", import.meta.url).href),
     webm: formatUrl(new URL("/src/assets/resources/1stpet-animation/play_ball.webm", import.meta.url).href)
   },
-  
+
   eat: EAT_VIDEO_SOURCES,
   eat_fruit: EAT_VIDEO_SOURCES,
 

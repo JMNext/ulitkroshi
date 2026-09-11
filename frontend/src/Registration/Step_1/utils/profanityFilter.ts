@@ -28,15 +28,15 @@ const badPatterns: RegExp[] = [
 
 export const checkNameValidity = (text: string): "spaces" | "profane" | "song" | "ok" => {
   const trimmed = text.trim();
-  
+
   if (trimmed.includes(" ")) return "spaces";
-  if (badPatterns.some(pattern => pattern.test(trimmed))) return "profane";
+  if (badPatterns.some((pattern) => pattern.test(trimmed))) return "profane";
 
   const onlyLetters = trimmed.replace(/[^a-zA-Zа-яА-ЯёЁ]/g, "");
   if (onlyLetters.length > 0) {
     const hasVowels = /[aeiouyаеёиоуыэюя]/i.test(onlyLetters);
     const hasConsonants = /[bcdfghjklmnpqrstvwxzбвгджзйклмнпрстфхцчшщ]/i.test(onlyLetters);
-    
+
     if (!hasVowels || !hasConsonants) return "song";
   }
 

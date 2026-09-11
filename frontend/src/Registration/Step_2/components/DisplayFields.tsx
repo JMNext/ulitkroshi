@@ -1,4 +1,3 @@
-import React from "react";
 import { useRegistrationStep2Store } from "../store/useRegistrationStep2Store";
 
 export const DisplayFields = () => {
@@ -19,11 +18,9 @@ export const DisplayFields = () => {
   }
 
   return (
-    <div className="relative flex h-[76px] w-[460px] shrink-0 items-center justify-center font-black pointer-events-none select-none text-slate-700 transition-all duration-150 origin-center">
+    <div className="pointer-events-none relative flex h-[76px] w-[460px] shrink-0 origin-center items-center justify-center font-black text-slate-700 transition-all duration-150 select-none">
       <div className="box-border flex h-full w-full items-center justify-center rounded-[38px] border border-slate-100 bg-white px-6 text-center shadow-md">
-        <span className="block w-full truncate text-[22px] tracking-wider font-black">
-          {displayText}
-        </span>
+        <span className="block w-full truncate text-[22px] font-black tracking-wider">{displayText}</span>
       </div>
     </div>
   );

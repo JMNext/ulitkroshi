@@ -1,7 +1,7 @@
+import { CatchGameScene } from "@/game/MiniGames/CatchGame/CatchGameScene";
+import { CATCH_ASSETS, getCatchResizeMetrics } from "@/game/MiniGames/CatchGame/constants/catchGame.constants";
+import { useCatchGameStore } from "@/game/MiniGames/CatchGame/store/useCatchGameStore";
 import Phaser from "phaser";
-import { CatchGameScene } from "./CatchGameScene";
-import { useCatchGameStore } from "./store/useCatchGameStore";
-import { CATCH_ASSETS, getCatchResizeMetrics } from "./catchGame.constants";
 
 export class CatchGamePet {
   public width = 230;
@@ -12,7 +12,10 @@ export class CatchGamePet {
   private textureCanvas: Phaser.Textures.CanvasTexture | null = null;
   private petSprite: Phaser.GameObjects.Sprite | null = null;
   private keyboardCursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
-  private wasdKeys: { left: Phaser.Input.Keyboard.Key; right: Phaser.Input.Keyboard.Key } | null = null;
+  private wasdKeys: {
+    left: Phaser.Input.Keyboard.Key;
+    right: Phaser.Input.Keyboard.Key;
+  } | null = null;
   private keyboardSpeed = 0.8;
 
   constructor(private scene: CatchGameScene) {}
@@ -21,10 +24,15 @@ export class CatchGamePet {
     this.x = this.scene.scale.width / 2;
 
     this.videoElement = document.createElement("video");
-    Object.assign(this.videoElement, { autoplay: true, loop: true, muted: true, playsInline: true });
+    Object.assign(this.videoElement, {
+      autoplay: true,
+      loop: true,
+      muted: true,
+      playsInline: true
+    });
     this.videoElement.setAttribute("webkit-playsinline", "true");
     this.videoElement.style.display = "none";
-    
+
     const isWebm = this.scene.sys.game.device.video.webm;
     this.videoElement.src = isWebm ? CATCH_ASSETS.video.webm : CATCH_ASSETS.video.mov;
     document.body.appendChild(this.videoElement);
@@ -39,7 +47,7 @@ export class CatchGamePet {
     }
 
     this.petSprite = this.scene.add.sprite(this.x, 0, "pet-video-stream").setOrigin(0.5, 1);
-    
+
     this.resize();
     useCatchGameStore.getState().setPetX(this.x);
     this.initControls();
@@ -62,8 +70,12 @@ export class CatchGamePet {
     if (useCatchGameStore.getState().isGameOver) return;
 
     const delta = this.scene.game.loop.delta;
-    let dir = (this.keyboardCursors?.left?.isDown || this.wasdKeys?.left?.isDown) ? -1 : 
-              (this.keyboardCursors?.right?.isDown || this.wasdKeys?.right?.isDown) ? 1 : 0;
+    let dir =
+      this.keyboardCursors?.left?.isDown || this.wasdKeys?.left?.isDown
+        ? -1
+        : this.keyboardCursors?.right?.isDown || this.wasdKeys?.right?.isDown
+          ? 1
+          : 0;
 
     if (dir !== 0) this.updatePosition(this.x + dir * this.keyboardSpeed * delta);
     else if (this.scene.input.activePointer?.isDown) this.updatePosition(this.scene.input.activePointer.x);
@@ -102,10 +114,12 @@ export class CatchGamePet {
     this.updatePosition(this.x);
   };
 
-  public pause = (): void => { this.videoElement?.pause(); };
-  
-  public hide = (): void => { 
-    this.petSprite?.setVisible(false); 
+  public pause = (): void => {
+    this.videoElement?.pause();
+  };
+
+  public hide = (): void => {
+    this.petSprite?.setVisible(false);
     this.pause();
   };
 

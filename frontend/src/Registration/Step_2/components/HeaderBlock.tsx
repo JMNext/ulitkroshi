@@ -1,4 +1,3 @@
-import React from "react";
 import { useRegistrationStep2Store } from "../store/useRegistrationStep2Store";
 
 const MESSAGES = {
@@ -13,14 +12,7 @@ const MESSAGES = {
 };
 
 export const HeaderBlock = () => {
-  const {
-    mode,
-    secs,
-    attempts,
-    errorMessage,
-    sendPhone,
-    startTimer
-  } = useRegistrationStep2Store();
+  const { mode, secs, attempts, errorMessage, sendPhone, startTimer } = useRegistrationStep2Store();
 
   const handleResendClick = () => {
     if (secs <= 0) sendPhone().then(() => startTimer());
@@ -41,9 +33,11 @@ export const HeaderBlock = () => {
   }
 
   return (
-    <div className="relative flex h-[140px] w-[460px] shrink-0 items-center justify-center font-black pointer-events-none select-none transition-all duration-150 origin-center">
+    <div className="pointer-events-none relative flex h-[140px] w-[460px] shrink-0 origin-center items-center justify-center font-black transition-all duration-150 select-none">
       <div className="box-border flex h-full w-full flex-col items-center justify-center rounded-[32px] border border-slate-200/50 bg-white p-6 text-center shadow-md">
-        <h2 className={`m-0 text-[21px] leading-snug font-black whitespace-pre-line ${errorMessage && errorMessage !== "user_not_found" ? "text-red-500" : "text-slate-700"}`}>
+        <h2
+          className={`m-0 text-[21px] leading-snug font-black whitespace-pre-line ${errorMessage && errorMessage !== "user_not_found" ? "text-red-500" : "text-slate-700"}`}
+        >
           {titleStr}
         </h2>
         {mode === "code" && (

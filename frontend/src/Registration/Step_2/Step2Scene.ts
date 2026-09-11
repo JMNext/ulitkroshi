@@ -1,67 +1,62 @@
-import Phaser from 'phaser';
-import { createRoot, Root } from 'react-dom/client';
-import React from 'react';
-import { Step2UiManager, LayoutContext } from './Step2UiManager';
-import { useRegistrationStep2Store } from '@/Registration/Step_2/store/useRegistrationStep2Store';
-import fonGorizUrl from '../../assets/background/fon_goriz.png';
-import fonVertUrl from '../../assets/background/fon_vert.png';
+import { useRegistrationStep2Store } from "@/Registration/Step_2/store/useRegistrationStep2Store";
+import Phaser from "phaser";
+import React from "react";
+import { createRoot, Root } from "react-dom/client";
+import fonGorizUrl from "../../assets/background/fon_goriz.png";
+import fonVertUrl from "../../assets/background/fon_vert.png";
+import { Step2UiManager } from "./Step2UiManager";
+
+const CONFIG = { BASE_W: 460, BASE_VERT_H: 960, BASE_HORIZ_H: 840, PADDING: 0.9 };
 
 export class Step2Scene extends Phaser.Scene {
   public backgroundIm!: Phaser.GameObjects.Image;
   private uiContainer: HTMLDivElement | null = null;
-  private currentOrientation: 'vert' | 'goriz' | null = null;
+  private currentOrientation: "vert" | "goriz" | null = null;
   private reactRoot: Root | null = null;
 
-  constructor() { 
-    super({ key: 'Step2Scene' }); 
+  constructor() {
+    super({ key: "Step2Scene" });
+  }
+
+  private syncStore(): void {
+    const store = useRegistrationStep2Store.getState();
+    store.setPhaserScene(this); 
+    store.clearError();
+    store.checkSavedDevicePhone(() => this.triggerResize());
   }
 
   public init(): void {
-    document.querySelectorAll('#phaser-native-step1-bubble, #phaser-native-success-bubble')
-      .forEach(e => e.remove());
-    (window as any).currentPhaserScene = this;
-
-    const store = useRegistrationStep2Store.getState();
-    store.clearError();
-    store.checkSavedDevicePhone(() => {
-      this.triggerResize();
-    });
+    document.querySelectorAll("#phaser-native-step1-bubble, #phaser-native-success-bubble").forEach((e) => e.remove());
   }
 
   public preload(): void {
-    this.load.image('step2_bg_fon_goriz', fonGorizUrl);
-    this.load.image('step2_bg_fon_vert', fonVertUrl);
+    this.load.image("step2_bg_fon_goriz", fonGorizUrl);
+    this.load.image("step2_bg_fon_vert", fonVertUrl);
   }
 
   public create(): void {
-    if (this.game.canvas) {
-      this.game.canvas.className = "absolute inset-0 w-full h-full z-1";
-    }
+    if (this.game.canvas) this.game.canvas.className = "absolute inset-0 w-full h-full z-1";
 
     const { width, height } = this.scale;
-    const isVertInit = height > width;
-    this.currentOrientation = isVertInit ? 'vert' : 'goriz';
-    
-    this.backgroundIm = this.add.image(width / 2, height / 2, isVertInit ? 'step2_bg_fon_vert' : 'step2_bg_fon_goriz')
-      .setOrigin(0.5, 0.5)
+    this.backgroundIm = this.add
+      .image(width / 2, height / 2, "step2_bg_fon_goriz")
+      .setOrigin(0.5)
       .setDepth(-2);
-      
-    this.updateBackgroundScale(width, height);
 
-    const gameContainer = document.getElementById("game-container") || document.body;
-    this.uiContainer = document.createElement('div');
+    this.uiContainer = document.createElement("div");
     this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden";
-    gameContainer.appendChild(this.uiContainer);
+    (document.getElementById("game-container") || document.body).appendChild(this.uiContainer);
+
+    if (width > 0 && height > 0) this.executeResizeLogic(width, height);
+    this.syncStore();
 
     this.reactRoot = createRoot(this.uiContainer);
-    this.reactRoot.render(
-      React.createElement(Step2UiManager, { phaserScene: this })
-    );
+    this.reactRoot.render(React.createElement(Step2UiManager, { phaserScene: this }));
 
-    this.scale.on('resize', this.triggerResize, this);
-    this.events.on('wake', this.handleWake, this);
+    this.scale.on("resize", this.triggerResize, this);
+    this.events.on("wake", this.handleWake, this);
     this.events.on("sleep", this.handleSleep, this);
-    this.events.once('shutdown', this.cleanUp, this);
+    this.events.once("shutdown", this.cleanUp, this);
 
     setTimeout(() => {
       if (this.sys?.isActive()) this.triggerResize();
@@ -71,81 +66,58 @@ export class Step2Scene extends Phaser.Scene {
   public triggerResize(): void {
     if (!this.sys?.isActive() || !this.scale) return;
     const { width, height } = this.scale;
-    if (width === 0 || height === 0) return;
+    if (width && height) this.executeResizeLogic(width, height);
+  }
 
+  private executeResizeLogic(width: number, height: number): void {
     const isVert = height > width;
-    const nextOrientation = isVert ? 'vert' : 'goriz';
+    const nextOrientation = isVert ? "vert" : "goriz";
 
     if (this.currentOrientation !== nextOrientation) {
       this.currentOrientation = nextOrientation;
-      this.backgroundIm.setTexture(isVert ? 'step2_bg_fon_vert' : 'step2_bg_fon_goriz');
+      this.backgroundIm.setTexture(`step2_bg_fon_${nextOrientation}`);
     }
-    
-    this.updateBackgroundScale(width, height);
+    this.backgroundIm.setPosition(width / 2, height / 2).setDisplaySize(width, height);
 
     const aspect = width / height;
     let computedScale = 1;
 
     if (isVert) {
-      const scaleX = width / 460;
+      const scaleX = width / CONFIG.BASE_W;
       computedScale = aspect > 0.6 ? scaleX : aspect < 0.48 ? scaleX * 0.92 : scaleX * 0.96;
       if (height < 700) computedScale *= 0.93;
       computedScale = Math.max(0.42, Math.min(1.3, computedScale));
     } else {
-      const scaleToFitWidth = (width - width * 0.1) / 460; 
-      const scaleToFitHeight = (height - height * 0.1) / 840;
-      computedScale = Math.min(scaleToFitWidth, scaleToFitHeight);
-      if (aspect < 1.45) computedScale = Math.min(scaleToFitWidth * 0.92, scaleToFitHeight * 0.95);
-      computedScale = Math.max(0.30, Math.min(1.25, computedScale));
+      const scaleX = (width * CONFIG.PADDING) / CONFIG.BASE_W;
+      const scaleY = (height * CONFIG.PADDING) / CONFIG.BASE_HORIZ_H;
+      computedScale = Math.min(scaleX, scaleY);
+      if (aspect < 1.45) computedScale = Math.min(scaleX * 0.92, scaleY * 0.95);
+      computedScale = Math.max(0.3, Math.min(1.25, computedScale));
     }
 
     const viewW = width / computedScale;
-    const screenMode: 'fold' | 'mobile' | 'tablet' | 'desktop' = isVert 
-      ? (viewW < 750 ? 'fold' : 'mobile') 
-      : (aspect < 1.6 ? 'tablet' : 'desktop');
+    const screenMode = isVert ? (viewW < 750 ? "fold" : "mobile") : aspect < 1.6 ? "tablet" : "desktop";
 
-    const layoutContext: LayoutContext = { screenMode, viewW, scale: computedScale, isVert };
-
-    window.dispatchEvent(new CustomEvent('step2_layout_update', { 
-      detail: { layoutContext, computedScale } 
-    }));
-    window.dispatchEvent(new CustomEvent('phaser_scene_resize', { detail: { width, height, isVert } }));
+    useRegistrationStep2Store.getState().setLayout({ screenMode, viewW, scale: computedScale, isVert }, computedScale);
+    window.dispatchEvent(new CustomEvent("phaser_scene_resize", { detail: { width, height, isVert } }));
   }
 
-  private updateBackgroundScale(width: number, height: number): void {
-    if (!this.backgroundIm) return;
-    this.backgroundIm.setPosition(width / 2, height / 2).setDisplaySize(width, height);
+  private handleWake(): void {
+    this.uiContainer?.classList.remove("hidden");
+    useRegistrationStep2Store.getState().setPhaserScene(this);
+    this.syncStore();
   }
-
-  private handleWake(): void { 
-    this.uiContainer?.classList.remove("hidden"); 
-    (window as any).currentPhaserScene = this;
-    
-    const store = useRegistrationStep2Store.getState();
-    store.clearError();
-    store.checkSavedDevicePhone(() => {
-      this.triggerResize();
-    });
-  }
-  
-  private handleSleep(): void { 
-    this.uiContainer?.classList.add("hidden"); 
+  private handleSleep(): void {
+    this.uiContainer?.classList.add("hidden");
   }
 
   private cleanUp(): void {
-    this.scale.off('resize', this.triggerResize, this);
-    this.events.off('wake', this.handleWake, this);
-    this.events.off('sleep', this.handleSleep, this);
-    if ((window as any).currentPhaserScene === this) {
-      (window as any).currentPhaserScene = null;
-    }
-    
+    this.scale.off("resize", this.triggerResize, this);
+    this.events.off("wake", this.handleWake, this);
+    this.events.off("sleep", this.handleSleep, this);
+    useRegistrationStep2Store.getState().setPhaserScene(null);
     this.reactRoot?.unmount();
-    this.reactRoot = null;
-
-    if (this.uiContainer?.parentElement) {
-      this.uiContainer.parentElement.removeChild(this.uiContainer);
-      this.uiContainer = null;
-    }
+    this.uiContainer?.remove();
+    this.reactRoot = this.uiContainer = null;
   }
 }

@@ -1,5 +1,5 @@
-import { useMemoryGameStore } from "./store/useMemoryGameStore";
-import { MemoryGameScene } from "./MemoryGameScene";
+import { MemoryGameScene } from "../MemoryGameScene";
+import { useMemoryGameStore } from "../store/useMemoryGameStore";
 
 export class MemoryGameGrid {
   private mainGridContainer!: Phaser.GameObjects.Container;
@@ -33,11 +33,18 @@ export class MemoryGameGrid {
       const fruit = this.scene.add.image(0, 0, `fruit_${id}`).setDisplaySize(this.cardW * 0.85, this.cardH * 0.85);
 
       container.add([frame, shirt, fruit]).setSize(this.cardW, this.cardH).setInteractive({ useHandCursor: true });
-      container.setData({ index: i, fruitId: id, shirt, fruit, frame, isOpen: true });
-      
-      container.on("pointerdown", () => 
-        useMemoryGameStore.getState().canClick &&
-        useMemoryGameStore.getState().handleCardClick(i, this.scene.totalPairs)
+      container.setData({
+        index: i,
+        fruitId: id,
+        shirt,
+        fruit,
+        frame,
+        isOpen: true
+      });
+
+      container.on(
+        "pointerdown",
+        () => useMemoryGameStore.getState().canClick && useMemoryGameStore.getState().handleCardClick(i, this.scene.totalPairs)
       );
 
       this.mainGridContainer.add(container);
@@ -66,7 +73,7 @@ export class MemoryGameGrid {
       const paddingY = w < 960 ? 60 : 100;
       scale = Math.min(w / (gridW + paddingX), h / (gridH + paddingY));
       if (w / h < 1.6) scale *= 0.98;
-      
+
       const maxHorizontalScale = (w * 0.65) / gridW;
       scale = Math.min(scale, maxHorizontalScale, 1.25);
     }
@@ -85,8 +92,13 @@ export class MemoryGameGrid {
 
       if (isMatched && c.visible) {
         this.scene.tweens.add({
-          targets: c, scale: 0.75, alpha: 0, duration: 400,
-          onComplete: () => { c.setVisible(false).disableInteractive(); }
+          targets: c,
+          scale: 0.75,
+          alpha: 0,
+          duration: 400,
+          onComplete: () => {
+            c.setVisible(false).disableInteractive();
+          }
         });
         return;
       }
@@ -94,13 +106,19 @@ export class MemoryGameGrid {
       if (lastIsOpen !== shouldBeOpen) {
         c.setData("isOpen", shouldBeOpen);
         this.scene.tweens.add({
-          targets: c, scaleX: 0, duration: 200, ease: "Quad.easeIn",
+          targets: c,
+          scaleX: 0,
+          duration: 200,
+          ease: "Quad.easeIn",
           onComplete: () => {
             shirt.setVisible(!shouldBeOpen);
             fruit.setVisible(shouldBeOpen);
-            
-            this.scene.tweens.add({ 
-              targets: c, scaleX: 1, duration: 200, ease: "Quad.easeOut",
+
+            this.scene.tweens.add({
+              targets: c,
+              scaleX: 1,
+              duration: 200,
+              ease: "Quad.easeOut",
               onComplete: () => {
                 if (shouldBeOpen && !isMatched) {
                   this.runShimmerEffect(c);
@@ -147,9 +165,19 @@ export class MemoryGameGrid {
       this.mainGridContainer.bringToTop(c1);
       this.mainGridContainer.bringToTop(c2);
 
-      this.scene.tweens.add({ targets: c1, x: x2, y: y2, duration: 350, ease: "Cubic.easeInOut" });
       this.scene.tweens.add({
-        targets: c2, x: x1, y: y1, duration: 350, ease: "Cubic.easeInOut",
+        targets: c1,
+        x: x2,
+        y: y2,
+        duration: 350,
+        ease: "Cubic.easeInOut"
+      });
+      this.scene.tweens.add({
+        targets: c2,
+        x: x1,
+        y: y1,
+        duration: 350,
+        ease: "Cubic.easeInOut",
         onComplete: () => {
           currentDeck[idx1] = c2;
           currentDeck[idx2] = c1;

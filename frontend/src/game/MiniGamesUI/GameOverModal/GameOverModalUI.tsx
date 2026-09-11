@@ -1,23 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import confetti from 'canvas-confetti';
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
-import { COIN_IMAGE_URL, GAMEOVER_TEXTS, CONFETTI_BASE_CONFIG, getGameOverModalScale } from './gameOverModal.constants';
+import confetti from "canvas-confetti";
+import { useEffect, useState } from "react";
+import { COIN_IMAGE_URL, CONFETTI_BASE_CONFIG, GAMEOVER_TEXTS, getGameOverModalScale } from "./constants/gameOverModal.constants";
 
 interface GameOverModalUIProps {
   onRestart: () => void;
   onBack: () => void;
   isWin?: boolean;
   score?: number;
-  difficulty?: 'easy' | 'medium' | 'hard';
+  difficulty?: "easy" | "medium" | "hard";
 }
 
-export const GameOverModalUI = ({ 
-  onRestart, 
-  onBack, 
-  isWin: initialIsWin = false, 
-  score,
-  difficulty 
-}: GameOverModalUIProps) => {
+export const GameOverModalUI = ({ onRestart, onBack, isWin: initialIsWin = false, score, difficulty }: GameOverModalUIProps) => {
   const [scale, setScale] = useState(1);
   const { gameOverResult, setGameOver, clearGameOver } = useMainGameStore();
 
@@ -32,8 +26,8 @@ export const GameOverModalUI = ({
     };
 
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {
@@ -61,46 +55,51 @@ export const GameOverModalUI = ({
   const { isWin, rewardText } = gameOverResult;
 
   return (
-    <div 
-      className="absolute inset-0 flex items-center justify-center bg-black/60 z-50 pointer-events-auto w-full h-full select-none"
+    <div
+      className="pointer-events-auto absolute inset-0 z-50 flex h-full w-full items-center justify-center bg-black/60 select-none"
       style={{ fontFamily: "'Arteks-Forced', sans-serif" }}
     >
-      <article className="bg-white border-solid border-4 border-[#ff9800] text-center flex flex-col items-center justify-center w-[300px] p-6 pb-7 gap-4 rounded-[32px] origin-center shadow-lg" style={{ transform: `scale(${scale})` }}>
-        <h1 className={`font-black tracking-wide leading-none text-[28px] m-0 ${isWin ? 'text-[#2e7d32]' : 'text-[#d32f2f]'}`}>
+      <article
+        className="flex w-[300px] origin-center flex-col items-center justify-center gap-4 rounded-[32px] border-4 border-solid border-[#ff9800] bg-white p-6 pb-7 text-center shadow-lg"
+        style={{ transform: `scale(${scale})` }}
+      >
+        <h1 className={`m-0 text-[28px] leading-none font-black tracking-wide ${isWin ? "text-[#2e7d32]" : "text-[#d32f2f]"}`}>
           {isWin ? GAMEOVER_TEXTS.winTitle : GAMEOVER_TEXTS.loseTitle}
         </h1>
-        
+
         {score !== undefined && (
-          <div className="flex flex-col gap-1 items-center justify-center">
+          <div className="flex flex-col items-center justify-center gap-1">
             {!difficulty && score !== 999 && (
-              <p className="font-extrabold text-slate-700 text-[20px] m-0 uppercase tracking-wide">
-                {GAMEOVER_TEXTS.scoreLabel} <span className="text-[#1e1b4b] text-[24px] font-black">{score}</span>
+              <p className="m-0 text-[20px] font-extrabold tracking-wide text-slate-700 uppercase">
+                {GAMEOVER_TEXTS.scoreLabel} <span className="text-[24px] font-black text-[#1e1b4b]">{score}</span>
               </p>
             )}
-            <div className="flex items-center justify-center gap-0.5 mt-0.5 h-8">
-              <span className="font-black text-slate-700 text-[18px] uppercase tracking-wide mr-1">
-                {GAMEOVER_TEXTS.rewardLabel}
-              </span>
-              <span 
-                className="font-black text-[26px] tracking-wide leading-none select-none text-[#ffb300]"
-                style={{ WebkitTextStroke: '1px #ffffff', filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.15))' }}
+            <div className="mt-0.5 flex h-8 items-center justify-center gap-0.5">
+              <span className="mr-1 text-[18px] font-black tracking-wide text-slate-700 uppercase">{GAMEOVER_TEXTS.rewardLabel}</span>
+              <span
+                className="text-[26px] leading-none font-black tracking-wide text-[#ffb300] select-none"
+                style={{ WebkitTextStroke: "1px #ffffff", filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.15))" }}
               >
                 {rewardText}
               </span>
-              <img 
-                src={COIN_IMAGE_URL} 
-                className="w-7 h-7 object-contain block select-none pointer-events-none" 
-                alt="" 
-              />
+              <img src={COIN_IMAGE_URL} className="pointer-events-none block h-7 w-7 object-contain select-none" alt="" />
             </div>
           </div>
         )}
 
-        <nav className="flex flex-col w-full gap-2.5 mt-1">
-          <button type="button" onClick={() => clickAction(onRestart)} className="w-full flex items-center justify-center font-black text-white text-[16px] h-11 rounded-[16px] border-none uppercase tracking-wide bg-[#ff9800] cursor-pointer">
+        <nav className="mt-1 flex w-full flex-col gap-2.5">
+          <button
+            type="button"
+            onClick={() => clickAction(onRestart)}
+            className="flex h-11 w-full cursor-pointer items-center justify-center rounded-[16px] border-none bg-[#ff9800] text-[16px] font-black tracking-wide text-white uppercase"
+          >
             {GAMEOVER_TEXTS.restartBtn}
           </button>
-          <button type="button" onClick={() => clickAction(onBack)} className="w-full flex items-center justify-center font-black text-[#1e1b4b] text-[16px] h-11 rounded-[16px] border-none uppercase tracking-wide bg-[#81c714] cursor-pointer">
+          <button
+            type="button"
+            onClick={() => clickAction(onBack)}
+            className="flex h-11 w-full cursor-pointer items-center justify-center rounded-[16px] border-none bg-[#81c714] text-[16px] font-black tracking-wide text-[#1e1b4b] uppercase"
+          >
             {GAMEOVER_TEXTS.exitBtn}
           </button>
         </nav>

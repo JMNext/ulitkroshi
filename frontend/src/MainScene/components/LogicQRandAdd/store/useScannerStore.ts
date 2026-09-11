@@ -1,5 +1,5 @@
-import { create } from "zustand";
 import { Html5Qrcode } from "html5-qrcode";
+import { create } from "zustand";
 
 interface ScannerState {
   cameraError: string | null;
@@ -15,12 +15,13 @@ export const useScannerStore = create<ScannerState>((set, get) => ({
   isInitializing: false,
 
   initScanner: async (elementId, handleSuccess) => {
-    if (get().isInitializing || get().qrScanner?.isScanning) return;
+    const state = get();
+    if (state.isInitializing || state.qrScanner?.isScanning) return;
 
     set({ cameraError: null, isInitializing: true });
 
     if (window.location.protocol !== "https:" && window.location.hostname !== "localhost") {
-      set({ cameraError: "Камера заблокирована: требуется защищенное соединение HTTPS.", isInitializing: false });
+      set({ cameraError: "https_required", isInitializing: false });
       return;
     }
 
@@ -28,17 +29,12 @@ export const useScannerStore = create<ScannerState>((set, get) => ({
       const scanner = new Html5Qrcode(elementId);
       set({ qrScanner: scanner });
 
-      await scanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 140, height: 140 } },
-        (decodedText) => handleSuccess(decodedText),
-        () => {}
-      );
+      await scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 140, height: 140 } }, handleSuccess, () => {});
       set({ isInitializing: false });
     } catch (err) {
       console.warn("Camera init failed:", err);
-      set({ 
-        cameraError: "Доступ запрещен. Пожалуйста, разрешите использование камеры в настройках.", 
+      set({
+        cameraError: "permission_denied",
         isInitializing: false,
         qrScanner: null
       });
@@ -46,14 +42,8 @@ export const useScannerStore = create<ScannerState>((set, get) => ({
   },
 
   safelyStopScanner: async () => {
-    const { qrScanner, isInitializing } = get();
-    
-    if (isInitializing) {
-      let checks = 0;
-      while (get().isInitializing && checks < 20) {
-        await new Promise((res) => setTimeout(res, 100));
-        checks++;
-      }
+    if (get().isInitializing) {
+      await new Promise((res) => setTimeout(res, 200));
     }
 
     const currentScanner = get().qrScanner;
@@ -64,13 +54,10 @@ export const useScannerStore = create<ScannerState>((set, get) => ({
         console.warn("Scanner stop failed:", err);
       }
     }
-    
-    if (currentScanner) {
-      try {
-        currentScanner.clear();
-      } catch (_) {}
-    }
 
+    try {
+      currentScanner?.clear();
+    } catch (_) {}
     set({ qrScanner: null, isInitializing: false });
   }
 }));

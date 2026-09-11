@@ -1,7 +1,6 @@
-import React from 'react';
 import lifeIcon from "../../../assets/interface-icons/life.svg";
 
-const coinImgUrl = new URL('@/assets/buttom_menu-icons/eat.svg', import.meta.url).href;
+const coinImgUrl = new URL("@/assets/buttom_menu-icons/eat.svg", import.meta.url).href;
 
 interface GameHeaderUIProps {
   score?: number;
@@ -14,26 +13,27 @@ interface GameHeaderUIProps {
 export const GameHeaderUI = ({ score, onBack, hp, currentScale = 1, isCoinHeader = false }: GameHeaderUIProps) => {
   const hasLives = typeof hp === "number";
   const livesCount = hasLives ? Math.ceil(hp / 25) : 0;
-  
+
   const isPortrait = window.innerHeight > window.innerWidth;
-  const autoScale = isPortrait 
-    ? Math.min(Math.max(currentScale * 1.15, 0.75), 1.25) 
-    : Math.min(Math.max(currentScale * 1.35, 0.7), 1.4);
+  const autoScale = isPortrait ? Math.min(Math.max(currentScale * 1.15, 0.75), 1.25) : Math.min(Math.max(currentScale * 1.35, 0.7), 1.4);
 
   const sharedTextClass = "m-0 text-[19px] landscape:text-[20px]";
 
   return (
-    <header className="fixed inset-x-0 top-0 z-30 flex items-start justify-between p-[18px_24px] landscape:p-[24px_48px] w-screen max-w-full pointer-events-none select-none box-border">
-      <div 
-        className="flex flex-col pointer-events-auto origin-top-left transition-transform duration-100"
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-30 box-border flex w-screen max-w-full items-start justify-between p-[18px_24px] select-none landscape:p-[24px_48px]">
+      <div
+        className="pointer-events-auto flex origin-top-left flex-col transition-transform duration-100"
         style={{ transform: `scale(${autoScale})` }}
       >
         <button
-          type="button" 
-          onClick={() => { if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); onBack(); }}
-          className="cursor-pointer p-1 font-sans font-black text-2xl text-white uppercase flex items-center gap-1 drop-shadow-[0_3px_5px_rgba(0,0,0,0.8)] transition-transform duration-100 ease-out hover:scale-105 active:scale-95 outline-none bg-transparent border-none"
+          type="button"
+          onClick={() => {
+            if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+            onBack();
+          }}
+          className="flex cursor-pointer items-center gap-1 border-none bg-transparent p-1 font-sans text-2xl font-black text-white uppercase drop-shadow-[0_3px_5px_rgba(0,0,0,0.8)] transition-transform duration-100 ease-out outline-none hover:scale-105 active:scale-95"
         >
-          <span className="text-[26px] relative top-[-1.5px]">‹</span> Назад
+          <span className="relative top-[-1.5px] text-[26px]">‹</span> Назад
         </button>
 
         {hasLives && (
@@ -42,7 +42,7 @@ export const GameHeaderUI = ({ score, onBack, hp, currentScale = 1, isCoinHeader
               const isAlive = idx < livesCount;
               return (
                 <img
-                  key={`life-${idx}`} 
+                  key={`life-${idx}`}
                   src={lifeIcon}
                   className="h-7 w-7 object-contain transition-all duration-300"
                   style={{
@@ -59,13 +59,13 @@ export const GameHeaderUI = ({ score, onBack, hp, currentScale = 1, isCoinHeader
       </div>
 
       {score !== undefined && (
-        <div 
-          className="flex flex-col pointer-events-auto origin-top-right transition-transform duration-100"
+        <div
+          className="pointer-events-auto flex origin-top-right flex-col transition-transform duration-100"
           style={{ transform: `scale(${autoScale})` }}
         >
-          <div className="flex items-center gap-2 border border-slate-700/50 bg-slate-900/80 p-[10px_18px] landscape:p-[12px_20px] font-sans font-black text-white rounded-2xl drop-shadow-[0_10px_15px_rgba(0,0,0,0.2)] backdrop-blur-md">
+          <div className="flex items-center gap-2 rounded-2xl border border-slate-700/50 bg-slate-900/80 p-[10px_18px] font-sans font-black text-white drop-shadow-[0_10px_15px_rgba(0,0,0,0.2)] backdrop-blur-md landscape:p-[12px_20px]">
             {isCoinHeader ? (
-              <img src={coinImgUrl} className="w-6 h-6 object-contain block select-none pointer-events-none mr-0.5" alt="" />
+              <img src={coinImgUrl} className="pointer-events-none mr-0.5 block h-6 w-6 object-contain select-none" alt="" />
             ) : (
               <p className={`tracking-wide ${sharedTextClass}`}>СЧЕТ:</p>
             )}

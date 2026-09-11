@@ -1,21 +1,21 @@
-import { createRoot, Root } from "react-dom/client";
-import React from "react";
-import { useSnakeGameStore } from "./store/useSnakeGameStore";
+import { CatchGameScene } from "@/game/MiniGames/CatchGame/CatchGameScene";
+import { useCatchGameStore } from "@/game/MiniGames/CatchGame/store/useCatchGameStore";
 import { GameHeaderUI } from "@/game/MiniGamesUI/GameHeader/GameHeaderUI";
 import { GameOverModalUI } from "@/game/MiniGamesUI/GameOverModal/GameOverModalUI";
-import { SnakeGameScene } from "./SnakeGameScene";
+import React from "react";
+import { createRoot, Root } from "react-dom/client";
 
-export class SnakeGameOverlay {
+export class CatchGameOverlay {
   private root: Root | null = null;
   private container: HTMLDivElement | null = null;
 
-  constructor(private scene: SnakeGameScene) {}
+  constructor(private scene: CatchGameScene) {}
 
   public create = (): void => {
     const gameContainer = document.getElementById("game-container") || document.body;
-    const existing = document.getElementById("phaser-catch-root");
-    if (existing) {
-      this.container = existing as HTMLDivElement;
+    const existingElement = document.getElementById("phaser-catch-root");
+    if (existingElement) {
+      this.container = existingElement as HTMLDivElement;
       return;
     }
     this.container = document.createElement("div");
@@ -29,9 +29,10 @@ export class SnakeGameOverlay {
     if (!this.root) this.root = createRoot(this.container);
 
     const ReactiveOverlay = () => {
-      const score = useSnakeGameStore((s) => s.score);
-      const hp = useSnakeGameStore((s) => s.hp);
-      const isGameOver = useSnakeGameStore((s) => s.isGameOver);
+      const score = useCatchGameStore((s) => s.score);
+      const hp = useCatchGameStore((s) => s.hp);
+      const isGameOver = useCatchGameStore((s) => s.isGameOver);
+      const isWin = useCatchGameStore((s) => s.isWin);
 
       const { width, height } = this.scene.scale;
       const currentScale = height > width ? height / 1080 : Math.min(width / 1920, height / 1080);
@@ -52,7 +53,7 @@ export class SnakeGameOverlay {
             { className: "pointer-events-auto absolute inset-0 z-50 flex items-center justify-center bg-black/40" },
             React.createElement(GameOverModalUI, {
               score,
-              isWin: score >= 20,
+              isWin,
               onRestart: () => this.scene.scene.restart({ difficulty: this.scene.difficulty }),
               onBack: () => this.scene.exitGame()
             })
@@ -65,7 +66,11 @@ export class SnakeGameOverlay {
 
   public destroy = (): void => {
     if (this.root) {
-      try { this.root.unmount(); } catch (e) { console.warn(e); }
+      try {
+        this.root.unmount();
+      } catch (e) {
+        console.warn(e);
+      }
       this.root = null;
     }
     if (this.container) {

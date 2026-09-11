@@ -1,10 +1,13 @@
 import Phaser from "phaser";
-import { useSnakeGameStore } from "./store/useSnakeGameStore";
-import { SnakeGridRenderer } from "./SnakeGridRenderer";
-import { SnakeFruitSpawner } from "./SnakeFruitSpawner";
+import { useSnakeGameStore } from "../store/useSnakeGameStore";
 import { SnakeBombManager } from "./SnakeBombManager";
+import { SnakeFruitSpawner } from "./SnakeFruitSpawner";
+import { SnakeGridRenderer } from "./SnakeGridRenderer";
 
-export interface Point { x: number; y: number; }
+export interface Point {
+  x: number;
+  y: number;
+}
 
 export class SnakeGameLogicManager {
   public snake: Point[] = [];
@@ -17,7 +20,10 @@ export class SnakeGameLogicManager {
   public fruitSpawner!: SnakeFruitSpawner;
   public bombManager!: SnakeBombManager;
 
-  constructor(private scene: Phaser.Scene, private moveDelay: number) {
+  constructor(
+    private scene: Phaser.Scene,
+    private moveDelay: number
+  ) {
     this.renderer = new SnakeGridRenderer(this.scene, this);
     this.fruitSpawner = new SnakeFruitSpawner(this.scene, this);
     this.bombManager = new SnakeBombManager(this.scene, this);
@@ -37,7 +43,13 @@ export class SnakeGameLogicManager {
   };
 
   public handleTicks = (time: number): void => {
-    if (useSnakeGameStore.getState().isGameOver || useSnakeGameStore.getState().isCrashed || time < this.nextMoveTime || this.snake.length === 0) return;
+    if (
+      useSnakeGameStore.getState().isGameOver ||
+      useSnakeGameStore.getState().isCrashed ||
+      time < this.nextMoveTime ||
+      this.snake.length === 0
+    )
+      return;
 
     this.dir = this.nextDir;
     const head: Point = { x: this.snake[0].x, y: this.snake[0].y };
@@ -79,23 +91,37 @@ export class SnakeGameLogicManager {
     if (this.snake[0].y < 0) this.snake[0].y = 0;
     if (this.snake[0].y >= 12) this.snake[0].y = 11;
 
-    const OPP_DIR: Record<string, string> = { UP: "DOWN", DOWN: "UP", LEFT: "RIGHT", RIGHT: "LEFT" };
+    const OPP_DIR: Record<string, string> = {
+      UP: "DOWN",
+      DOWN: "UP",
+      LEFT: "RIGHT",
+      RIGHT: "LEFT"
+    };
     this.nextDir = OPP_DIR[this.dir] || this.dir;
     useSnakeGameStore.getState().applyPenalty(() => (this.scene as any).overlayManager.render(), false);
   };
 
   public changeDirection = (newDir: string): void => {
-    const OPP: Record<string, string> = { UP: "DOWN", DOWN: "UP", LEFT: "RIGHT", RIGHT: "LEFT" };
+    const OPP: Record<string, string> = {
+      UP: "DOWN",
+      DOWN: "UP",
+      LEFT: "RIGHT",
+      RIGHT: "LEFT"
+    };
     if (OPP[newDir] !== this.dir && OPP[newDir] !== this.nextDir) this.nextDir = newDir;
   };
 
   private resetSnake = (): void => {
     this.dir = this.nextDir = "RIGHT";
-    this.snake = [{ x: 3, y: 5 }, { x: 2, y: 5 }, { x: 1, y: 5 }];
+    this.snake = [
+      { x: 3, y: 5 },
+      { x: 2, y: 5 },
+      { x: 1, y: 5 }
+    ];
   };
-  
+
   public resetPositionOnCrash = (): void => {};
-  
+
   public destroy = (): void => {
     this.bombManager?.destroy();
     this.fruitSpawner?.destroy();

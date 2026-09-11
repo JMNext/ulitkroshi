@@ -1,21 +1,21 @@
-import { createRoot, Root } from "react-dom/client";
-import React from "react";
-import { useCatchGameStore } from "./store/useCatchGameStore";
 import { GameHeaderUI } from "@/game/MiniGamesUI/GameHeader/GameHeaderUI";
 import { GameOverModalUI } from "@/game/MiniGamesUI/GameOverModal/GameOverModalUI";
-import { CatchGameScene } from "./CatchGameScene";
+import React from "react";
+import { createRoot, Root } from "react-dom/client";
+import { SnakeGameScene } from "../SnakeGameScene";
+import { useSnakeGameStore } from "../store/useSnakeGameStore";
 
-export class CatchGameOverlay {
+export class SnakeGameOverlay {
   private root: Root | null = null;
   private container: HTMLDivElement | null = null;
 
-  constructor(private scene: CatchGameScene) {}
+  constructor(private scene: SnakeGameScene) {}
 
   public create = (): void => {
     const gameContainer = document.getElementById("game-container") || document.body;
-    const existingElement = document.getElementById("phaser-catch-root");
-    if (existingElement) {
-      this.container = existingElement as HTMLDivElement;
+    const existing = document.getElementById("phaser-catch-root");
+    if (existing) {
+      this.container = existing as HTMLDivElement;
       return;
     }
     this.container = document.createElement("div");
@@ -29,17 +29,18 @@ export class CatchGameOverlay {
     if (!this.root) this.root = createRoot(this.container);
 
     const ReactiveOverlay = () => {
-      const score = useCatchGameStore((s) => s.score);
-      const hp = useCatchGameStore((s) => s.hp);
-      const isGameOver = useCatchGameStore((s) => s.isGameOver);
-      const isWin = useCatchGameStore((s) => s.isWin);
+      const score = useSnakeGameStore((s) => s.score);
+      const hp = useSnakeGameStore((s) => s.hp);
+      const isGameOver = useSnakeGameStore((s) => s.isGameOver);
 
       const { width, height } = this.scene.scale;
       const currentScale = height > width ? height / 1080 : Math.min(width / 1920, height / 1080);
 
       return React.createElement(
         "div",
-        { className: "absolute inset-0 w-full h-full pointer-events-none" },
+        {
+          className: "absolute inset-0 w-full h-full pointer-events-none"
+        },
         React.createElement(GameHeaderUI, {
           score,
           hp,
@@ -50,11 +51,16 @@ export class CatchGameOverlay {
         isGameOver &&
           React.createElement(
             "div",
-            { className: "pointer-events-auto absolute inset-0 z-50 flex items-center justify-center bg-black/40" },
+            {
+              className: "pointer-events-auto absolute inset-0 z-50 flex items-center justify-center bg-black/40"
+            },
             React.createElement(GameOverModalUI, {
               score,
-              isWin,
-              onRestart: () => this.scene.scene.restart({ difficulty: this.scene.difficulty }),
+              isWin: score >= 20,
+              onRestart: () =>
+                this.scene.scene.restart({
+                  difficulty: this.scene.difficulty
+                }),
               onBack: () => this.scene.exitGame()
             })
           )
@@ -66,7 +72,11 @@ export class CatchGameOverlay {
 
   public destroy = (): void => {
     if (this.root) {
-      try { this.root.unmount(); } catch (e) { console.warn(e); }
+      try {
+        this.root.unmount();
+      } catch (e) {
+        console.warn(e);
+      }
       this.root = null;
     }
     if (this.container) {

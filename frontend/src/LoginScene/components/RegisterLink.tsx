@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface RegisterLinkProps {
   onClick: () => void;
@@ -14,11 +14,11 @@ export const RegisterLink = React.memo(({ onClick }: RegisterLinkProps) => {
   };
 
   return (
-    <div className="scale-100 origin-center pointer-events-none z-10 flex items-center justify-center w-[300px] h-[44px] relative">
-      <button 
+    <div className="pointer-events-none relative z-10 flex h-[44px] w-[300px] origin-center scale-100 items-center justify-center">
+      <button
         type="button"
         onClick={handleLinkClick}
-        className="box-border border-0 m-0 p-0 bg-transparent cursor-pointer outline-none font-medium text-[20px] text-white text-center flex items-center justify-center transition-transform duration-75 hover:text-slate-200 active:scale-95 pointer-events-auto touch-manipulation select-none"
+        className="pointer-events-auto m-0 box-border flex cursor-pointer touch-manipulation items-center justify-center border-0 bg-transparent p-0 text-center text-[20px] font-medium text-white transition-transform duration-75 outline-none select-none hover:text-slate-200 active:scale-95"
       >
         Зарегистрироваться
       </button>

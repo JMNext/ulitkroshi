@@ -1,5 +1,5 @@
-import petVideoWebm from "@/assets/resources/1stpet-animation/prostoi-converted.webm";
 import petVideoMov from "@/assets/resources/1stpet-animation/prostoi-converted.mov";
+import petVideoWebm from "@/assets/resources/1stpet-animation/prostoi-converted.webm";
 
 import f01 from "@/assets/fruits/fruits_01.png";
 import f02 from "@/assets/fruits/fruits_02.png";
@@ -23,10 +23,22 @@ export const CATCH_ASSETS = {
   bgVert: new URL("@/assets/background/fon_vert.png", import.meta.url).href,
   video: { webm: petVideoWebm, mov: petVideoMov },
   fruits: {
-    fruit_01: f01, fruit_02: f02, fruit_03: f03, fruit_04: f04,
-    fruit_05: f05, fruit_06: f06, fruit_07: f07, fruit_08: f08,
-    fruit_09: f09, fruit_10: f10, fruit_11: f11, fruit_12: f12,
-    fruit_13: f13, fruit_14: f14, fruit_15: f15, fruit_16: f16
+    fruit_01: f01,
+    fruit_02: f02,
+    fruit_03: f03,
+    fruit_04: f04,
+    fruit_05: f05,
+    fruit_06: f06,
+    fruit_07: f07,
+    fruit_08: f08,
+    fruit_09: f09,
+    fruit_10: f10,
+    fruit_11: f11,
+    fruit_12: f12,
+    fruit_13: f13,
+    fruit_14: f14,
+    fruit_15: f15,
+    fruit_16: f16
   }
 };
 

@@ -18,7 +18,7 @@ export const MEMORY_ASSETS = {
     fruit_13: new URL("@/assets/fruits/fruits_13.png", import.meta.url).href,
     fruit_14: new URL("@/assets/fruits/fruits_14.png", import.meta.url).href,
     fruit_15: new URL("@/assets/fruits/fruits_15.png", import.meta.url).href,
-    fruit_16: new URL("@/assets/fruits/fruits_16.png", import.meta.url).href,
+    fruit_16: new URL("@/assets/fruits/fruits_16.png", import.meta.url).href
   }
 };
 
@@ -37,6 +37,6 @@ export const getMemoryResizeMetrics = (w: number, h: number, isPortrait: boolean
     paddingX: w < 960 ? 100 : 160,
     paddingY: w < 960 ? 60 : 100,
     offsetY: 0,
-    ratioModifier: (w / h) < 1.6
+    ratioModifier: w / h < 1.6
   };
 };

@@ -1,9 +1,9 @@
-import { createRoot, Root } from "react-dom/client";
-import React from "react";
-import { useMemoryGameStore } from "./store/useMemoryGameStore";
 import { GameHeaderUI } from "@/game/MiniGamesUI/GameHeader/GameHeaderUI";
 import { GameOverModalUI } from "@/game/MiniGamesUI/GameOverModal/GameOverModalUI";
-import { MemoryGameScene } from "./MemoryGameScene";
+import React from "react";
+import { createRoot, Root } from "react-dom/client";
+import { MemoryGameScene } from "../MemoryGameScene";
+import { useMemoryGameStore } from "../store/useMemoryGameStore";
 
 export class MemoryGameOverlay {
   private root: Root | null = null;
@@ -36,10 +36,14 @@ export class MemoryGameOverlay {
 
       return React.createElement(
         "div",
-        { className: "absolute inset-0 w-full h-full pointer-events-none" },
+        {
+          className: "absolute inset-0 w-full h-full pointer-events-none"
+        },
         React.createElement(
           "div",
-          { className: "pointer-events-auto absolute inset-x-0 top-0 z-50" },
+          {
+            className: "pointer-events-auto absolute inset-x-0 top-0 z-50"
+          },
           React.createElement(GameHeaderUI, {
             currentScale,
             onBack: () => this.scene.exitGameSession()
@@ -49,7 +53,9 @@ export class MemoryGameOverlay {
         isGameOver &&
           React.createElement(
             "div",
-            { className: "pointer-events-auto absolute inset-0 z-50 flex items-center justify-center bg-black/40" },
+            {
+              className: "pointer-events-auto absolute inset-0 z-50 flex items-center justify-center bg-black/40"
+            },
             React.createElement(GameOverModalUI, {
               score: 0,
               isWin: true,
@@ -66,7 +72,11 @@ export class MemoryGameOverlay {
 
   public destroy = (): void => {
     if (this.root) {
-      try { this.root.unmount(); } catch (e) { console.warn(e); }
+      try {
+        this.root.unmount();
+      } catch (e) {
+        console.warn(e);
+      }
       this.root = null;
     }
     if (this.container) {

@@ -1,9 +1,9 @@
 import menuBg from "@/assets/background/bottom-menu-desktop.svg";
 import btnBg from "@/assets/buttom_menu-icons/button.svg";
 import eatIcon from "@/assets/buttom_menu-icons/eat.svg";
-import washIcon from "@/assets/buttom_menu-icons/wash.svg";
 import playIcon from "@/assets/buttom_menu-icons/play.svg";
 import sleepIcon from "@/assets/buttom_menu-icons/sleep.svg";
+import washIcon from "@/assets/buttom_menu-icons/wash.svg";
 
 export type Action = "feed" | "wash" | "play" | "sleep";
 

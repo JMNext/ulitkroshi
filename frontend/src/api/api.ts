@@ -1,9 +1,9 @@
 import axios from "axios";
-import { UserProfile, AuthResponse } from "./types";
 import { mockApi } from "./api.mock";
+import { AuthResponse, UserProfile } from "./types";
 
 // ТВОЙ ПЕРЕКЛЮЧАТЕЛЬ: true — моки для заказчика, false — реальный сервер
-export const isMock = true; 
+export const isMock = true;
 
 export const gatewayApi = axios.create({
   baseURL: "http://localhost:3001",
@@ -17,7 +17,7 @@ gatewayApi.interceptors.response.use(
     // Если включены моки, гасим сетевые ошибки localhost, чтобы билд не падал
     if (isMock) {
       console.warn("Сетевой запрос проигнорирован (включен режим моков):", error.message);
-      return Promise.resolve({ data: {} } as any); 
+      return Promise.resolve({ data: {} } as any);
     }
     const message = error.response?.data?.error || "Произошла сетевая ошибка";
     return Promise.reject(new Error(message));
@@ -63,7 +63,7 @@ export const api = {
 
   async restore(): Promise<UserProfile> {
     if (isMock) return mockApi.restore();
-    return (await gatewayApi.get<UserProfile>('/auth/me')).data;
+    return (await gatewayApi.get<UserProfile>("/auth/me")).data;
   },
 
   async refresh(refreshToken: string): Promise<AuthResponse> {
@@ -85,7 +85,8 @@ export const api = {
 
   async loginPhone(phone: string, chosenPetName?: string): Promise<{ success: boolean; sessionId: string; isLogin: boolean }> {
     if (isMock) return mockApi.loginPhone(phone);
-    return (await gatewayApi.post<{ success: boolean; sessionId: string; isLogin: boolean }>("/auth/login/phone", { phone, chosenPetName })).data;
+    return (await gatewayApi.post<{ success: boolean; sessionId: string; isLogin: boolean }>("/auth/login/phone", { phone, chosenPetName }))
+      .data;
   },
 
   async verifySms(phone: string, code: string): Promise<{ sessionId: string }> {
@@ -132,7 +133,11 @@ export const api = {
     return (await gatewayApi.get<{ coins: number }>(`/game/pharmacy/coins/${userId}`)).data;
   },
 
-  async updateCoins(actionType: 'buy_medicine' | 'mini_game_reward' | 'buy_shop_items', userId: number, total?: number): Promise<{ coins: number }> {
+  async updateCoins(
+    actionType: "buy_medicine" | "mini_game_reward" | "buy_shop_items",
+    userId: number,
+    total?: number
+  ): Promise<{ coins: number }> {
     if (isMock) return mockApi.updateCoins(actionType, total);
     return (await gatewayApi.post<{ coins: number }>("/game/pharmacy/action", { actionType, userId, total })).data;
   },

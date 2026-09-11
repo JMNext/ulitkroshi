@@ -1,7 +1,7 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface LoginState {
-  status: 'button' | 'loading';
+  status: "button" | "loading";
   progress: number;
   width: number;
   height: number;
@@ -13,12 +13,12 @@ interface LoginState {
 }
 
 const initialValues = {
-  status: 'button' as const,
+  status: "button" as const,
   progress: 0,
   width: 0,
   height: 0,
   scale: 1,
-  isVert: true,
+  isVert: true
 };
 
 let activeAnimationFrameId: number | null = null;
@@ -42,7 +42,7 @@ export const useLoginStore = create<LoginState>((set) => ({
 
   startLoading: (onCompleteAction) => {
     clearActiveTimers();
-    set({ status: 'loading', progress: 0 });
+    set({ status: "loading", progress: 0 });
     const startTime = performance.now();
 
     const animate = (now: number) => {

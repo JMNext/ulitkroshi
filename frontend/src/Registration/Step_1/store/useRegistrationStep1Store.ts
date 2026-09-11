@@ -1,6 +1,13 @@
-import { create } from "zustand";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
+import { create } from "zustand";
 import { checkNameValidity } from "../utils/profanityFilter";
+
+export interface LayoutContext {
+  screenMode: "fold" | "mobile" | "tablet" | "desktop";
+  viewW: number;
+  scale: number;
+  isVert: boolean;
+}
 
 export interface Step1State {
   stage: number;
@@ -10,6 +17,9 @@ export interface Step1State {
   nameStatus: "idle" | "available" | "profane" | "spaces" | "song";
   nameSuggestions: string[];
   nameHistory: string[];
+  layoutContext: LayoutContext | null;
+  finalScale: number;
+  setLayout: (layoutContext: LayoutContext, finalScale: number) => void;
   setInput: (val: string) => void;
   setStage: (stage: number) => void;
   submit: (value: string) => void;
@@ -26,7 +36,9 @@ const initialValues = {
   isNameChecking: false,
   nameStatus: "idle" as const,
   nameSuggestions: [] as string[],
-  nameHistory: [] as string[]
+  nameHistory: [] as string[],
+  layoutContext: null,
+  finalScale: 1
 };
 
 const formatName = (s: string): string => {
@@ -48,31 +60,19 @@ export const useRegistrationStep1Store = create<Step1State>((set, get) => {
     }
 
     usePetStore.getState().updateField("petName", trimmed);
-
-    set({
-      isNameChecking: false,
-      nameStatus: "available",
-      nameSuggestions: [],
-      stage: 2,
-      input: ""
-    });
+    set({ isNameChecking: false, nameStatus: "available", nameSuggestions: [], stage: 2, input: "" });
     return true;
   };
 
   const processAndSubmitName = async (targetText: string): Promise<void> => {
     const textToProcess = targetText.trim() || get().input.trim();
-
     if (!textToProcess) {
       set({ stage: 3, nameStatus: "idle", nameSuggestions: [] });
       return;
     }
 
     const formatted = formatName(cleanTextRegex(textToProcess));
-    const currentStatus = get().nameStatus;
-
-    if (formatted === get().name && (currentStatus === "profane" || currentStatus === "spaces" || currentStatus === "song")) {
-      return;
-    }
+    if (formatted === get().name && ["profane", "spaces", "song"].includes(get().nameStatus)) return;
 
     set({ name: formatted });
     await triggerNameCheck(formatted);
@@ -80,13 +80,13 @@ export const useRegistrationStep1Store = create<Step1State>((set, get) => {
 
   return {
     ...initialValues,
+    setLayout: (layoutContext, finalScale) => set({ layoutContext, finalScale }),
     setInput: (val) => {
       set({ input: val, nameStatus: "idle", nameSuggestions: [] });
       if (get().stage === 3) set({ stage: 1 });
     },
     setStage: (stage) => {
-      const currentStage = get().stage;
-      if (stage === 1 && currentStage === 2) {
+      if (stage === 1 && get().stage === 2) {
         const currentName = get().name;
         const history = get().nameHistory;
         set({

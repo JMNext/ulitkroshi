@@ -1,4 +1,3 @@
-import React from "react";
 import { useRegistrationStep3Store } from "../store/useRegistrationStep3Store";
 import { FRUIT_URLS } from "./fruitAssets";
 

@@ -4,8 +4,8 @@ export interface UserProfile {
   phone: string;
   email?: string;
   roles: string[];
-  coins: number; 
-  unlockedPets: number[]; 
+  coins: number;
+  unlockedPets: number[];
   petName: string;
   petStatus: string;
   petSatiety: number;

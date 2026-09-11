@@ -1,10 +1,10 @@
-import { Scene } from "phaser";
-import { useCatchGameStore } from "./store/useCatchGameStore";
-import { CatchGamePhysicsManager } from "./CatchGamePhysicsManager";
-import { CatchGameOverlay } from "./CatchGameOverlay";
-import { CatchGamePet } from "./CatchGamePet";
+import { CatchGameOverlay } from "@/game/MiniGames/CatchGame/components/CatchGameOverlay";
+import { CatchGamePet } from "@/game/MiniGames/CatchGame/components/CatchGamePet";
+import { CatchGamePhysicsManager } from "@/game/MiniGames/CatchGame/components/CatchGamePhysicsManager";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
-import { CATCH_ASSETS, DIFFICULTY_CONFIGS } from "./catchGame.constants";
+import { Scene } from "phaser";
+import { CATCH_ASSETS, DIFFICULTY_CONFIGS } from "./constants/catchGame.constants";
+import { useCatchGameStore } from "./store/useCatchGameStore";
 
 export class CatchGameScene extends Scene {
   public difficulty = "medium";
@@ -17,7 +17,9 @@ export class CatchGameScene extends Scene {
   private unsubscribeStore: (() => void) | null = null;
   private resizeTimer: Phaser.Time.TimerEvent | null = null;
 
-  constructor() { super("CatchGameScene"); }
+  constructor() {
+    super("CatchGameScene");
+  }
 
   public init(data: { difficulty?: "easy" | "medium" | "hard" }): void {
     this.difficulty = data.difficulty || "medium";
@@ -50,13 +52,16 @@ export class CatchGameScene extends Scene {
     this.overlayManager.render();
 
     this.scale.on("resize", this.handleResize, this);
-    this.unsubscribeStore = useCatchGameStore.subscribe((s) => s.isGameOver, (isOver) => {
-      if (isOver) { 
-        this.physicsManager.pausePhysics(); 
-        this.petEntity.hide();
-        this.overlayManager.render(); 
+    this.unsubscribeStore = useCatchGameStore.subscribe(
+      (s) => s.isGameOver,
+      (isOver) => {
+        if (isOver) {
+          this.physicsManager.pausePhysics();
+          this.petEntity.hide();
+          this.overlayManager.render();
+        }
       }
-    });
+    );
     this.events.once("shutdown", () => this.cleanup());
   }
 
@@ -80,9 +85,15 @@ export class CatchGameScene extends Scene {
     });
   };
 
-  public addScore(): void { useCatchGameStore.getState().addScore(() => this.overlayManager.render()); }
-  public loseHp(): void { useCatchGameStore.getState().applyMissPenalty(() => this.overlayManager.render()); }
-  public hitBomb(): void { useCatchGameStore.getState().applyBombPenalty(() => this.overlayManager.render()); }
+  public addScore(): void {
+    useCatchGameStore.getState().addScore(() => this.overlayManager.render());
+  }
+  public loseHp(): void {
+    useCatchGameStore.getState().applyMissPenalty(() => this.overlayManager.render());
+  }
+  public hitBomb(): void {
+    useCatchGameStore.getState().applyBombPenalty(() => this.overlayManager.render());
+  }
 
   public exitGame = (): void => {
     if (!useCatchGameStore.getState().isGameOver && useCatchGameStore.getState().score < 20) {

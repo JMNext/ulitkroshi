@@ -1,15 +1,15 @@
 import React from "react";
 
 export const GAMES = [
-  { type: 'memory', text: 'НАЙДИ ПАРУ', scene: 'MemoryGameScene' },
-  { type: 'catch', text: 'ЛОВЛЯ ФРУКТОВ', scene: 'CatchGameScene' },
-  { type: 'snake', text: 'ЗМЕЙКА', scene: 'SnakeGameScene' },
+  { type: "memory", text: "НАЙДИ ПАРУ", scene: "MemoryGameScene" },
+  { type: "catch", text: "ЛОВЛЯ ФРУКТОВ", scene: "CatchGameScene" },
+  { type: "snake", text: "ЗМЕЙКА", scene: "SnakeGameScene" }
 ];
 
 export const MODES = [
-  { diff: 'easy', text: 'ЛЕГКО', bgColor: '#388e3c', textColor: '#ffffff' },
-  { diff: 'medium', text: 'НОРМАЛЬНО', bgColor: '#fbc02d', textColor: '#0f172a' },
-  { diff: 'hard', text: 'СЛОЖНО', bgColor: '#d32f2f', textColor: '#ffffff' },
+  { diff: "easy", text: "ЛЕГКО", bgColor: "#388e3c", textColor: "#ffffff" },
+  { diff: "medium", text: "НОРМАЛЬНО", bgColor: "#fbc02d", textColor: "#0f172a" },
+  { diff: "hard", text: "СЛОЖНО", bgColor: "#d32f2f", textColor: "#ffffff" }
 ];
 
 export const GAME_COLORS: Record<string, string> = {
@@ -37,8 +37,12 @@ export const GAME_SVGS: Record<string, React.ReactNode> = {
     </svg>
   ),
   LockIcon: (
-    <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+    <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="h-4 w-4">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+      />
     </svg>
   )
 };

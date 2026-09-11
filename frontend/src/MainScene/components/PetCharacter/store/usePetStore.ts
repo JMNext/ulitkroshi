@@ -1,6 +1,6 @@
-import { create } from "zustand";
-import { PET_LOCK_BUBBLES } from "@/MainScene/components/PetCharacter/petCharacter.constants";
+import { PET_LOCK_BUBBLES } from "@/MainScene/components/PetCharacter/constants/petCharacter.constants";
 import { api } from "@/api/api";
+import { create } from "zustand";
 
 export interface PetState {
   petName: string;
@@ -26,7 +26,12 @@ export interface PetState {
   completeCareAction: () => void;
   triggerSleepAction: () => void;
   incrementMiniGamesClick: () => string;
-  useFruitId: (id: string, hpRestoreValue: number, restoresHp: boolean, isStandard?: boolean) => "SUCCESS" | "FULL_HP" | "COOLDOWN_OR_EMPTY";
+  useFruitId: (
+    id: string,
+    hpRestoreValue: number,
+    restoresHp: boolean,
+    isStandard?: boolean
+  ) => "SUCCESS" | "FULL_HP" | "COOLDOWN_OR_EMPTY";
   addFruitsToInventory: (slotId: string, fid: number, q: number) => void;
   unlockPet: (index: number) => Promise<void>;
   handleGameLoss: () => void;
@@ -37,9 +42,24 @@ const SLEEP_ANIMATIONS = ["sleep_circle", "sleep_begin", "sleep_awake"];
 const BASE_ANIMATIONS = ["prostoi1", "prostoi2", "sad_state"];
 
 const initialFruits = {
-  fruitsCooldowns: { fruit_01: 0, fruit_02: 0, fruit_03: 0, fruit_04: 0 },
-  fruitsCounts: { fruit_01: 0, fruit_02: 0, fruit_03: 0, fruit_04: 0 },
-  activeFruitIds: { fruit_01: 1, fruit_02: 5, fruit_03: 9, fruit_04: 13 }
+  fruitsCooldowns: {
+    fruit_01: 0,
+    fruit_02: 0,
+    fruit_03: 0,
+    fruit_04: 0
+  },
+  fruitsCounts: {
+    fruit_01: 0,
+    fruit_02: 0,
+    fruit_03: 0,
+    fruit_04: 0
+  },
+  activeFruitIds: {
+    fruit_01: 1,
+    fruit_02: 5,
+    fruit_03: 9,
+    fruit_04: 13
+  }
 };
 
 export const usePetStore = create<PetState>((set, get) => ({
@@ -48,7 +68,7 @@ export const usePetStore = create<PetState>((set, get) => ({
   isMiniGamesBlocked: false,
   miniGamesClickCount: 0,
   activePetIndex: 0,
-  unlockedPetIndexes:[0],
+  unlockedPetIndexes: [0],
   currentAnim: "prostoi1",
   washState: "idle",
   ...initialFruits,
@@ -68,7 +88,9 @@ export const usePetStore = create<PetState>((set, get) => ({
   setCurrentFruitId: (id) => set({ currentFruitId: id }),
 
   selectFruitId: (id) =>
-    set((state) => ({ currentFruitId: state.currentFruitId === id ? "" : id })),
+    set((state) => ({
+      currentFruitId: state.currentFruitId === id ? "" : id
+    })),
 
   canExecuteAction: (t) => {
     const { currentAnim } = get();
@@ -85,7 +107,10 @@ export const usePetStore = create<PetState>((set, get) => ({
 
     if (currentAnim === "sleep_awake") {
       window.dispatchEvent(new CustomEvent("ui_show_bubble", { detail: { text: null } }));
-      return set({ currentAnim: hp <= 25 ? "sad_state" : "prostoi1", washState: "idle" });
+      return set({
+        currentAnim: hp <= 25 ? "sad_state" : "prostoi1",
+        washState: "idle"
+      });
     }
 
     requestAnimationFrame(() => {
@@ -157,7 +182,10 @@ export const usePetStore = create<PetState>((set, get) => ({
 
   addFruitsToInventory: (sid, fid, q) =>
     set((s) => ({
-      fruitsCounts: { ...s.fruitsCounts, [sid]: (s.fruitsCounts[sid] ?? 0) + q },
+      fruitsCounts: {
+        ...s.fruitsCounts,
+        [sid]: (s.fruitsCounts[sid] ?? 0) + q
+      },
       activeFruitIds: { ...s.activeFruitIds, [sid]: fid }
     })),
 
@@ -190,7 +218,7 @@ export const usePetStore = create<PetState>((set, get) => ({
       isMiniGamesBlocked: false,
       miniGamesClickCount: 0,
       activePetIndex: 0,
-      unlockedPetIndexes:[0],
+      unlockedPetIndexes: [0],
       currentAnim: "prostoi1",
       washState: "idle",
       ...initialFruits,

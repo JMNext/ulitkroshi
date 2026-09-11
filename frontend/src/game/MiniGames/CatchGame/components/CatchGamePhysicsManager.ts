@@ -1,15 +1,19 @@
+import { CatchGameScene } from "@/game/MiniGames/CatchGame/CatchGameScene";
+import { CatchGamePet } from "@/game/MiniGames/CatchGame/components/CatchGamePet";
+import { getCatchResizeMetrics } from "@/game/MiniGames/CatchGame/constants/catchGame.constants";
+import { useCatchGameStore } from "@/game/MiniGames/CatchGame/store/useCatchGameStore";
 import Phaser from "phaser";
-import { CatchGameScene } from "./CatchGameScene";
-import { useCatchGameStore } from "./store/useCatchGameStore";
-import { CatchGamePet } from "./CatchGamePet";
-import { getCatchResizeMetrics } from "./catchGame.constants";
 
 export class CatchGamePhysicsManager {
   public fruitsGroup: (Phaser.GameObjects.Image | Phaser.GameObjects.Text)[] = [];
   private nextSpawnTime = 0;
   private currentFruitSize = 64;
 
-  constructor(private scene: CatchGameScene, public speed: number, public delay: number) {}
+  constructor(
+    private scene: CatchGameScene,
+    public speed: number,
+    public delay: number
+  ) {}
 
   public initPhysics = (): void => {
     this.fruitsGroup = [];
@@ -34,7 +38,10 @@ export class CatchGamePhysicsManager {
 
     for (let i = this.fruitsGroup.length - 1; i >= 0; i--) {
       const item = this.fruitsGroup[i];
-      if (!item?.active) { this.fruitsGroup.splice(i, 1); continue; }
+      if (!item?.active) {
+        this.fruitsGroup.splice(i, 1);
+        continue;
+      }
 
       item.y += this.speed * dt;
       item.angle += 2 * dt;
@@ -43,7 +50,8 @@ export class CatchGamePhysicsManager {
         const isBomb = item.getData("isBomb") === true;
         item.destroy();
         this.fruitsGroup.splice(i, 1);
-        if (isBomb) this.scene.hitBomb(); else this.scene.addScore();
+        if (isBomb) this.scene.hitBomb();
+        else this.scene.addScore();
         continue;
       }
 
@@ -64,17 +72,26 @@ export class CatchGamePhysicsManager {
 
     if (isBomb) {
       const size = Math.floor(this.currentFruitSize * 0.65);
-      const bomb = this.scene.add.text(spawnX, -70, "💣", { fontSize: `${size}px`, fontFamily: "Arial" }).setOrigin(0.5);
+      const bomb = this.scene.add
+        .text(spawnX, -70, "💣", {
+          fontSize: `${size}px`,
+          fontFamily: "Arial"
+        })
+        .setOrigin(0.5);
       bomb.setData("isBomb", true);
       this.fruitsGroup.push(bomb);
     } else {
-      const fruit = this.scene.add.image(spawnX, -70, `fruit_${String(Phaser.Math.Between(1, 16)).padStart(2, "0")}`).setDisplaySize(this.currentFruitSize, this.currentFruitSize);
+      const fruit = this.scene.add
+        .image(spawnX, -70, `fruit_${String(Phaser.Math.Between(1, 16)).padStart(2, "0")}`)
+        .setDisplaySize(this.currentFruitSize, this.currentFruitSize);
       fruit.setData("isBomb", false);
       this.fruitsGroup.push(fruit);
     }
   };
 
-  public pausePhysics = (): void => { this.destroy(); };
+  public pausePhysics = (): void => {
+    this.destroy();
+  };
 
   public resizeMetrics = (): void => {
     if (!this.scene?.scale) return;

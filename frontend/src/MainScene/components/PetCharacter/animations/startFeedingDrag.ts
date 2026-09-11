@@ -1,6 +1,6 @@
-import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 import { createBaseDrag } from "@/MainScene/components/PetCharacter/animations/createBaseDrag";
-import { FOOD_CONFIGS, DEFAULT_FOOD_CONFIG, EAT_SOUND_URL } from "@/MainScene/components/PetCharacter/petCharacter.constants";
+import { DEFAULT_FOOD_CONFIG, EAT_SOUND_URL, FOOD_CONFIGS } from "@/MainScene/components/PetCharacter/constants/petCharacter.constants";
+import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 
 const cachedEatAudio = typeof window !== "undefined" ? new Audio(EAT_SOUND_URL) : null;
 if (cachedEatAudio) {
@@ -28,30 +28,40 @@ export const startFeedingDrag = (
     onDragEndCallback?.();
   };
 
-  createBaseDrag(initialEvent, {
-    url: foodKey,
-    action: "eat",
-    onSuccess: () => {
-      const store = usePetStore.getState();
-      const config = FOOD_CONFIGS[fruitId || foodKey] || DEFAULT_FOOD_CONFIG;
+  createBaseDrag(
+    initialEvent,
+    {
+      url: foodKey,
+      action: "eat",
+      onSuccess: () => {
+        const store = usePetStore.getState();
+        const config = FOOD_CONFIGS[fruitId || foodKey] || DEFAULT_FOOD_CONFIG;
 
-      const result = fruitId 
-        ? store.useFruitId(fruitId, config.hpRestoreValue, config.restoresHp, false)
-        : store.useFruitId("standard_food", 1, true, true);
+        const result = fruitId
+          ? store.useFruitId(fruitId, config.hpRestoreValue, config.restoresHp, false)
+          : store.useFruitId("standard_food", 1, true, true);
 
-      if (result === "FULL_HP") {
-        window.dispatchEvent(new CustomEvent("ui_show_bubble", { 
-          detail: { text: "Спасибо, я сейчас не голоден!", type: "error" } 
-        }));
-      } else if (result === "SUCCESS") {
-        if (cachedEatAudio) {
-          cachedEatAudio.currentTime = 0;
-          cachedEatAudio.play().catch(() => {});
+        if (result === "FULL_HP") {
+          window.dispatchEvent(
+            new CustomEvent("ui_show_bubble", {
+              detail: {
+                text: "Спасибо, я сейчас не голоден!",
+                type: "error"
+              }
+            })
+          );
+        } else if (result === "SUCCESS") {
+          if (cachedEatAudio) {
+            cachedEatAudio.currentTime = 0;
+            cachedEatAudio.play().catch(() => {});
+          }
+
+          store.triggerCareAction(fruitId ? "eat_fruit" : "eat");
         }
-
-        store.triggerCareAction(fruitId ? "eat_fruit" : "eat");
-      }
+      },
+      onEnd: checkAndResetEmptyFruit
     },
-    onEnd: checkAndResetEmptyFruit
-  }, scale, s);
+    scale,
+    s
+  );
 };

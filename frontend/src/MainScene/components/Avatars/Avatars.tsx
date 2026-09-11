@@ -1,4 +1,4 @@
-import { AVATAR_IMG_URL } from "@/MainScene/components/ProfileEdit/profileEdit.constants";
+import { AVATAR_IMG_URL } from "@/MainScene/components/ProfileEdit/constants/profileEdit.constants";
 import React from "react";
 
 export type AvatarId = "default" | "frog" | "dog" | "cat" | "panda" | "fox";
@@ -11,15 +11,17 @@ interface AvatarItem {
 export const AVAILABLE_AVATARS: AvatarItem[] = [
   {
     id: "default",
-    Component: () => (
-      <img src={AVATAR_IMG_URL} className="w-full h-full object-cover block rounded-full" alt="Default Avatar" />
-    )
+    Component: () => <img src={AVATAR_IMG_URL} className="block h-full w-full rounded-full object-cover" alt="Default Avatar" />
   },
   {
     id: "frog",
     Component: () => (
-      <svg viewBox="0 0 160 160" className="w-full h-full">
-        <defs><clipPath id="clip-frog"><circle cx="80" cy="80" r="75" /></clipPath></defs>
+      <svg viewBox="0 0 160 160" className="h-full w-full">
+        <defs>
+          <clipPath id="clip-frog">
+            <circle cx="80" cy="80" r="75" />
+          </clipPath>
+        </defs>
         <circle cx="80" cy="80" r="75" fill="#E8F5E9" stroke="#2E7D32" strokeWidth="4" />
         <g clipPath="url(#clip-frog)">
           <ellipse cx="80" cy="90" rx="60" ry="50" fill="#81C784" />
@@ -41,8 +43,12 @@ export const AVAILABLE_AVATARS: AvatarItem[] = [
   {
     id: "dog",
     Component: () => (
-      <svg viewBox="0 0 160 160" className="w-full h-full">
-        <defs><clipPath id="clip-dog"><circle cx="80" cy="80" r="75" /></clipPath></defs>
+      <svg viewBox="0 0 160 160" className="h-full w-full">
+        <defs>
+          <clipPath id="clip-dog">
+            <circle cx="80" cy="80" r="75" />
+          </clipPath>
+        </defs>
         <circle cx="80" cy="80" r="75" fill="#E1F5FE" stroke="#4E342E" strokeWidth="4" />
         <g clipPath="url(#clip-dog)">
           <ellipse cx="32" cy="75" rx="14" ry="30" fill="#795548" transform="rotate(15, 32, 75)" />
@@ -64,8 +70,12 @@ export const AVAILABLE_AVATARS: AvatarItem[] = [
   {
     id: "cat",
     Component: () => (
-      <svg viewBox="0 0 160 160" className="w-full h-full">
-        <defs><clipPath id="clip-cat"><circle cx="80" cy="80" r="75" /></clipPath></defs>
+      <svg viewBox="0 0 160 160" className="h-full w-full">
+        <defs>
+          <clipPath id="clip-cat">
+            <circle cx="80" cy="80" r="75" />
+          </clipPath>
+        </defs>
         <circle cx="80" cy="80" r="75" fill="#FFF3E0" stroke="#E65100" strokeWidth="4" />
         <g clipPath="url(#clip-cat)">
           <polygon points="30,60 35,20 70,50" fill="#FFB74D" />
@@ -89,8 +99,12 @@ export const AVAILABLE_AVATARS: AvatarItem[] = [
   {
     id: "panda",
     Component: () => (
-      <svg viewBox="0 0 160 160" className="w-full h-full">
-        <defs><clipPath id="clip-panda"><circle cx="80" cy="80" r="75" /></clipPath></defs>
+      <svg viewBox="0 0 160 160" className="h-full w-full">
+        <defs>
+          <clipPath id="clip-panda">
+            <circle cx="80" cy="80" r="75" />
+          </clipPath>
+        </defs>
         <circle cx="80" cy="80" r="75" fill="#F3E5F5" stroke="#263238" strokeWidth="4" />
         <g clipPath="url(#clip-panda)">
           <circle cx="42" cy="46" r="18" fill="#263238" />
@@ -113,8 +127,12 @@ export const AVAILABLE_AVATARS: AvatarItem[] = [
   {
     id: "fox",
     Component: () => (
-      <svg viewBox="0 0 160 160" className="w-full h-full">
-        <defs><clipPath id="clip-fox"><circle cx="80" cy="80" r="75" /></clipPath></defs>
+      <svg viewBox="0 0 160 160" className="h-full w-full">
+        <defs>
+          <clipPath id="clip-fox">
+            <circle cx="80" cy="80" r="75" />
+          </clipPath>
+        </defs>
         <circle cx="80" cy="80" r="75" fill="#FFFDE7" stroke="#263238" strokeWidth="4" />
         <g clipPath="url(#clip-fox)">
           <polygon points="30,55 20,15 60,45" fill="#FF7043" />

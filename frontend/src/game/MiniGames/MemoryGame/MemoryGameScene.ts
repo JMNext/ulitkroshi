@@ -1,9 +1,9 @@
-import { Scene } from "phaser";
-import { useMemoryGameStore } from "./store/useMemoryGameStore";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
-import { MemoryGameOverlay } from "./MemoryGameOverlay";
-import { MemoryGameGrid } from "./MemoryGameGrid";
-import { MEMORY_ASSETS } from "./memoryGame.constants";
+import { Scene } from "phaser";
+import { MemoryGameGrid } from "./components/MemoryGameGrid";
+import { MemoryGameOverlay } from "./components/MemoryGameOverlay";
+import { MEMORY_ASSETS } from "./constants/memoryGame.constants";
+import { useMemoryGameStore } from "./store/useMemoryGameStore";
 
 const FRUITS_POOL = ["01", "02", "03", "04", "05", "06", "07", "08", "10", "11", "12", "14", "15", "16"];
 
@@ -16,7 +16,9 @@ export class MemoryGameScene extends Scene {
   private unsubscribeStore: (() => void) | null = null;
   private unsubscribeGameOver: (() => void) | null = null;
 
-  constructor() { super("MemoryGameScene"); }
+  constructor() {
+    super("MemoryGameScene");
+  }
 
   public init(data: { difficulty?: "easy" | "medium" | "hard" }): void {
     this.difficulty = data.difficulty || "medium";
@@ -83,7 +85,9 @@ export class MemoryGameScene extends Scene {
     this.overlayManager.render();
   };
 
-  public restartGame = (): void => { this.scene.restart({ difficulty: this.difficulty }); };
+  public restartGame = (): void => {
+    this.scene.restart({ difficulty: this.difficulty });
+  };
 
   public exitGameSession = (): void => {
     window.dispatchEvent(new CustomEvent("minigame_stopped"));

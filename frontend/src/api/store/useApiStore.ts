@@ -1,11 +1,11 @@
-import { create } from "zustand";
-import { UserProfile, AuthResponse } from "@/api/types";
 import { api, isMock } from "@/api/api";
+import { AuthResponse, UserProfile } from "@/api/types";
+import { create } from "zustand";
 
 interface AuthState {
   user: UserProfile | null;
   token: string | null;
-  coins: number; 
+  coins: number;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -20,28 +20,27 @@ interface AuthState {
   refreshToken: () => Promise<boolean>;
   logout: () => Promise<void>;
   fetchCoins: () => Promise<void>;
-  executeAction: (actionType: 'buy_medicine' | 'mini_game_reward' | 'buy_shop_items', total?: number) => Promise<boolean>;
+  executeAction: (actionType: "buy_medicine" | "mini_game_reward" | "buy_shop_items", total?: number) => Promise<boolean>;
 }
 
-const getErrorMessage = (err: unknown, defaultMsg: string): string => 
-  err instanceof Error ? err.message : defaultMsg;
+const getErrorMessage = (err: unknown, defaultMsg: string): string => (err instanceof Error ? err.message : defaultMsg);
 
 export const useApiStore = create<AuthState>((set, get) => {
   const handleAuthSuccess = (res: AuthResponse) => {
     localStorage.setItem("accessToken", res.accessToken);
     localStorage.setItem("refreshToken", res.refreshToken);
-    
+
     let serverCoins = res.user?.coins ?? 0;
     if (serverCoins === 100) {
       serverCoins = 0;
     }
 
-    set({ 
-      user: { ...res.user, coins: serverCoins }, 
-      token: res.accessToken, 
-      coins: serverCoins, 
-      isAuthenticated: true, 
-      isLoading: false 
+    set({
+      user: { ...res.user, coins: serverCoins },
+      token: res.accessToken,
+      coins: serverCoins,
+      isAuthenticated: true,
+      isLoading: false
     });
     return res;
   };
@@ -49,7 +48,7 @@ export const useApiStore = create<AuthState>((set, get) => {
   return {
     user: null,
     token: null,
-    coins: 0, 
+    coins: 0,
     isAuthenticated: false,
     isLoading: false,
     error: null,
@@ -158,7 +157,9 @@ export const useApiStore = create<AuthState>((set, get) => {
 
     logout: async () => {
       set({ isLoading: true });
-      try { await api.logout(); } catch {}
+      try {
+        await api.logout();
+      } catch {}
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("mock_accessToken");
@@ -172,7 +173,7 @@ export const useApiStore = create<AuthState>((set, get) => {
       try {
         const res = await api.getCoins(userId);
         let backendCoins = res.coins ?? 0;
-        
+
         if (backendCoins === 100) {
           backendCoins = 0;
         }
@@ -212,9 +213,12 @@ if (typeof window !== "undefined") {
   } else {
     const token = localStorage.getItem("accessToken");
     if (token) {
-      useApiStore.getState().refreshToken().then((success) => {
-        if (success) useApiStore.getState().fetchCoins();
-      });
+      useApiStore
+        .getState()
+        .refreshToken()
+        .then((success) => {
+          if (success) useApiStore.getState().fetchCoins();
+        });
     }
   }
 }

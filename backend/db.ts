@@ -1,11 +1,11 @@
-import pg from 'pg';
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
+import pg from "pg";
 
 dotenv.config();
 
 const cleanEnv = (val: string | undefined): string | undefined => {
   if (!val) return undefined;
-  return val.replace(/['"]/g, '').trim();
+  return val.replace(/['"]/g, "").trim();
 };
 
 export const dbPool = new pg.Pool({
@@ -16,7 +16,7 @@ export const dbPool = new pg.Pool({
   port: Number(cleanEnv(process.env.DB_PORT)) || 5432,
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 2000
 });
 
 export async function initDatabase() {
@@ -39,8 +39,8 @@ export async function initDatabase() {
   `;
   try {
     await dbPool.query(createUsersTable);
-    console.log('🎰 [DB] Таблица пользователей Улиткрошей готова.');
+    console.log("🎰 [DB] Таблица пользователей Улиткрошей готова.");
   } catch (error) {
-    console.error('❌ [DB] Ошибка инициализации базы данных:', error);
+    console.error("❌ [DB] Ошибка инициализации базы данных:", error);
   }
 }
