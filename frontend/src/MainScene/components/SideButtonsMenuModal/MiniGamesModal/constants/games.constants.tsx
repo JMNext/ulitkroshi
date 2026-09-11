@@ -2,7 +2,7 @@ import React from "react";
 
 export const GAMES = [
   { type: "memory", text: "НАЙДИ ПАРУ", scene: "MemoryGameScene" },
-  { type: "catch", text: "ЛОВЛЯ ФРУКТОВ", scene: "CatchGameScene" },
+  { type: "catch", text: "СБОР УРОЖАЯ", scene: "CatchGameScene" },
   { type: "snake", text: "ЗМЕЙКА", scene: "SnakeGameScene" }
 ];
 
