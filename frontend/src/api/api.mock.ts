@@ -25,6 +25,12 @@ const generateMockAuth = (prefix: string, name?: string, phone?: string): AuthRe
 });
 
 export const mockApi = {
+  resetMockMemory() {
+    mockCoinsMemory = 5000;
+    mockUnlockedPetsMemory = [];
+    mockPhoneMemory = "";
+  },
+
   async checkLoginPhone(phone: string): Promise<{ success: boolean; isLogin: boolean }> {
     mockPhoneMemory = phone;
     return { success: true, isLogin: true };

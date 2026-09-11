@@ -2,7 +2,6 @@ import axios from "axios";
 import { mockApi } from "./api.mock";
 import { AuthResponse, UserProfile } from "./types";
 
-// ТВОЙ ПЕРЕКЛЮЧАТЕЛЬ: true — моки для заказчика, false — реальный сервер
 export const isMock = true;
 
 export const gatewayApi = axios.create({
@@ -10,11 +9,9 @@ export const gatewayApi = axios.create({
   headers: { "Content-Type": "application/json" }
 });
 
-// Интерцептор ответов, адаптированный под билд с моками
 gatewayApi.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Если включены моки, гасим сетевые ошибки localhost, чтобы билд не падал
     if (isMock) {
       console.warn("Сетевой запрос проигнорирован (включен режим моков):", error.message);
       return Promise.resolve({ data: {} } as any);
@@ -31,6 +28,10 @@ gatewayApi.interceptors.request.use((config) => {
 });
 
 export const api = {
+  resetMockMemory(): void {
+    if (isMock) mockApi.resetMockMemory();
+  },
+
   async checkLoginPhone(phone: string): Promise<{ success: boolean; isLogin: boolean }> {
     if (isMock) return mockApi.checkLoginPhone(phone);
     return (await gatewayApi.post<{ success: boolean; isLogin: boolean }>("/auth/login/phone-check", { phone })).data;

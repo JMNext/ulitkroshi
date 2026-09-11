@@ -37,6 +37,21 @@ const mapUserFields = (dbUser: any): UserProfile => ({
 });
 
 export const BackendAuthService = {
+  async invalidateToken(token: string) {
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as { id: number };
+      const result = await dbPool.query("SELECT phone FROM users WHERE id = $1", [decoded.id]);
+      if (result.rows.length) {
+        const userPhone = result.rows[0].phone;
+        for (const [id, data] of phoneSessions.entries()) {
+          if (data.phone === userPhone) {
+            phoneSessions.delete(id);
+          }
+        }
+      }
+    } catch {}
+  },
+
   async login(phone: string, password: string) {
     const cleanPhone = phone.replace(/[^0-9]/g, "").trim();
     const result = await dbPool.query("SELECT * FROM users WHERE phone = $1", [cleanPhone]);

@@ -31,15 +31,12 @@ app.get("/", (_req, res) => {
 
 async function startServer() {
   try {
-    // ШАГ 1: Проверяем физическую связь с базой данных
     await dbPool.query("SELECT NOW()");
     console.log("🚀 [SERVER] Успешное подключение к PostgreSQL пулу Улиткрошей!");
 
-    // ШАГ 2: СТРОГО СНАЧАЛА создаем таблицу в базе, если её нет!
     await initDatabase();
     console.log("✅ [SERVER] Таблица пользователей гарантированно создана в PostgreSQL.");
 
-    // ШАГ 3: И только после этого открываем порты для фронтенда!
     app.listen(PORT, () => {
       console.log(`🎉 [SERVER] Экспресс-сервер Улиткрошей запущен на порту ${PORT}`);
     });

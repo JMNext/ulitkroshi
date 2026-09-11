@@ -33,6 +33,8 @@ export async function initDatabase() {
       pet_status VARCHAR(20) DEFAULT 'alive',
       pet_satiety INT DEFAULT 100,
       pet_happiness INT DEFAULT 100,
+      is_suspended BOOLEAN DEFAULT false,
+      last_minigame_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP - INTERVAL '1 minute',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );

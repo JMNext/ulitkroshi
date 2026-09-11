@@ -16,8 +16,19 @@ authRouter.post("/login", async (req, res) => {
   }
 });
 
-authRouter.post("/logout", (_req, res) => {
-  res.json({ success: true });
+authRouter.post("/logout", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+
+    if (token && typeof (BackendAuthService as any).invalidateToken === "function") {
+      await (BackendAuthService as any).invalidateToken(token);
+    }
+
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ error: "Ошибка сервера при выходе" });
+  }
 });
 
 authRouter.get("/me", async (req, res) => {
