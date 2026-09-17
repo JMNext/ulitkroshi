@@ -1,22 +1,20 @@
+import { CloseButton } from "@/CloseButton/CloseButton";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 import { PetsTrack } from "@/MainScene/components/SideButtonsMenuModal/PetsModal/components/PetsTrack";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
-import { CloseButton } from "@/ModalWrapper/CloseButton";
+import NiceModal, { useModal } from "@ebay/nice-modal-react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { useEffect, useRef } from "react";
+import { clsx } from "clsx";
+import { useEffect } from "react";
 import { PetMetaInfo } from "./components/PetMetaInfo";
 import { usePetNavigationStore } from "./store/usePetNavigationStore";
 import startPetImg from "/src/assets/start-pet.png";
 
-interface PetsModalProps {
-  onClose: () => void;
-}
-
-export const PetsModal = ({ onClose }: PetsModalProps) => {
+export const PetsModal = NiceModal.create(() => {
+  const modal = useModal();
   const { isVert, scale } = useMainGameStore();
-  const { activePetIndex = 0, unlockedPetIndexes = [0], petName = "Булька", updateField } = usePetStore();
+  const { activePetIndex, unlockedPetIndexes, petName, updateField } = usePetStore();
   const { currentIndex, init, onDragStart, onDragMove, handleWheel, handlePrev, handleNext } = usePetNavigationStore();
-  const isDraggingRef = useRef(false);
 
   useEffect(() => {
     init(activePetIndex);
@@ -27,7 +25,7 @@ export const PetsModal = ({ onClose }: PetsModalProps) => {
   const isSelected = currentIndex === activePetIndex;
 
   return (
-    <Dialog.Root open={true} onOpenChange={(open) => !open && onClose()}>
+    <Dialog.Root open={modal.visible} onOpenChange={(open) => !open && modal.hide()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" />
         <Dialog.Content className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 outline-none">
@@ -52,28 +50,22 @@ export const PetsModal = ({ onClose }: PetsModalProps) => {
               onPointerDown={(e) => onDragStart(e.clientX)}
               onPointerMove={(e) => onDragMove(e.clientX)}
             >
-              <PetsTrack
-                currentIndex={currentIndex}
-                isDraggingRef={isDraggingRef}
-                startPetImg={startPetImg}
-                onDragStart={onDragStart}
-                onDragMove={onDragMove}
-                updateField={updateField}
-              />
+              <PetsTrack currentIndex={currentIndex} startPetImg={startPetImg} updateField={updateField} />
             </div>
 
             <div className="mt-3 flex h-8 w-full shrink-0 items-center justify-center landscape:mt-1">
               <button
                 type="button"
                 disabled={!isUnlocked || isSelected}
-                onClick={() => isUnlocked && updateField?.("activePetIndex", currentIndex)}
-                className={`min-w-[120px] rounded-full border-2 border-solid border-white px-4 py-1 text-center text-[12px] font-black tracking-wider whitespace-nowrap text-white uppercase antialiased shadow-md transition-all ${
+                onClick={() => isUnlocked && updateField("activePetIndex", currentIndex)}
+                className={clsx(
+                  "min-w-[120px] rounded-full border-2 border-solid border-white px-4 py-1 text-center text-[12px] font-black tracking-wider whitespace-nowrap text-white uppercase antialiased shadow-md transition-all",
                   isUnlocked
                     ? isSelected
                       ? "cursor-default bg-[#81c714]"
                       : "cursor-pointer touch-manipulation bg-[#ff9800] active:scale-[0.98]"
                     : "cursor-default bg-slate-500 opacity-80"
-                }`}
+                )}
               >
                 {isUnlocked ? (isSelected ? "Выбран" : "Выбрать") : "Не получен"}
               </button>
@@ -100,4 +92,4 @@ export const PetsModal = ({ onClose }: PetsModalProps) => {
       </Dialog.Portal>
     </Dialog.Root>
   );
-};
+});

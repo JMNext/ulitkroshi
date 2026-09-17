@@ -25,7 +25,7 @@ export class SnakeGameScene extends Scene {
     this.difficulty = data.difficulty || "medium";
     this.score = 0;
     this.hp = 100;
-    const speed = { easy: 340, medium: 200, hard: 120 }[this.difficulty] || 200;
+    const speed = this.difficulty === "hard" ? 120 : this.difficulty === "easy" ? 340 : 200;
 
     this.overlayManager = new SnakeGameOverlay(this);
     this.logicManager = new SnakeGameLogicManager(this, speed);
@@ -66,22 +66,17 @@ export class SnakeGameScene extends Scene {
 
       if (Math.abs(diffX) > Math.abs(diffY)) {
         if (Math.abs(diffX) > swipeThreshold) {
-          if (diffX > 0) this.logicManager.changeDirection("RIGHT");
-          else this.logicManager.changeDirection("LEFT");
+          this.logicManager.changeDirection(diffX > 0 ? "RIGHT" : "LEFT");
         }
       } else {
         if (Math.abs(diffY) > swipeThreshold) {
-          if (diffY > 0) this.logicManager.changeDirection("DOWN");
-          else this.logicManager.changeDirection("UP");
+          this.logicManager.changeDirection(diffY > 0 ? "DOWN" : "UP");
         }
       }
-      this.touchStartX = undefined;
-      this.touchStartY = undefined;
+      this.touchStartX = this.touchStartY = undefined;
     });
 
-    if (this.input.keyboard) {
-      this.cursors = this.input.keyboard.createCursorKeys();
-    }
+    if (this.input.keyboard) this.cursors = this.input.keyboard.createCursorKeys();
     this.events.once("shutdown", () => this.cleanup());
   }
 
@@ -98,6 +93,7 @@ export class SnakeGameScene extends Scene {
   public addScore = (): void => {
     useSnakeGameStore.getState().addScore(() => {});
   };
+
   public triggerCrash = (): void => {
     useSnakeGameStore.getState().applyPenalty(() => {});
   };
@@ -112,9 +108,7 @@ export class SnakeGameScene extends Scene {
 
   public exitGame = (): void => {
     const snakeState = useSnakeGameStore.getState();
-    if (!snakeState.isGameOver && snakeState.score < 20) {
-      usePetStore.getState().handleGameLoss();
-    }
+    if (!snakeState.isGameOver && snakeState.score < 20) usePetStore.getState().handleGameLoss();
     window.dispatchEvent(new CustomEvent("minigame_stopped"));
     this.scene.stop(this.scene.key);
     if (this.scene.manager.isSleeping("MainScene")) this.scene.wake("MainScene");

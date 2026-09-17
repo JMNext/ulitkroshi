@@ -1,3 +1,5 @@
+import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
+import { useApiStore } from "@/api/store/useApiStore";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
@@ -22,14 +24,7 @@ const createGameDeck = (pairsCount: number, availableCards: string[]): string[] 
 };
 
 interface MemoryGameState {
-  score: number;
-  isGameOver: boolean;
-  isWash: boolean;
-  deck: string[];
-  openedCards: number[];
-  matchedCards: string[];
-  canClick: boolean;
-  isPreview: boolean;
+  score: number; isGameOver: boolean; isWash: boolean; deck: string[]; openedCards: number[]; matchedCards: string[]; canClick: boolean; isPreview: boolean;
   initGame: (pairsCount: number, availableCards: string[]) => void;
   setSwappedDeck: (newDeck: string[]) => void;
   setCanClickTrue: () => void;
@@ -38,16 +33,7 @@ interface MemoryGameState {
   resetStore: () => void;
 }
 
-const initialValues = {
-  score: 0,
-  isGameOver: false,
-  isWash: false,
-  deck: [],
-  openedCards: [],
-  matchedCards: [],
-  canClick: false,
-  isPreview: true
-};
+const initialValues = { score: 0, isGameOver: false, isWash: false, deck: [], openedCards: [], matchedCards: [], canClick: false, isPreview: true };
 
 export const useMemoryGameStore = create<MemoryGameState>()(
   subscribeWithSelector((set, get) => ({
@@ -75,6 +61,12 @@ export const useMemoryGameStore = create<MemoryGameState>()(
       if (isPairMatched) {
         const nextScore = score + 1;
         const isWin = nextScore === totalPairs;
+
+        if (isWin) {
+          useApiStore.getState().executeAction("mini_game_reward", 1, "memory");
+          useMainGameStore.setState({ gameOverResult: { isWin: true, rewardText: "+1" } });
+        }
+
         setTimeout(() => {
           set({
             matchedCards: [...matchedCards, deck[firstIndex]],
@@ -86,9 +78,7 @@ export const useMemoryGameStore = create<MemoryGameState>()(
           });
         }, 300);
       } else {
-        setTimeout(() => {
-          set({ openedCards: [], canClick: true });
-        }, 800);
+        setTimeout(() => set({ openedCards: [], canClick: true }), 800);
       }
     },
 

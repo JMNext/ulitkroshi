@@ -1,12 +1,10 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import { fileURLToPath } from "url";
 import { defineConfig } from "vite";
 import checker from "vite-plugin-checker";
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
-
+// Кастомный плагин HMR для полной перезагрузки сцен Phaser
 function phaserHmrFix() {
   return {
     name: 'phaser-hmr-fix',
@@ -20,7 +18,8 @@ function phaserHmrFix() {
 }
 
 export default defineConfig({
-  root: path.resolve(__dirname, "./frontend"),
+  // Заменили жесткий root: "path.resolve" на относительный путь для Vite
+  root: "./frontend",
 
   plugins: [
     tailwindcss(),
@@ -28,7 +27,7 @@ export default defineConfig({
     phaserHmrFix(),
     checker({
       typescript: {
-        tsconfigPath: path.resolve(__dirname, "./tsconfig.json")
+        tsconfigPath: "./tsconfig.json" // Упростили путь до конфига TypeScript
       },
       overlay: false
     })
@@ -42,24 +41,22 @@ export default defineConfig({
 
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./frontend/src")
+      // Упростили запись алиаса. Свойство root автоматически подставит
+      // нужный базовый путь к папке src фронтенда
+      "@": path.resolve("frontend/src")
     }
   },
 
   build: {
-    outDir: path.resolve(__dirname, "./dist"),
+    outDir: "../dist", // Изменили на относительный путь от корня root (папки frontend) наружу
     emptyOutDir: true,
     assetsInlineLimit: 4096,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            if (id.includes("phaser")) {
-              return "phaser";
-            }
-            if (id.includes("react")) {
-              return "react-vendor";
-            }
+            if (id.includes("phaser")) return "phaser";
+            if (id.includes("react")) return "react-vendor";
             return "vendor";
           }
         }

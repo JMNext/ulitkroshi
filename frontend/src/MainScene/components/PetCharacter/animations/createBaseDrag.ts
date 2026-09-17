@@ -1,4 +1,3 @@
-import { triggerSleepingClick } from "@/MainScene/components/PetCharacter/animations/sleepPet";
 import { startFeedingDrag } from "@/MainScene/components/PetCharacter/animations/startFeedingDrag";
 import { startPlayingDrag } from "@/MainScene/components/PetCharacter/animations/startPlayingDrag";
 import { startWashingDrag } from "@/MainScene/components/PetCharacter/animations/startWashingDrag";
@@ -20,40 +19,52 @@ const DRAG_METHODS = {
   wash: startWashingDrag
 } as const;
 
-export const handleCareActionDown = (type: CareActionType, btn: HTMLElement, scale: number, s: number, e: PointerEvent) => {
+export const handleCareActionDown = (
+  type: CareActionType,
+  defIcon: string,
+  activeFruitIcon: string,
+  scale: number,
+  s: number,
+  e: React.PointerEvent<HTMLDivElement>
+) => {
   const petStore = usePetStore.getState();
   const gameStore = useMainGameStore.getState();
 
   if (!petStore.canExecuteAction(type)) return;
-  if (type === "sleep") return triggerSleepingClick();
 
-  const defIcon = btn.getAttribute("data-ui-default-icon") || "";
+  if (type === "sleep") {
+    petStore.triggerSleepAction();
+    return;
+  }
 
   if (type === "feed") {
+    e.stopPropagation();
     const { currentFruitId: fId, fruitsCounts: fCounts } = petStore;
-    const hasFruit = fId && (fCounts?.[fId] ?? 0) > 0;
-    const startX = e.clientX,
-      startY = e.clientY;
+    const hasFruit = fId && fCounts[fId] > 0;
+    const startX = e.nativeEvent.clientX;
+    const startY = e.nativeEvent.clientY;
 
-    const icon = hasFruit ? btn.parentElement?.getAttribute("data-active-fruit-icon") || defIcon : defIcon;
+    const icon = hasFruit ? activeFruitIcon || defIcon : defIcon;
     const targetId = hasFruit ? fId : undefined;
+    let isDraggingTriggered = false;
 
     const handlePointerMove = (me: PointerEvent) => {
+      if (isDraggingTriggered) return;
       const dx = me.clientX - startX;
       const dy = me.clientY - startY;
       if (dx * dx + dy * dy > 100) {
+        isDraggingTriggered = true;
         cleanup();
-        startFeedingDrag(e, icon, targetId, undefined, scale, s);
+        startFeedingDrag(e.nativeEvent, icon, targetId, undefined, scale, s);
       }
     };
 
     const handlePointerUp = (ue: PointerEvent) => {
       cleanup();
+      if (isDraggingTriggered) return;
       const dx = ue.clientX - startX;
       const dy = ue.clientY - startY;
-      if (dx * dx + dy * dy <= 100) {
-        gameStore.setIsFoodOpen((p) => !p);
-      }
+      if (dx * dx + dy * dy <= 100) gameStore.setIsFoodOpen((p) => !p);
     };
 
     const cleanup = () => {
@@ -61,20 +72,19 @@ export const handleCareActionDown = (type: CareActionType, btn: HTMLElement, sca
       window.removeEventListener("pointerup", handlePointerUp);
     };
 
-    window.addEventListener("pointermove", handlePointerMove, {
-      passive: true
-    });
-    window.addEventListener("pointerup", handlePointerUp, {
-      passive: true
-    });
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    window.addEventListener("pointerup", handlePointerUp, { passive: true });
     return;
   }
 
   const drag = DRAG_METHODS[type as keyof typeof DRAG_METHODS];
-  if (drag) drag(e, defIcon, undefined, scale, s);
+  if (drag) {
+    e.stopPropagation();
+    drag(e.nativeEvent, defIcon, undefined, scale, s);
+  }
 };
 
-export const handleFruitActionDown = (id: string, isZero: boolean, scale: number, s: number, e: PointerEvent) => {
+export const handleFruitActionDown = (id: string, isZero: boolean, scale: number, s = 1, e: PointerEvent) => {
   const gameStore = useMainGameStore.getState();
   if (isZero) return gameStore.setModal("shop");
 
@@ -86,16 +96,18 @@ export const handleFruitActionDown = (id: string, isZero: boolean, scale: number
 };
 
 export const createBaseDrag = (ie: React.PointerEvent<HTMLDivElement> | PointerEvent, config: BaseDragConfig, scale = 1, s = 1): void => {
-  if (!["prostoi1", "prostoi2", "sad_state"].includes(usePetStore.getState().currentAnim ?? "prostoi1")) {
+  if (!["prostoi1", "prostoi2", "sad_state"].includes(usePetStore.getState().currentAnim)) {
     return config.onEnd?.();
   }
 
   const targetElement = ie.target as HTMLElement;
-  try {
-    if (targetElement && typeof targetElement.setPointerCapture === "function") {
-      targetElement.setPointerCapture(ie.pointerId);
-    }
-  } catch (err) {}
+  const nativeEvent = "nativeEvent" in ie ? ie.nativeEvent : ie;
+
+  if (targetElement?.setPointerCapture && nativeEvent.pointerId !== undefined) {
+    try {
+      targetElement.setPointerCapture(nativeEvent.pointerId);
+    } catch (_) {}
+  }
 
   const ratio = window.innerWidth / window.innerHeight;
   const mode = ratio < 1 ? (ratio < 0.42 ? "u" : "v") : "d";
@@ -116,7 +128,7 @@ export const createBaseDrag = (ie: React.PointerEvent<HTMLDivElement> | PointerE
   const updateTransform = (x: number, y: number) => {
     ghost.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) scale(${scale * s})`;
   };
-  updateTransform(ie.clientX, ie.clientY);
+  updateTransform(nativeEvent.clientX, nativeEvent.clientY);
 
   const img = document.createElement("img");
   img.src = config.url;
@@ -124,41 +136,37 @@ export const createBaseDrag = (ie: React.PointerEvent<HTMLDivElement> | PointerE
   ghost.appendChild(img);
   document.body.appendChild(ghost);
 
-  let transformTicking = false;
+  (window as any).isGlobalDragActive = true;
+
   const handleDragMove = (e: PointerEvent) => {
-    if (!transformTicking) {
-      requestAnimationFrame(() => {
-        updateTransform(e.clientX, e.clientY);
-        transformTicking = false;
-      });
-      transformTicking = true;
-    }
+    if (!(window as any).isGlobalDragActive) return;
+    updateTransform(e.clientX, e.clientY);
   };
 
   const handleDragUp = (e: PointerEvent) => {
+    if (!(window as any).isGlobalDragActive) return;
+    (window as any).isGlobalDragActive = false;
+
     window.removeEventListener("pointermove", handleDragMove);
     window.removeEventListener("pointerup", handleDragUp);
 
-    try {
-      if (targetElement && typeof targetElement.releasePointerCapture === "function") {
+    if (targetElement?.releasePointerCapture && e.pointerId !== undefined) {
+      try {
         targetElement.releasePointerCapture(e.pointerId);
-      }
-    } catch (err) {}
+      } catch (_) {}
+    }
 
     ghost.remove();
 
     const dx = e.clientX - targetX;
     const dy = e.clientY - targetY;
+
     if (dx * dx + dy * dy <= radiusSq) {
       config.onSuccess();
     }
     config.onEnd?.();
   };
 
-  window.addEventListener("pointermove", handleDragMove, {
-    passive: true
-  });
-  window.addEventListener("pointerup", handleDragUp, {
-    passive: true
-  });
+  window.addEventListener("pointermove", handleDragMove, { passive: true });
+  window.addEventListener("pointerup", handleDragUp, { passive: true });
 };

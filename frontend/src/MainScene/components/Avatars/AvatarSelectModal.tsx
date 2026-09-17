@@ -1,18 +1,16 @@
+import { CloseButton } from "@/CloseButton/CloseButton";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
-import { CloseButton } from "@/ModalWrapper/CloseButton";
+import NiceModal, { useModal } from "@ebay/nice-modal-react";
 import * as Dialog from "@radix-ui/react-dialog";
+import { clsx } from "clsx";
 import { AVAILABLE_AVATARS, AvatarId } from "./Avatars";
 
-interface AvatarSelectModalProps {
-  onClose: () => void;
-}
-
-export const AvatarSelectModal = ({ onClose }: AvatarSelectModalProps) => {
-  const { avatarId, setAvatarId } = useMainGameStore();
-  const currentAvatarId = avatarId || "frog";
+export const AvatarSelectModal = NiceModal.create(() => {
+  const modal = useModal();
+  const { avatarId = "frog", setAvatarId } = useMainGameStore();
 
   return (
-    <Dialog.Root open={true} onOpenChange={(open) => !open && onClose()}>
+    <Dialog.Root open={modal.visible} onOpenChange={(open) => !open && modal.hide()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" />
 
@@ -31,17 +29,18 @@ export const AvatarSelectModal = ({ onClose }: AvatarSelectModalProps) => {
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
               {AVAILABLE_AVATARS.map((avatar) => {
-                const isSelected = avatar.id === currentAvatarId;
+                const isSelected = avatar.id === avatarId;
                 const IconComponent = avatar.Component;
 
                 return (
                   <button
                     key={avatar.id}
                     type="button"
-                    onClick={() => setAvatarId?.(avatar.id as AvatarId)}
-                    className={`relative aspect-square cursor-pointer overflow-visible rounded-[20px] border-2 bg-[#f1f5f9] p-1.5 transition-transform outline-none active:scale-95 ${
+                    onClick={() => setAvatarId(avatar.id as AvatarId)}
+                    className={clsx(
+                      "relative aspect-square cursor-pointer overflow-visible rounded-[20px] border-2 bg-[#f1f5f9] p-1.5 transition-transform outline-none active:scale-95",
                       isSelected ? "z-10 scale-105 border-[#81c714] bg-[#f0fdf4] shadow-md" : "border-transparent hover:border-[#cbd5e1]"
-                    }`}
+                    )}
                   >
                     <div className="h-full w-full overflow-hidden rounded-[14px]">
                       <IconComponent />
@@ -61,4 +60,4 @@ export const AvatarSelectModal = ({ onClose }: AvatarSelectModalProps) => {
       </Dialog.Portal>
     </Dialog.Root>
   );
-};
+});

@@ -41,6 +41,7 @@ export async function initDatabase() {
   `;
   try {
     await dbPool.query(createUsersTable);
+    await dbPool.query("ALTER TABLE public.users ALTER COLUMN coins SET DEFAULT 0;");
     console.log("🎰 [DB] Таблица пользователей Улиткрошей готова.");
   } catch (error) {
     console.error("❌ [DB] Ошибка инициализации базы данных:", error);

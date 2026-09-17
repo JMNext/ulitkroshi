@@ -1,3 +1,4 @@
+import { clsx } from "clsx";
 import lifeIcon from "../../../assets/interface-icons/life.svg";
 
 const coinImgUrl = new URL("@/assets/buttom_menu-icons/eat.svg", import.meta.url).href;
@@ -28,7 +29,7 @@ export const GameHeaderUI = ({ score, onBack, hp, currentScale = 1, isCoinHeader
         <button
           type="button"
           onClick={() => {
-            if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+            (document.activeElement as HTMLElement)?.blur?.();
             onBack();
           }}
           className="flex cursor-pointer items-center gap-1 border-none bg-transparent p-1 font-sans text-2xl font-black text-white uppercase drop-shadow-[0_3px_5px_rgba(0,0,0,0.8)] transition-transform duration-100 ease-out outline-none hover:scale-105 active:scale-95"
@@ -44,12 +45,10 @@ export const GameHeaderUI = ({ score, onBack, hp, currentScale = 1, isCoinHeader
                 <img
                   key={`life-${idx}`}
                   src={lifeIcon}
-                  className="h-7 w-7 object-contain transition-all duration-300"
-                  style={{
-                    transform: isAlive ? "scale(1)" : "scale(0.75)",
-                    opacity: isAlive ? 1 : 0.2,
-                    filter: isAlive ? "none" : "grayscale(100%)"
-                  }}
+                  className={clsx(
+                    "h-7 w-7 object-contain transition-all duration-300",
+                    isAlive ? "scale-100 opacity-100" : "scale-75 opacity-20 grayscale"
+                  )}
                   alt=""
                 />
               );

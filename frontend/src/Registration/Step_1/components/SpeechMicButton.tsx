@@ -2,23 +2,32 @@ import { useEffect, useRef } from "react";
 import { useRegistrationStep1Store } from "../store/useRegistrationStep1Store";
 import micBtnImg from "/src/assets/registration/microphone_button.png";
 
+// Расширяем глобальный интерфейс Window
+declare global {
+  interface Window {
+    __globalBgAudio?: HTMLAudioElement;
+    SpeechRecognition?: any;
+    webkitSpeechRecognition?: any;
+  }
+}
+
+const toggleGlobalAudio = (play: boolean) => {
+  const audio = window.__globalBgAudio;
+  if (!audio) return;
+  if (play) {
+    audio.play().catch(() => {});
+  } else {
+    audio.pause();
+  }
+};
+
 export const SpeechMicButton = () => {
   const recognitionRef = useRef<any>(null);
   const isListeningRef = useRef<boolean>(false);
   const { setSpeechResult, setSpeechError, setInput } = useRegistrationStep1Store();
 
-  const toggleGlobalAudio = (play: boolean) => {
-    const audio = (window as any).__globalBgAudio;
-    if (!audio) return;
-    if (play) {
-      audio.play().catch(() => {});
-    } else {
-      audio.pause();
-    }
-  };
-
   useEffect(() => {
-    const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognitionClass) return;
 
     const rec = new SpeechRecognitionClass();
@@ -54,24 +63,21 @@ export const SpeechMicButton = () => {
     };
 
     recognitionRef.current = rec;
+
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.onstart = null;
         recognitionRef.current.onend = null;
         recognitionRef.current.onresult = null;
         recognitionRef.current.onerror = null;
-        try {
-          recognitionRef.current.abort();
-        } catch (_) {}
+        recognitionRef.current.abort();
       }
     };
-  }, [setSpeechError, setSpeechResult, setInput]);
+  }, [setSpeechError, setSpeechResult]);
 
   const handleMicClick = () => {
     setInput("");
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
+    (document.activeElement as HTMLElement)?.blur?.();
 
     if (!recognitionRef.current) {
       toggleGlobalAudio(false);
@@ -86,18 +92,12 @@ export const SpeechMicButton = () => {
       return;
     }
 
-    try {
-      if (isListeningRef.current) {
-        recognitionRef.current.abort();
-        isListeningRef.current = false;
-        toggleGlobalAudio(true);
-      } else {
-        recognitionRef.current.start();
-      }
-    } catch {
-      recognitionRef.current?.abort();
+    if (isListeningRef.current) {
+      recognitionRef.current.abort();
       isListeningRef.current = false;
       toggleGlobalAudio(true);
+    } else {
+      recognitionRef.current.start();
     }
   };
 

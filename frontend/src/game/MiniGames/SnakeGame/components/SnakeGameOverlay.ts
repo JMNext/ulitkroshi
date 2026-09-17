@@ -32,35 +32,29 @@ export class SnakeGameOverlay {
       const score = useSnakeGameStore((s) => s.score);
       const hp = useSnakeGameStore((s) => s.hp);
       const isGameOver = useSnakeGameStore((s) => s.isGameOver);
+      const isWin = useSnakeGameStore((s) => s.isWin);
 
       const { width, height } = this.scene.scale;
       const currentScale = height > width ? height / 1080 : Math.min(width / 1920, height / 1080);
 
       return React.createElement(
         "div",
-        {
-          className: "absolute inset-0 w-full h-full pointer-events-none"
-        },
+        { className: "absolute inset-0 w-full h-full pointer-events-none" },
         React.createElement(GameHeaderUI, {
           score,
           hp,
           currentScale,
           onBack: () => this.scene.exitGame()
         }),
-
         isGameOver &&
           React.createElement(
             "div",
-            {
-              className: "pointer-events-auto absolute inset-0 z-50 flex items-center justify-center bg-black/40"
-            },
+            { className: "pointer-events-auto absolute inset-0 z-50 flex items-center justify-center bg-black/40" },
             React.createElement(GameOverModalUI, {
               score,
-              isWin: score >= 20,
-              onRestart: () =>
-                this.scene.scene.restart({
-                  difficulty: this.scene.difficulty
-                }),
+              isWin: isWin,
+              difficulty: this.scene.difficulty as "easy" | "medium" | "hard",
+              onRestart: () => this.scene.scene.restart({ difficulty: this.scene.difficulty }),
               onBack: () => this.scene.exitGame()
             })
           )

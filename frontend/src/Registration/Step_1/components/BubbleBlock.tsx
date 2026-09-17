@@ -1,3 +1,4 @@
+import { clsx } from "clsx";
 import { useRegistrationStep1Store } from "../store/useRegistrationStep1Store";
 
 const MESSAGES = {
@@ -7,26 +8,29 @@ const MESSAGES = {
   statusSpaces: "Имя должно быть только в одно слово!\nПридумай имя без пробелов.",
   statusSong: "Это больше похоже на песню,\nа не на имя! 🎵",
   historyChange: "Эх, а мне так нравилось... Ну ладно, тогда как меня будут звать? Придумай другое имя!",
-  defaultWelcome:
-    "Привет, друг! Я — твой Улиткрош! Придумай мне имя, а затем введи его на клавиатуре или нажми на большую красную кнопку и скажи мне его. Громко и чётче!",
+  defaultWelcome: "Привет, друг! Я — твой Улиткрош! Придумай мне имя, а затем введи его на клавиатуре или нажми на большую красную кнопку и скажи мне его. Громко и чётче!",
   notHeard: "Ой, я не расслышал!\nДавай ещё разок, громче и чётче!"
+} as const;
+
+// Карта ошибок для стадии 1 избавляет от вложенных тернаров
+const STATUS_MESSAGES: Record<string, string> = {
+  profane: MESSAGES.statusProfane,
+  spaces: MESSAGES.statusSpaces,
+  song: MESSAGES.statusSong
 };
 
 export const BubbleBlock = () => {
   const { stage, name, nameStatus, nameHistory } = useRegistrationStep1Store();
 
-  const isStage1 = stage === 1;
   const isStage2 = stage === 2;
   const isStage4 = stage === 4;
   const isNamedStage = isStage2 || isStage4;
 
+  // Декларативное и плоское вычисление текста
   let textStr = "";
-  if (isStage1) {
-    if (nameStatus === "profane") textStr = MESSAGES.statusProfane;
-    else if (nameStatus === "spaces") textStr = MESSAGES.statusSpaces;
-    else if (nameStatus === "song") textStr = MESSAGES.statusSong;
-    else if (nameHistory.length > 0) textStr = MESSAGES.historyChange;
-    else textStr = MESSAGES.defaultWelcome;
+
+  if (stage === 1) {
+    textStr = STATUS_MESSAGES[nameStatus] || (nameHistory.length > 0 ? MESSAGES.historyChange : MESSAGES.defaultWelcome);
   } else if (isNamedStage) {
     textStr = `${name}${isStage2 ? "?" : ""}`;
   } else if (stage === 3) {
@@ -42,12 +46,15 @@ export const BubbleBlock = () => {
           </span>
         )}
         <p
-          className={`m-0 text-center text-[22px] leading-snug font-black break-words whitespace-pre-line antialiased ${
+          className={clsx(
+            "m-0 text-center text-[22px] leading-snug font-black break-words whitespace-pre-line antialiased",
             isNamedStage ? "text-[36px] text-emerald-900" : "text-slate-800"
-          }`}
+          )}
         >
           {textStr}
         </p>
+
+        {/* Хвостик баббла (стрелочка) */}
         <div className="absolute bottom-[-18px] left-1/2 h-0 w-0 -translate-x-1/2 border-x-[18px] border-t-[18px] border-x-transparent border-t-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.05)]" />
         <div className="absolute bottom-[-19.5px] left-1/2 -z-10 h-0 w-0 -translate-x-1/2 border-x-[18px] border-t-[18px] border-x-transparent border-t-slate-200" />
       </div>

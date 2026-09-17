@@ -54,6 +54,7 @@ export class CatchGameOverlay {
             React.createElement(GameOverModalUI, {
               score,
               isWin,
+              difficulty: this.scene.difficulty as "easy" | "medium" | "hard",
               onRestart: () => this.scene.scene.restart({ difficulty: this.scene.difficulty }),
               onBack: () => this.scene.exitGame()
             })

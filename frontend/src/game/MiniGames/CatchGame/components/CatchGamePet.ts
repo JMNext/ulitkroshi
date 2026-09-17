@@ -37,16 +37,20 @@ export class CatchGamePet {
     this.videoElement.src = isWebm ? CATCH_ASSETS.video.webm : CATCH_ASSETS.video.mov;
     document.body.appendChild(this.videoElement);
 
+    this.videoElement.play().catch((err) => console.warn(err));
+
     if (this.scene.textures.exists("pet-video-stream")) {
-      this.scene.textures.remove("pet-video-stream");
+      this.textureCanvas = this.scene.textures.get("pet-video-stream") as Phaser.Textures.CanvasTexture;
+    } else {
+      this.textureCanvas = this.scene.textures.createCanvas("pet-video-stream", 256, 256);
     }
-    this.textureCanvas = this.scene.textures.createCanvas("pet-video-stream", 256, 256);
 
     if (this.textureCanvas) {
       (this.textureCanvas as any).hasAlpha = true;
     }
 
-    this.petSprite = this.scene.add.sprite(this.x, 0, "pet-video-stream").setOrigin(0.5, 1);
+    this.y = this.scene.scale.height - 150;
+    this.petSprite = this.scene.add.sprite(this.x, this.y, "pet-video-stream").setOrigin(0.5, 1).setDepth(10);
 
     this.resize();
     useCatchGameStore.getState().setPetX(this.x);
@@ -80,7 +84,7 @@ export class CatchGamePet {
     if (dir !== 0) this.updatePosition(this.x + dir * this.keyboardSpeed * delta);
     else if (this.scene.input.activePointer?.isDown) this.updatePosition(this.scene.input.activePointer.x);
 
-    if (this.videoElement && !this.videoElement.paused && this.textureCanvas) {
+    if (this.videoElement && !this.videoElement.paused && this.videoElement.readyState >= 2 && this.textureCanvas) {
       const ctx = this.textureCanvas.context;
       ctx.clearRect(0, 0, 256, 256);
       (this.textureCanvas as any).hasAlpha = true;
@@ -92,7 +96,7 @@ export class CatchGamePet {
   public updatePosition = (targetX: number): void => {
     const half = this.width / 2;
     this.x = Phaser.Math.Clamp(targetX, half, this.scene.scale.width - half);
-    if (this.petSprite) this.petSprite.x = this.x;
+    if (this.petSprite) this.petSprite.setPosition(this.x, this.y);
     useCatchGameStore.getState().setPetX(this.x);
   };
 

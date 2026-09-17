@@ -1,14 +1,11 @@
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
+import { useApiStore } from "@/api/store/useApiStore";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
 interface CatchGameState {
-  score: number;
-  hp: number;
-  isGameOver: boolean;
-  isWin: boolean;
-  petX: number;
+  score: number; hp: number; isGameOver: boolean; isWin: boolean; petX: number;
   initGame: () => void;
   addScore: (renderCallback: () => void) => void;
   applyBombPenalty: (renderCallback: () => void) => void;
@@ -29,12 +26,13 @@ export const useCatchGameStore = create<CatchGameState>()(
       const nextScore = get().score + 1;
       const isWin = nextScore >= 20;
 
+      if (isWin) {
+        useApiStore.getState().executeAction("mini_game_reward", 5);
+        useMainGameStore.setState({ gameOverResult: { isWin: true, rewardText: "+5" } });
+      }
+
       set({ score: nextScore, isGameOver: isWin, isWin: isWin });
       renderCallback();
-
-      if (isWin) {
-        useMainGameStore.getState().addTestCoins();
-      }
     },
 
     applyBombPenalty: (renderCallback) => {
@@ -43,13 +41,14 @@ export const useCatchGameStore = create<CatchGameState>()(
       const nextHp = get().hp - 25;
       const isOver = nextHp <= 0;
 
-      set({ hp: nextHp, score: nextScore, isGameOver: isOver, isWin: false });
-      renderCallback();
-
       if (isOver) {
-        useMainGameStore.getState().addTestCoins();
+        useApiStore.getState().executeAction("mini_game_reward", 2);
+        useMainGameStore.setState({ gameOverResult: { isWin: false, rewardText: "+2" } });
         usePetStore.getState().handleGameLoss();
       }
+
+      set({ hp: nextHp, score: nextScore, isGameOver: isOver, isWin: false });
+      renderCallback();
     },
 
     applyMissPenalty: (renderCallback) => {
@@ -58,17 +57,17 @@ export const useCatchGameStore = create<CatchGameState>()(
       const nextHp = get().hp - 25;
       const isOver = nextHp <= 0;
 
-      set({ hp: nextHp, score: nextScore, isGameOver: isOver, isWin: false });
-      renderCallback();
-
       if (isOver) {
-        useMainGameStore.getState().addTestCoins();
+        useApiStore.getState().executeAction("mini_game_reward", 2);
+        useMainGameStore.setState({ gameOverResult: { isWin: false, rewardText: "+2" } });
         usePetStore.getState().handleGameLoss();
       }
+
+      set({ hp: nextHp, score: nextScore, isGameOver: isOver, isWin: false });
+      renderCallback();
     },
 
     setPetX: (x) => set({ petX: x }),
-
     resetStore: () => set(initialValues)
   }))
 );

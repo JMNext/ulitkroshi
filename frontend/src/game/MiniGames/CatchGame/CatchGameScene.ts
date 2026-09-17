@@ -43,7 +43,10 @@ export class CatchGameScene extends Scene {
     window.dispatchEvent(new CustomEvent("minigame_started"));
     document.getElementById("game-container")?.setAttribute("data-scene", this.scene.key);
 
-    this.bgImage = this.add.image(0, 0, this.scale.height > this.scale.width ? "catch_bg_vert" : "catch_bg_horiz").setOrigin(0);
+    this.bgImage = this.add
+      .image(0, 0, this.scale.height > this.scale.width ? "catch_bg_vert" : "catch_bg_horiz")
+      .setOrigin(0)
+      .setDepth(0);
     this.bgImage.setDisplaySize(this.scale.width, this.scale.height);
 
     this.overlayManager.create();

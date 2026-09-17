@@ -1,5 +1,6 @@
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
 import confetti from "canvas-confetti";
+import { clsx } from "clsx";
 import { useEffect, useState } from "react";
 import { COIN_IMAGE_URL, CONFETTI_BASE_CONFIG, GAMEOVER_TEXTS, getGameOverModalScale } from "./constants/gameOverModal.constants";
 
@@ -8,23 +9,20 @@ interface GameOverModalUIProps {
   onBack: () => void;
   isWin?: boolean;
   score?: number;
-  difficulty?: "easy" | "medium" | "hard";
+  difficulty?: "easy" | "medium" | "hard" | "memory";
 }
 
-export const GameOverModalUI = ({ onRestart, onBack, isWin: initialIsWin = false, score, difficulty }: GameOverModalUIProps) => {
+export const GameOverModalUI = ({ onRestart, onBack, score, difficulty }: GameOverModalUIProps) => {
   const [scale, setScale] = useState(1);
-  const { gameOverResult, setGameOver, clearGameOver } = useMainGameStore();
+  const { gameOverResult } = useMainGameStore();
 
-  useEffect(() => {
-    setGameOver(score, difficulty, initialIsWin);
-    return () => clearGameOver();
-  }, [score, difficulty, initialIsWin, setGameOver, clearGameOver]);
+  const finalScore = score !== undefined ? Number(score) : 0;
+  const isMemory = difficulty === "memory";
 
   useEffect(() => {
     const handleResize = () => {
       setScale(getGameOverModalScale(window.innerWidth, window.innerHeight));
     };
-
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -47,12 +45,12 @@ export const GameOverModalUI = ({ onRestart, onBack, isWin: initialIsWin = false
   }, [gameOverResult]);
 
   const clickAction = (cb: () => void) => {
-    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    (document.activeElement as HTMLElement)?.blur?.();
     cb();
   };
 
   if (!gameOverResult) return null;
-  const { isWin, rewardText } = gameOverResult;
+  const { isWin: resultIsWin, rewardText } = gameOverResult;
 
   return (
     <div
@@ -63,29 +61,27 @@ export const GameOverModalUI = ({ onRestart, onBack, isWin: initialIsWin = false
         className="flex w-[300px] origin-center flex-col items-center justify-center gap-4 rounded-[32px] border-4 border-solid border-[#ff9800] bg-white p-6 pb-7 text-center shadow-lg"
         style={{ transform: `scale(${scale})` }}
       >
-        <h1 className={`m-0 text-[28px] leading-none font-black tracking-wide ${isWin ? "text-[#2e7d32]" : "text-[#d32f2f]"}`}>
-          {isWin ? GAMEOVER_TEXTS.winTitle : GAMEOVER_TEXTS.loseTitle}
+        <h1 className={clsx("m-0 text-[28px] leading-none font-black tracking-wide", resultIsWin ? "text-[#2e7d32]" : "text-[#d32f2f]")}>
+          {resultIsWin ? GAMEOVER_TEXTS.winTitle : GAMEOVER_TEXTS.loseTitle}
         </h1>
 
-        {score !== undefined && (
-          <div className="flex flex-col items-center justify-center gap-1">
-            {!difficulty && score !== 999 && (
-              <p className="m-0 text-[20px] font-extrabold tracking-wide text-slate-700 uppercase">
-                {GAMEOVER_TEXTS.scoreLabel} <span className="text-[24px] font-black text-[#1e1b4b]">{score}</span>
-              </p>
-            )}
-            <div className="mt-0.5 flex h-8 items-center justify-center gap-0.5">
-              <span className="mr-1 text-[18px] font-black tracking-wide text-slate-700 uppercase">{GAMEOVER_TEXTS.rewardLabel}</span>
-              <span
-                className="text-[26px] leading-none font-black tracking-wide text-[#ffb300] select-none"
-                style={{ WebkitTextStroke: "1px #ffffff", filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.15))" }}
-              >
-                {rewardText}
-              </span>
-              <img src={COIN_IMAGE_URL} className="pointer-events-none block h-7 w-7 object-contain select-none" alt="" />
-            </div>
+        <div className="flex flex-col items-center justify-center gap-1">
+          {!isMemory && finalScore !== 999 && (
+            <p className="m-0 text-[20px] font-extrabold tracking-wide text-slate-700 uppercase">
+              {GAMEOVER_TEXTS.scoreLabel} <span className="text-[24px] font-black text-[#1e1b4b]">{finalScore}</span>
+            </p>
+          )}
+          <div className="mt-0.5 flex h-8 items-center justify-center gap-0.5">
+            <span className="mr-1 text-[18px] font-black tracking-wide text-slate-700 uppercase">{GAMEOVER_TEXTS.rewardLabel}</span>
+            <span
+              className="text-[26px] leading-none font-black tracking-wide text-[#ffb300] select-none"
+              style={{ WebkitTextStroke: "1px #ffffff", filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.15))" }}
+            >
+              {rewardText}
+            </span>
+            <img src={COIN_IMAGE_URL} className="pointer-events-none block h-7 w-7 object-contain select-none" alt="" />
           </div>
-        )}
+        </div>
 
         <nav className="mt-1 flex w-full flex-col gap-2.5">
           <button

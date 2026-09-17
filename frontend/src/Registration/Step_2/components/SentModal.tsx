@@ -1,32 +1,36 @@
-import React, { useContext } from "react";
+import { clsx } from "clsx";
+import { useContext } from "react";
 import { PhaserGameContext } from "../Step2UiManager";
 import { useRegistrationStep2Store } from "../store/useRegistrationStep2Store";
 
 export const SentModal = () => {
   const phaserScene = useContext(PhaserGameContext);
-  const { errorMessage, confirmSent, resetStore, setIsLogin } = useRegistrationStep2Store();
+  const { errorMessage, confirmSent, setIsLogin, resetStore } = useRegistrationStep2Store();
   const isNotFound = errorMessage === "user_not_found";
 
-  const handleOkClick = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleOkClick = () => {
     (document.activeElement as HTMLElement)?.blur?.();
     confirmSent();
   };
 
-  const handleYesClick = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleYesClick = () => {
     localStorage.removeItem("login_phone_buffer");
     localStorage.removeItem("saved_user_phone");
+    sessionStorage.setItem("force_registration_flow", "true");
     setIsLogin(false);
     resetStore();
-    phaserScene?.scene.start("Step1Scene");
+    if (phaserScene) {
+      phaserScene.scene.start("Step1Scene");
+    }
   };
 
   return (
     <div className="animate-fade-in pointer-events-none absolute top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2">
       <div
-        className="pointer-events-auto box-border flex w-[340px] max-w-full flex-col items-center justify-center gap-5 rounded-[28px] border-2 bg-white px-5 py-6 text-center shadow-2xl landscape:gap-4 landscape:py-5"
-        style={{ borderColor: isNotFound ? "#f43f5e" : "#81c714" }}
+        className={clsx(
+          "pointer-events-auto box-border flex w-[340px] max-w-full flex-col items-center justify-center gap-5 rounded-[28px] border-2 bg-white px-5 py-6 text-center shadow-2xl landscape:gap-4 landscape:py-5",
+          isNotFound ? "border-rose-500" : "border-[#81c714]"
+        )}
       >
         {isNotFound ? (
           <div className="box-border flex w-full flex-col items-center justify-center gap-5">
@@ -43,10 +47,7 @@ export const SentModal = () => {
               </button>
               <button
                 type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  resetStore();
-                }}
+                onClick={() => phaserScene?.scene.switch("LoginScene")}
                 className="flex h-12 flex-1 cursor-pointer touch-manipulation items-center justify-center rounded-full border-none bg-gradient-to-b from-rose-500 to-rose-600 text-base font-black whitespace-nowrap text-white uppercase shadow-md transition-transform outline-none active:scale-95"
               >
                 НЕТ

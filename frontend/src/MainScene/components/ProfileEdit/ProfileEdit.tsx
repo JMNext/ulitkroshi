@@ -1,66 +1,51 @@
+import editBtnIcon from "@/assets/interface-icons/button_edit.svg";
+import avatarDefaultIcon from "@/assets/interface-icons/icon-avatar.svg";
+import { CloseButton } from "@/CloseButton/CloseButton";
 import { AVAILABLE_AVATARS } from "@/MainScene/components/Avatars/Avatars";
+import { AvatarSelectModal } from "@/MainScene/components/Avatars/AvatarSelectModal";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
-import { CloseButton } from "@/ModalWrapper/CloseButton";
-import { api } from "@/api/api";
-import { useApiStore } from "@/api/store/useApiStore";
+import NiceModal, { useModal } from "@ebay/nice-modal-react";
 import * as Dialog from "@radix-ui/react-dialog";
+import { clsx } from "clsx";
 import { useEffect, useRef, useState } from "react";
-import { EDIT_BTN_ICON_URL } from "./constants/profileEdit.constants";
 
-interface ProfileEditProps {
-  onClose: () => void;
-}
-
-export const ProfileEdit = ({ onClose }: ProfileEditProps) => {
-  const { username, avatarId, setUsername, resetStore } = useMainGameStore();
+export const ProfileEdit = NiceModal.create(() => {
+  const modal = useModal();
+  const { username, avatarId, userId, setUsername, resetStore } = useMainGameStore();
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(username);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => setInputValue(username), [username]);
 
+  useEffect(() => {
+    if (isEditing) {
+      inputRef.current?.focus();
+    }
+  }, [isEditing]);
+
   const handleStartEdit = () => {
     setIsEditing(true);
     setInputValue(username);
-    setTimeout(() => inputRef.current?.focus(), 40);
   };
 
   const handleSave = () => {
-    if (inputValue && setUsername) setUsername(inputValue);
+    if (inputValue.trim()) setUsername(inputValue.trim());
     setIsEditing(false);
-    inputRef.current?.blur();
   };
 
   const handleLogout = async () => {
-    try {
-      await useApiStore.getState().logout();
-      localStorage.removeItem("mock_accessToken");
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("login_phone_buffer");
-
-      useApiStore.setState({ user: null, token: null, coins: 0, isAuthenticated: false });
-      if (resetStore) await resetStore();
-      if (typeof api.resetMockMemory === "function") api.resetMockMemory();
-
-      onClose();
-      const phaser = (window as any).phaserGame || (window as any).game;
-      if (phaser?.scene) {
-        phaser.scene.stop("MainScene");
-        phaser.scene.start("LoginScene");
-      } else {
-        window.location.reload();
-      }
-    } catch {
-      window.location.reload();
-    }
+    modal.hide();
+    await resetStore();
   };
 
-  const avatarsList = Array.isArray(AVAILABLE_AVATARS) ? AVAILABLE_AVATARS : [];
-  const AvatarComponent = (avatarsList.find((a) => a.id === (avatarId || "default")) || avatarsList[0])?.Component;
+  const currentAvatar = AVAILABLE_AVATARS.find((a) => a.id === avatarId) || {
+    Component: () => <img src={avatarDefaultIcon} className="block h-full w-full rounded-full object-cover" alt="Default Avatar" />
+  };
+  const AvatarComponent = currentAvatar.Component;
 
   return (
-    <Dialog.Root open={true} onOpenChange={(open) => !open && onClose()}>
+    <Dialog.Root open={modal.visible} onOpenChange={(open) => !open && modal.hide()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" />
         <Dialog.Content className="fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 outline-none">
@@ -68,71 +53,66 @@ export const ProfileEdit = ({ onClose }: ProfileEditProps) => {
             <Dialog.Close asChild>
               <CloseButton className="absolute top-3 right-3" />
             </Dialog.Close>
-            <Dialog.Title className="sr-only">Редактирование профиля</Dialog.Title>
+            <Dialog.Title className="sr-only">Профиль</Dialog.Title>
+
+            {userId && (
+              <div className="mt-4 text-center text-[14px] font-black text-slate-400/80 uppercase tracking-wider select-none">
+                ID: {userId}
+              </div>
+            )}
 
             <div
-              className={`pointer-events-auto relative mx-auto mt-8 h-[105px] w-[105px] cursor-pointer rounded-full bg-white shadow-sm transition-transform hover:scale-105 active:scale-95 ${avatarId === "default" || !avatarId ? "border-0 p-0" : "border-2 border-[#e2e8f0] p-1"}`}
+              onClick={() => NiceModal.show(AvatarSelectModal)}
+              className={clsx(
+                "pointer-events-auto relative mx-auto mt-4 h-[105px] w-[105px] cursor-pointer rounded-full bg-white shadow-sm transition-transform hover:scale-105 active:scale-95",
+                !avatarId || avatarId === "default" ? "border-0 p-0" : "border-2 border-[#e2e8f0] p-1"
+              )}
             >
-              <div className="pointer-events-none flex h-full w-full items-center justify-center overflow-hidden rounded-full">
-                {AvatarComponent && <AvatarComponent />}
+              <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full">
+                <AvatarComponent />
               </div>
             </div>
 
             <div className="relative mx-auto mt-4 flex h-[34px] w-full max-w-[280px] items-center justify-center font-black">
               {!isEditing ? (
-                <div className="pointer-events-auto flex w-full items-center justify-center gap-2">
+                <div className="flex w-full items-center justify-center gap-2">
                   <span
                     onClick={handleStartEdit}
-                    className="max-w-[180px] cursor-pointer overflow-hidden text-[21px] text-ellipsis whitespace-nowrap text-[#1a3d1c] active:scale-95"
+                    className="max-w-[180px] cursor-pointer overflow-hidden text-[21px] text-ellipsis whitespace-nowrap text-[#1a3d1c]"
                   >
                     {username}
                   </span>
                   <button
                     type="button"
                     onClick={handleStartEdit}
-                    className="flex h-[32px] w-[32px] items-center justify-center border-none bg-transparent p-0 transition-transform active:scale-90"
+                    className="flex h-8 w-8 items-center justify-center border-0 bg-transparent p-0 active:scale-90"
                   >
-                    <img src={EDIT_BTN_ICON_URL} className="pointer-events-none h-[26px] w-[26px] object-contain" alt="" />
+                    <img src={editBtnIcon} className="h-6 w-6 object-contain" alt="" />
                   </button>
                 </div>
               ) : (
-                <div className="pointer-events-auto flex w-full items-center justify-center gap-2">
+                <div className="flex w-full items-center justify-center gap-2">
                   <input
                     ref={inputRef}
                     type="text"
                     maxLength={20}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleSave();
-                      if (e.key === "Escape") {
-                        e.stopPropagation();
-                        setIsEditing(false);
-                      }
-                    }}
+                    onKeyDown={(e) => e.key === "Enter" && handleSave()}
                     onBlur={handleSave}
                     className="box-border h-[34px] w-full max-w-[180px] rounded-[12px] border-2 border-[#e2e8f0] bg-[#f8fafc] text-center text-[17px] font-black text-[#1a3d1c] outline-none focus:border-[#81c714]"
                   />
-                  <button
-                    type="button"
-                    onPointerDown={(e) => {
-                      e.preventDefault();
-                      handleSave();
-                    }}
-                    className="flex h-[32px] w-[32px] items-center justify-center border-none bg-transparent p-0 transition-transform active:scale-90"
-                  >
-                    <span className="flex h-[26px] w-[26px] items-center justify-center rounded-[6px] bg-[#81c714] text-[16px] text-white">
-                      ✓
-                    </span>
-                  </button>
                 </div>
               )}
             </div>
 
             <button
               type="button"
-              data-ui-action="scan_pet"
-              className="pointer-events-auto mx-auto mt-6 flex h-[48px] w-full max-w-[280px] cursor-pointer items-center justify-center rounded-[24px] border-0 bg-[#ff9800] text-[15px] font-black text-white uppercase shadow-sm active:scale-[0.98]"
+              onClick={() => {
+                modal.hide();
+                window.phaserGame?.scene.start("ScannerScene");
+              }}
+              className="mx-auto mt-6 flex h-[48px] w-full max-w-[280px] cursor-pointer items-center justify-center rounded-[24px] border-0 bg-[#ff9800] text-[15px] font-black text-white uppercase shadow-sm active:scale-[0.98]"
             >
               Добавить питомца
             </button>
@@ -140,13 +120,13 @@ export const ProfileEdit = ({ onClose }: ProfileEditProps) => {
             <button
               type="button"
               onClick={handleLogout}
-              className="pointer-events-auto mx-auto mt-3 flex h-[44px] w-full max-w-[280px] cursor-pointer items-center justify-center rounded-[24px] border-[2px] border-[#ef4444] bg-transparent text-[14px] font-black text-[#ef4444] uppercase transition-all hover:bg-[#fef2f2] active:scale-[0.98]"
+              className="mx-auto mt-3 flex h-[44px] w-full max-w-[280px] cursor-pointer items-center justify-center rounded-[24px] border-2 border-[#ef4444] bg-transparent text-[14px] font-black text-[#ef4444] uppercase shadow-sm active:scale-[0.98]"
             >
-              Выйти из аккаунта
+              Выйти
             </button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
   );
-};
+});

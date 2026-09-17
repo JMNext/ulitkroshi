@@ -1,4 +1,4 @@
-import { gatewayApi, isMock } from "@/api/api";
+import { isMock } from "@/api/api";
 import Phaser from "phaser";
 import React from "react";
 import { createRoot, Root } from "react-dom/client";
@@ -19,11 +19,9 @@ export class LoginScene extends Phaser.Scene {
   }
 
   public init(data?: { onStepComplete?: (action: "login" | "register") => void }): void {
-    this.onStepCompleteCallback =
-      data?.onStepComplete ||
-      ((action) => {
-        this.scene.start(action === "login" ? "Step2Scene" : "Step1Scene", { sessionId: "mock-session-id" });
-      });
+    this.onStepCompleteCallback = data?.onStepComplete || (action => {
+      this.scene.start(action === "login" ? "Step2Scene" : "Step1Scene", { sessionId: "mock-session-id" });
+    });
   }
 
   public preload(): void {
@@ -32,14 +30,6 @@ export class LoginScene extends Phaser.Scene {
   }
 
   public create(): void {
-    if (!isMock) {
-      const pendingPhone = localStorage.getItem("login_phone_buffer") || localStorage.getItem("saved_user_phone");
-      if (pendingPhone) {
-        gatewayApi.post("/auth/login/cleanup-registration", { phone: pendingPhone }).catch(() => {});
-        localStorage.removeItem("login_phone_buffer");
-      }
-    }
-
     if (typeof window !== "undefined") {
       window.addEventListener("beforeunload", () => {
         const pendingPhone = localStorage.getItem("login_phone_buffer");
@@ -51,38 +41,40 @@ export class LoginScene extends Phaser.Scene {
 
     if (this.game.canvas) this.game.canvas.className = "absolute inset-0 w-full h-full z-1";
 
-    const { width, height } = this.scale;
-    this.backgroundIm = this.add
-      .image(width / 2, height / 2, "login_bg_goriz")
-      .setOrigin(0.5)
-      .setDepth(-2);
+    const width = Number(this.scale.width);
+    const height = Number(this.scale.height);
+
+    const initialOrientation = height > width ? "vert" : "goriz";
+    this.backgroundIm = this.add.image(width / 2, height / 2, `login_bg_${initialOrientation}`).setOrigin(0.5).setDepth(-2);
+    this.currentOrientation = initialOrientation;
 
     this.uiContainer = document.createElement("div");
     this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden";
     (document.getElementById("game-container") || document.body).appendChild(this.uiContainer);
 
-    if (width > 0 && height > 0) this.executeResizeLogic(width, height);
+    if (width && height) this.executeResizeLogic(width, height);
 
     this.reactRoot = createRoot(this.uiContainer);
-    this.reactRoot.render(React.createElement(LoginUiManager, { phaserScene: this }));
+    this.reactRoot.render(<LoginUiManager phaserScene={this} />);
 
     this.scale.on("resize", this.triggerResize, this);
     this.events.on("switch_scene", this.handleSwitchScene, this);
     this.events.once("shutdown", this.cleanUp, this);
 
-    setTimeout(() => {
-      if (this.sys?.isActive()) this.triggerResize();
-    }, 0);
+    this.triggerResize();
   }
 
   public triggerResize(): void {
-    if (!this.sys?.isActive() || !this.scale) return;
-    const { width, height } = this.scale;
+    if (!this.sys.isActive() || !this.scale) return;
+    const width = Number(this.scale.width);
+    const height = Number(this.scale.height);
     if (width && height) this.executeResizeLogic(width, height);
   }
 
   private executeResizeLogic(width: number, height: number): void {
-    const isVert = height > width;
+    const w = Number(width);
+    const h = Number(height);
+    const isVert = h > w;
     const nextOrientation = isVert ? "vert" : "goriz";
 
     if (this.currentOrientation !== nextOrientation) {
@@ -93,28 +85,28 @@ export class LoginScene extends Phaser.Scene {
         this.backgroundIm.setAlpha(1).setTexture(nextTexture);
       }
     }
-    this.backgroundIm.setPosition(width / 2, height / 2).setDisplaySize(width, height);
+    this.backgroundIm.setPosition(w / 2, h / 2).setDisplaySize(w, h);
 
-    const scaleX = width / 460;
-    const scaleY = height / (isVert ? 780 : 1000);
-    const aspect = width / height;
+    const scaleX = w / 460;
+    const scaleY = h / (isVert ? 780 : 1000);
+    const aspect = w / h;
 
     let scale = Math.min(scaleX, scaleY);
     if (isVert) {
-      scale = aspect > 0.6 ? scaleX : aspect < 0.48 ? scaleX * 0.92 : scaleX * 0.96;
-      if (height < 700) scale *= 0.93;
+      scale = aspect >= 0.7 ? scaleY * 0.82 : aspect > 0.6 ? scaleX : aspect < 0.48 ? scaleX * 0.92 : scaleX * 0.96;
+      if (h < 700) scale *= 0.93;
     } else if (aspect < 1.45) {
       scale = Math.min(scaleX * 0.92, scaleY * 0.95);
     }
     scale = Math.max(0.35, Math.min(1.25, scale));
 
     const store = useLoginStore.getState();
-    store.updateField("width", width);
-    store.updateField("height", height);
+    store.updateField("width", w);
+    store.updateField("height", h);
     store.updateField("scale", scale);
     store.updateField("isVert", isVert);
 
-    window.dispatchEvent(new CustomEvent("phaser_scene_resize", { detail: { width, height, isVert } }));
+    this.events.emit("phaser_scene_resize", { width: w, height: h, isVert });
   }
 
   private handleSwitchScene(action: "login" | "register"): void {

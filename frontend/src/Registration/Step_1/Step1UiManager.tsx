@@ -1,6 +1,6 @@
-import { LayoutContext, useRegistrationStep1Store } from "@/Registration/Step_1/store/useRegistrationStep1Store";
+import { useRegistrationStep1Store } from "@/Registration/Step_1/store/useRegistrationStep1Store";
 import Phaser from "phaser";
-import { createContext, useEffect } from "react";
+import { useEffect } from "react";
 import { BubbleBlock } from "./components/BubbleBlock";
 import { ConfirmSelection } from "./components/ConfirmSelection";
 import { NextButton } from "./components/NextButton";
@@ -13,16 +13,15 @@ interface Step1UiManagerProps {
   phaserScene: Step1Scene;
 }
 
-export const ReactLayoutContext = createContext<LayoutContext>({ screenMode: "desktop", viewW: 1920, scale: 1, isVert: false });
-export const PhaserGameContext = createContext<Step1Scene | null>(null);
-
 export function Step1UiManager({ phaserScene }: Step1UiManagerProps) {
   const stage = useRegistrationStep1Store((state) => state.stage);
   const layoutContext = useRegistrationStep1Store((state) => state.layoutContext);
   const finalScale = useRegistrationStep1Store((state) => state.finalScale);
 
   useEffect(() => {
-    if (phaserScene?.sys?.isActive()) phaserScene.triggerResize();
+    if (phaserScene.sys.isActive()) {
+      phaserScene.triggerResize();
+    }
     return () => {
       useRegistrationStep1Store.getState().setStage(1);
     };
@@ -35,55 +34,54 @@ export function Step1UiManager({ phaserScene }: Step1UiManagerProps) {
   const sharedTop = isMobile ? "965px" : "910px";
 
   return (
-    <PhaserGameContext.Provider value={phaserScene}>
-      <ReactLayoutContext.Provider value={layoutContext}>
-        <div className="pointer-events-none absolute inset-0 h-full w-full overflow-hidden select-none">
-          <div
-            className="pointer-events-none absolute top-1/2 left-1/2 z-10 box-border flex h-[1080px] w-[1920px] flex-col items-center justify-center [backface-visibility:hidden]"
-            style={{ transform: `translate(-50%, -50%) scale(${finalScale})` }}
-          >
-            <PetVideoBlock />
-            <BubbleBlock />
-            {(stage === 1 || stage === 3) && (
-              <>
-                <div
-                  className="pointer-events-none absolute left-1/2 z-20 origin-center"
-                  style={{ top: isMobile ? "835px" : "810px", transform: sharedTransform }}
-                >
-                  <SpeechInputField />
-                </div>
-                <div
-                  className="pointer-events-none absolute left-1/2 z-20 origin-center"
-                  style={{ top: sharedTop, transform: sharedTransform }}
-                >
-                  <SpeechMicButton />
-                </div>
-              </>
-            )}
-            {stage === 2 && (
-              <div className="pointer-events-none absolute top-[865px] left-1/2 z-10 origin-center" style={{ transform: sharedTransform }}>
-                <ConfirmSelection />
-              </div>
-            )}
-            {stage === 4 && (
-              <div
-                className="pointer-events-none absolute left-1/2 z-10 origin-center"
-                style={{ top: sharedTop, transform: sharedTransform }}
-              >
-                <NextButton
-                  onComplete={() => {
-                    if (!phaserScene.sys?.isActive()) return;
-                    phaserScene.cameras.main.fadeOut(200, 0, 0, 0);
-                    phaserScene.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () =>
-                      phaserScene.scene.start("Step2Scene")
-                    );
-                  }}
-                />
-              </div>
-            )}
+    <div className="pointer-events-none absolute inset-0 h-full w-full overflow-hidden select-none">
+      <div
+        className="pointer-events-none absolute top-1/2 left-1/2 z-10 box-border flex h-[1080px] w-[1920px] flex-col items-center justify-center [backface-visibility:hidden]"
+        style={{ transform: `translate(-50%, -50%) scale(${finalScale})` }}
+      >
+        <PetVideoBlock />
+        <BubbleBlock />
+
+        {(stage === 1 || stage === 3) && (
+          <>
+            <div
+              className="pointer-events-none absolute left-1/2 z-20 origin-center"
+              style={{ top: isMobile ? "835px" : "810px", transform: sharedTransform }}
+            >
+              <SpeechInputField />
+            </div>
+            <div
+              className="pointer-events-none absolute left-1/2 z-20 origin-center"
+              style={{ top: sharedTop, transform: sharedTransform }}
+            >
+              <SpeechMicButton />
+            </div>
+          </>
+        )}
+
+        {stage === 2 && (
+          <div className="pointer-events-none absolute top-[865px] left-1/2 z-10 origin-center" style={{ transform: sharedTransform }}>
+            <ConfirmSelection />
           </div>
-        </div>
-      </ReactLayoutContext.Provider>
-    </PhaserGameContext.Provider>
+        )}
+
+        {stage === 4 && (
+          <div
+            className="pointer-events-none absolute left-1/2 z-10 origin-center"
+            style={{ top: sharedTop, transform: sharedTransform }}
+          >
+            <NextButton
+              onComplete={() => {
+                if (!phaserScene.sys.isActive()) return;
+                phaserScene.cameras.main.fadeOut(200, 0, 0, 0);
+                phaserScene.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () =>
+                  phaserScene.scene.start("Step2Scene")
+                );
+              }}
+            />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

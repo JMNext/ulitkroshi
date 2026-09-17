@@ -8,6 +8,7 @@ import { Step1Scene } from "@/Registration/Step_1/Step1Scene";
 import { Step2Scene } from "@/Registration/Step_2/Step2Scene";
 import { Step3Scene } from "@/Registration/Step_3/Step3Scene";
 import { Step4Scene } from "@/Registration/Step_4/Step4Scene";
+import { ScannerScene } from "@/ScannerScene/ScannerScene";
 import Phaser from "phaser";
 import "./global.css";
 
@@ -45,5 +46,16 @@ window.phaserGame = new Phaser.Game({
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
   render: { antialias: true, roundPixels: true, pixelArt: false },
-  scene: [LoginScene, Step1Scene, Step2Scene, Step3Scene, Step4Scene, MainScene, CatchGameScene, MemoryGameScene, SnakeGameScene]
+  scene: [
+    LoginScene,
+    Step1Scene,
+    Step2Scene,
+    Step3Scene,
+    Step4Scene,
+    MainScene,
+    ScannerScene,
+    CatchGameScene,
+    MemoryGameScene,
+    SnakeGameScene
+  ]
 });

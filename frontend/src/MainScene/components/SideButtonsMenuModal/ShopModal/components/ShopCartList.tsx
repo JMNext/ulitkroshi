@@ -9,15 +9,14 @@ export const ShopCartList = () => {
   return (
     <div className="animate-fade-in box-border flex h-full w-full flex-col items-center justify-start py-1 select-none">
       <div className="box-border flex w-full grow scrollbar-none flex-col gap-2 overflow-y-auto pr-1 pb-4 sm:gap-3">
-        {Object.entries(cart).map(([idStr, qty]) => {
-          const id = idStr.startsWith("fruit_") ? idStr : Number(idStr);
+        {Object.entries(cart).map(([id, qty]) => {
           const item = BOOSTS_MAP[id];
 
           if (!item || qty <= 0) return null;
 
           return (
             <div
-              key={idStr}
+              key={id}
               className="animate-fade-in box-border flex w-full items-center justify-between gap-2 rounded-2xl border-[3px] border-amber-100 bg-white p-2 shadow-[0_3px_0_rgba(0,0,0,0.02)] sm:p-3"
             >
               <div className="flex h-10 min-w-0 flex-1 items-center gap-2 sm:h-12 sm:gap-4">

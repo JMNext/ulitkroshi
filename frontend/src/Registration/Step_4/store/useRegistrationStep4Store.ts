@@ -14,9 +14,13 @@ interface Step4State {
   resetStore: () => void;
 }
 
-export const useRegistrationStep4Store = create<Step4State>((set) => ({
+const initialValues = {
   layoutContext: null,
-  finalScale: 1,
+  finalScale: 1
+} as const; // Зафиксировали неизменяемость начальных значений
+
+export const useRegistrationStep4Store = create<Step4State>((set) => ({
+  ...initialValues,
   setLayout: (layoutContext, finalScale) => set({ layoutContext, finalScale }),
-  resetStore: () => set({ layoutContext: null, finalScale: 1 })
+  resetStore: () => set(initialValues)
 }));

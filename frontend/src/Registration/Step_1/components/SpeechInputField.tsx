@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import { useRef } from "react";
 import { useRegistrationStep1Store } from "../store/useRegistrationStep1Store";
 
 export const SpeechInputField = () => {
@@ -16,16 +16,6 @@ export const SpeechInputField = () => {
     }
   };
 
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.readOnly = true;
-    setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.readOnly = false;
-        inputRef.current.focus();
-      }
-    }, 40);
-  };
-
   return (
     <div className="relative mx-auto box-border flex w-[380px] flex-col items-center justify-center">
       <input
@@ -33,7 +23,6 @@ export const SpeechInputField = () => {
         type="text"
         maxLength={15}
         value={input}
-        onFocus={handleFocus}
         onKeyDown={handleKeyDown}
         disabled={isNameChecking}
         placeholder={isNameChecking ? "Проверяю имя..." : "Как меня зовут?"}

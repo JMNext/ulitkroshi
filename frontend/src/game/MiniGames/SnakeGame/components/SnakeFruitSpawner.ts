@@ -17,8 +17,8 @@ export class SnakeFruitSpawner {
 
   public spawn = (): void => {
     const r = () => Math.floor(Math.random() * 12);
-    let fx = r(),
-      fy = r();
+    let fx = r();
+    let fy = r();
     let counter = 0;
 
     while (

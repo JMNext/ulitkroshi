@@ -22,7 +22,7 @@ export class MemoryGameScene extends Scene {
 
   public init(data: { difficulty?: "easy" | "medium" | "hard" }): void {
     this.difficulty = data.difficulty || "medium";
-    this.totalPairs = { easy: 4, medium: 6, hard: 8 }[this.difficulty] || 6;
+    this.totalPairs = this.difficulty === "hard" ? 8 : this.difficulty === "easy" ? 4 : 6;
     this.overlayManager = new MemoryGameOverlay(this);
     this.gridManager = new MemoryGameGrid(this);
     useMemoryGameStore.getState().initGame(this.totalPairs, FRUITS_POOL);
@@ -62,9 +62,7 @@ export class MemoryGameScene extends Scene {
     this.unsubscribeGameOver = useMemoryGameStore.subscribe(
       (s) => s.isGameOver,
       (isGameOver) => {
-        if (isGameOver) {
-          useMainGameStore.getState().addTestCoins();
-        }
+        if (isGameOver) useMainGameStore.getState().addTestCoins();
       }
     );
 

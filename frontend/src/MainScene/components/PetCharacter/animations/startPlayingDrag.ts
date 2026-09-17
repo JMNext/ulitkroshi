@@ -3,9 +3,7 @@ import { PLAY_SOUND_URL } from "@/MainScene/components/PetCharacter/constants/pe
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 
 const cachedBounceAudio = typeof window !== "undefined" ? new Audio(PLAY_SOUND_URL) : null;
-if (cachedBounceAudio) {
-  cachedBounceAudio.volume = 1.0;
-}
+if (cachedBounceAudio) cachedBounceAudio.volume = 1.0;
 
 export const startPlayingDrag = (
   initialEvent: React.PointerEvent<HTMLDivElement> | PointerEvent,
@@ -15,18 +13,8 @@ export const startPlayingDrag = (
   s = 1
 ) => {
   const isPort = window.innerHeight > window.innerWidth;
-
-  const bounds = isPort ? { right: 1520, left: 0, up: 530, down: 0 } : { right: 1130, left: 0, up: 540, down: 0 };
-
-  const finalX = bounds.right - bounds.left;
-  const finalY = 1080 - bounds.up + bounds.down;
-
-  let isFinalized = false;
-  const handleDragEnd = () => {
-    if (isFinalized) return;
-    isFinalized = true;
-    onDragEndCallback?.();
-  };
+  const finalX = isPort ? 1520 : 1130;
+  const finalY = isPort ? 550 : 540;
 
   createBaseDrag(
     initialEvent,
@@ -43,7 +31,6 @@ export const startPlayingDrag = (
           height: window.innerHeight
         };
         const petRect = pet?.getBoundingClientRect();
-
         const baseSize = (isPort ? 95 : 120) * (petRect ? petRect.width / 644 : 1);
 
         const ballImg = document.createElement("img");
@@ -64,16 +51,8 @@ export const startPlayingDrag = (
         const startWorldX = ((initialEvent.clientX - cRect.left) / cRect.width) * 1920;
         const startWorldY = ((initialEvent.clientY - cRect.top) / cRect.height) * 1080;
 
-        const dummy = {
-          x: startWorldX,
-          y: startWorldY,
-          scale: 1,
-          angle: 0
-        };
-        const cLeft = cRect.left;
-        const cTop = cRect.top;
-        const cWidth = cRect.width;
-        const cHeight = cRect.height;
+        const dummy = { x: startWorldX, y: startWorldY, scale: 1, angle: 0 };
+        const { left: cLeft, top: cTop, width: cWidth, height: cHeight } = cRect;
 
         const sync = () => {
           const posX = cLeft + (dummy.x / 1920) * cWidth;
@@ -123,7 +102,7 @@ export const startPlayingDrag = (
         requestAnimationFrame(animate);
         usePetStore.getState().triggerCareAction("play");
       },
-      onEnd: handleDragEnd
+      onEnd: onDragEndCallback
     },
     scale,
     s

@@ -12,10 +12,6 @@ export const gatewayApi = axios.create({
 gatewayApi.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (isMock) {
-      console.warn("Сетевой запрос проигнорирован (включен режим моков):", error.message);
-      return Promise.resolve({ data: {} } as any);
-    }
     const message = error.response?.data?.error || "Произошла сетевая ошибка";
     return Promise.reject(new Error(message));
   }
@@ -38,14 +34,7 @@ export const api = {
   },
 
   async login(email: string, password: string): Promise<AuthResponse> {
-    if (isMock) {
-      const data = await mockApi.login();
-      if (data?.accessToken) {
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
-      }
-      return data;
-    }
+    if (isMock) return mockApi.login();
     const data = (await gatewayApi.post<AuthResponse>("/auth/login", { emailOrPhone: email, password })).data;
     if (data?.accessToken) {
       localStorage.setItem("accessToken", data.accessToken);
@@ -55,9 +44,8 @@ export const api = {
   },
 
   async logout(): Promise<void> {
-    if (!isMock) {
-      await gatewayApi.post("/auth/logout");
-    }
+    if (isMock) return mockApi.logout();
+    await gatewayApi.post("/auth/logout").catch(() => {});
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
   },
@@ -73,21 +61,13 @@ export const api = {
   },
 
   async register(data: { name: string; phone: string }): Promise<AuthResponse> {
-    if (isMock) {
-      const res = await mockApi.register(data);
-      if (res?.accessToken) {
-        localStorage.setItem("accessToken", res.accessToken);
-        localStorage.setItem("refreshToken", res.refreshToken);
-      }
-      return res;
-    }
+    if (isMock) return mockApi.register(data);
     return (await gatewayApi.post<AuthResponse>("/auth/register", data)).data;
   },
 
   async loginPhone(phone: string, chosenPetName?: string): Promise<{ success: boolean; sessionId: string; isLogin: boolean }> {
-    if (isMock) return mockApi.loginPhone(phone);
-    return (await gatewayApi.post<{ success: boolean; sessionId: string; isLogin: boolean }>("/auth/login/phone", { phone, chosenPetName }))
-      .data;
+    if (isMock) return mockApi.loginPhone(phone, chosenPetName);
+    return (await gatewayApi.post<{ success: boolean; sessionId: string; isLogin: boolean }>("/auth/login/phone", { phone, chosenPetName })).data;
   },
 
   async verifySms(phone: string, code: string): Promise<{ sessionId: string }> {
@@ -96,16 +76,9 @@ export const api = {
   },
 
   async verifyFruit(sessionId: string, fruits: string, phone?: string, isLoginFlow?: boolean): Promise<AuthResponse> {
-    if (isMock) {
-      const data = await mockApi.verifyFruit();
-      if (data?.accessToken) {
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
-      }
-      return data;
-    }
+    if (isMock) return mockApi.verifyFruit();
     const data = (await gatewayApi.post<AuthResponse>("/auth/login/fruit", { sessionId, fruitCode: fruits, phone, isLoginFlow })).data;
-    if (data?.accessToken) {
+    if (isLoginFlow && data?.accessToken) {
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
     }
@@ -113,14 +86,7 @@ export const api = {
   },
 
   async loginQr(qrData: string): Promise<AuthResponse> {
-    if (isMock) {
-      const data = await mockApi.loginQr();
-      if (data?.accessToken) {
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
-      }
-      return data;
-    }
+    if (isMock) return mockApi.loginQr();
     return (await gatewayApi.post<AuthResponse>("/auth/login/qr", { qrData })).data;
   },
 
@@ -137,9 +103,9 @@ export const api = {
   async updateCoins(
     actionType: "buy_medicine" | "mini_game_reward" | "buy_shop_items",
     userId: number,
-    total?: number
+    total: number
   ): Promise<{ coins: number }> {
-    if (isMock) return mockApi.updateCoins(actionType, total);
+    if (isMock) return mockApi.updateCoins(actionType, userId, total);
     return (await gatewayApi.post<{ coins: number }>("/game/pharmacy/action", { actionType, userId, total })).data;
   },
 

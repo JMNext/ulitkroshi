@@ -1,21 +1,32 @@
+import { CloseButton } from "@/CloseButton/CloseButton";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
-import { CloseButton } from "@/ModalWrapper/CloseButton";
+import NiceModal, { useModal } from "@ebay/nice-modal-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useState } from "react";
 import { BTN_BASE_CLASS, GAME_COLORS, GAME_SVGS, GAMES, MODES } from "./constants/games.constants";
 
-interface MiniGamesModalProps {
-  onClose: () => void;
-}
-
-export const MiniGamesModal = ({ onClose }: MiniGamesModalProps) => {
+export const MiniGamesModal = NiceModal.create(() => {
+  const modal = useModal();
   const [view, setView] = useState<"main" | "difficulty">("main");
   const [selectedScene, setSelectedScene] = useState<string>("");
 
-  const { hp = 0, currentAnim = "", incrementMiniGamesClick } = usePetStore();
+  const { hp, currentAnim, incrementMiniGamesClick } = usePetStore();
 
   const isBlocked = hp < 10 || ["sleep_circle", "sleep_begin", "sleep_awake"].includes(currentAnim);
   const isMainView = view === "main";
+
+  // Сброс стейта происходит в момент изменения видимости Dialog.Root (onOpenChange)
+  const handleClose = () => {
+    modal.hide();
+  };
+
+  const handleResetState = (open: boolean) => {
+    if (!open) {
+      modal.hide();
+      setView("main");
+      setSelectedScene("");
+    }
+  };
 
   const handleSelectMode = (difficulty: string) => {
     const phaserGame = (window as any).phaserGame;
@@ -23,12 +34,12 @@ export const MiniGamesModal = ({ onClose }: MiniGamesModalProps) => {
       phaserGame.scene.getScene("MainScene")?.scene.sleep();
       phaserGame.scene.start(selectedScene, { difficulty });
     }
-    onClose();
+    handleClose();
   };
 
   const handleGameClick = (scene: string) => {
-    if (isBlocked && incrementMiniGamesClick) {
-      onClose();
+    if (isBlocked) {
+      handleClose();
       window.dispatchEvent(new CustomEvent("ui_show_bubble", { detail: { text: incrementMiniGamesClick() } }));
       return;
     }
@@ -37,7 +48,7 @@ export const MiniGamesModal = ({ onClose }: MiniGamesModalProps) => {
   };
 
   return (
-    <Dialog.Root open={true} onOpenChange={(open) => !open && onClose()}>
+    <Dialog.Root open={modal.visible} onOpenChange={handleResetState}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" />
 
@@ -99,4 +110,4 @@ export const MiniGamesModal = ({ onClose }: MiniGamesModalProps) => {
       </Dialog.Portal>
     </Dialog.Root>
   );
-};
+});

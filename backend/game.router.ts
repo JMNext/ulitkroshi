@@ -1,71 +1,50 @@
-import { Response, Router } from "express";
-import { AuthenticatedRequest, requireAuth } from "./auth.middleware";
+import { Router } from "express";
+import { requireAuth } from "./auth.middleware";
 import { GameService } from "./game.service";
 
 export const gameRouter = Router();
 
-gameRouter.get("/status/:userId", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  const userId = Number(req.params.userId);
-  if (isNaN(userId)) return res.status(400).json({ error: "Некорректный ID" });
-
+gameRouter.get("/pharmacy/status/:userId", requireAuth, async (req: any, res: any) => {
   try {
-    const pet = await GameService.getPetStatus(userId);
-    if (!pet) return res.status(404).json({ error: "Пользователь не найден" });
-
-    console.log(`🔎 [LOG STATUS] Юзер ID: ${userId} | Текущие монеты в RETURNING:`, pet.coins);
-    res.json([pet]);
+    const userId = Number(req.user.id);
+    const status = await GameService.getPetStatus(userId);
+    if (!status) return res.status(404).json({ error: "Статус не найден" });
+    return res.json(status);
   } catch (error) {
-    console.error("🚨 Ошибка в /status/:userId:", error);
-    res.status(500).json({ error: "Ошибка сервера" });
+    return res.status(500).json({ error: "Ошибка сервера" });
   }
 });
 
-gameRouter.post("/feed", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  const userId = Number(req.body.userId);
-  if (isNaN(userId)) return res.status(400).json({ error: "userId обязателен" });
-
+gameRouter.post("/pharmacy/feed", requireAuth, async (req: any, res: any) => {
   try {
+    const userId = Number(req.user.id);
     const result = await GameService.feedPet(userId);
-    if (result.error) return res.status(result.status).json({ error: result.error });
-
-    res.json({ message: "Улитка успешно поела!", user: result.data });
+    if ("error" in result) return res.status(result.status).json({ error: result.error });
+    return res.json(result.data);
   } catch (error) {
-    console.error("🚨 Ошибка в /feed:", error);
-    res.status(500).json({ error: "Ошибка сервера" });
+    return res.status(500).json({ error: "Ошибка сервера" });
   }
 });
 
-gameRouter.get("/pharmacy/coins/:userId", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  const userId = Number(req.params.userId);
-  if (isNaN(userId)) return res.status(400).json({ error: "Некорректный ID" });
-
+gameRouter.get("/pharmacy/coins/:userId", requireAuth, async (req: any, res: any) => {
   try {
-    const user = await GameService.getUserCoins(userId);
-    if (!user) return res.status(404).json({ error: "Юзер не найден" });
-
-    console.log(`💰 [LOG GET COINS] Юзер ID: ${userId} | Запрос баланса выдал из Базы:`, user.coins);
-    res.json({ coins: user.coins });
+    const userId = Number(req.user.id);
+    const result = await GameService.getUserCoins(userId);
+    if (!result) return res.status(404).json({ error: "Пользователь не найден" });
+    return res.json(result);
   } catch (error) {
-    console.error("🚨 Ошибка в /pharmacy/coins/:userId:", error);
-    res.status(500).json({ error: "Ошибка сервера" });
+    return res.status(500).json({ error: "Ошибка сервера" });
   }
 });
 
-gameRouter.post("/pharmacy/action", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  const { userId, actionType, total } = req.body;
-  if (!userId || !actionType) return res.status(400).json({ error: "Не все параметры переданы" });
-
+gameRouter.post("/pharmacy/action", requireAuth, async (req: any, res: any) => {
   try {
-    console.log(`🛒 [LOG ACTION START] Юзер ID: ${userId} | Действие: ${actionType}`);
-
-    const result = await GameService.handleGameAction(Number(userId), actionType, total);
-    if (result.error) return res.status(result.status).json({ error: result.error });
-    if (!result.data) return res.status(404).json({ error: "Юзер не найден" });
-
-    console.log(`💸 [LOG ACTION END] Баланс ПОСЛЕ UPDATE в базе стал:`, result.data.coins);
-    res.json({ coins: result.data.coins });
+    const userId = Number(req.user.id);
+    const { actionType, total } = req.body;
+    const result = await GameService.handleGameAction(userId, actionType, total !== undefined ? Number(total) : undefined);
+    if ("error" in result) return res.status(result.status).json({ error: result.error });
+    return res.json(result.data);
   } catch (error) {
-    console.error("🚨 Ошибка в /pharmacy/action:", error);
-    res.status(500).json({ error: "Ошибка сервера" });
+    return res.status(500).json({ error: "Ошибка сервера" });
   }
 });

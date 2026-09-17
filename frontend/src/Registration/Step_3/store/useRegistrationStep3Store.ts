@@ -1,41 +1,27 @@
-import { gatewayApi, isMock } from "@/api/api";
+import { gatewayApi } from "@/api/api";
 import { useApiStore } from "@/api/store/useApiStore";
 import { create } from "zustand";
 
 export type CaptchaMode = "select" | "confirm" | "verify" | "error";
 
 export interface LayoutContext {
-  screenMode: "fold" | "mobile" | "tablet" | "desktop";
-  viewW: number;
-  scale: number;
-  isVert: boolean;
+  screenMode: "fold" | "mobile" | "tablet" | "desktop"; viewW: number; scale: number; isVert: boolean;
 }
 
 interface Step3State {
-  sel: number[];
-  corr: number[];
-  mode: CaptchaMode;
-  shake: boolean;
-  fruitOrder: number[];
-  attempts: number;
-  errorMessage: "wrong_fruit" | "system_error" | "";
-  isSubmitting: boolean;
-  isLogin: boolean;
-  layoutContext: LayoutContext | null;
-  computedScale: number;
+  sel: number[]; corr: number[]; mode: CaptchaMode; shake: boolean; fruitOrder: number[]; attempts: number;
+  errorMessage: "wrong_fruit" | "system_error" | ""; isSubmitting: boolean; isLogin: boolean; layoutContext: LayoutContext | null; computedScale: number;
   toggleSelect: (id: number, sessionId: string, onComplete: () => void) => Promise<void>;
-  saveFirstStep: () => void;
-  generateNewOrder: () => void;
-  setIsLogin: (isLogin: boolean) => void;
-  setLayout: (layoutContext: LayoutContext, computedScale: number) => void;
-  resetStore: (keepIsLogin?: boolean, isRegistrationSuccess?: boolean) => void;
+  saveFirstStep: () => void; generateNewOrder: () => void; setIsLogin: (isLogin: boolean) => void;
+  setLayout: (layoutContext: LayoutContext, computedScale: number) => void; resetStore: (keepIsLogin?: boolean, isRegistrationSuccess?: boolean) => void;
 }
 
-const LETTERS_LOOKUP = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p"];
-const genOrder = (): number[] => Array.from({ length: 16 }, (_, i) => i).sort(() => Math.random() - 0.5);
+const LETTERS_LOOKUP = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p"] as const;
 
-let shakeTimeoutId: any = null;
-let clearFruitsTimeoutId: any = null;
+const genOrder = (): number[] => [...Array(16).keys()].sort(() => Math.random() - 0.5);
+
+let shakeTimeoutId: ReturnType<typeof setTimeout> | null = null;
+let clearFruitsTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 const clearTimers = () => {
   if (shakeTimeoutId) clearTimeout(shakeTimeoutId);
@@ -43,23 +29,24 @@ const clearTimers = () => {
   shakeTimeoutId = clearFruitsTimeoutId = null;
 };
 
+const initialValues = {
+  sel: [], corr: [], mode: "select" as const, shake: false, attempts: 0, errorMessage: "" as const, isSubmitting: false, isLogin: false, layoutContext: null, computedScale: 1
+};
+
 export const useRegistrationStep3Store = create<Step3State>((set, get) => ({
-  sel: [],
-  corr: [],
-  mode: "select",
-  shake: false,
+  ...initialValues,
   fruitOrder: genOrder(),
-  attempts: 0,
-  errorMessage: "",
-  isSubmitting: false,
-  isLogin: false,
-  layoutContext: null,
-  computedScale: 1,
 
   setLayout: (layoutContext, computedScale) => set({ layoutContext, computedScale }),
   setIsLogin: (isLogin) => set({ isLogin }),
-  saveFirstStep: () => set({ sel: [], mode: "verify", errorMessage: "", isSubmitting: false }),
-  generateNewOrder: () => set({ fruitOrder: genOrder() }),
+
+  saveFirstStep: () => {
+    set({ sel: [], mode: "verify", errorMessage: "", isSubmitting: false });
+  },
+
+  generateNewOrder: () => {
+    set({ fruitOrder: genOrder() });
+  },
 
   toggleSelect: async (id, sessionId, onComplete) => {
     const { mode, sel, corr, isSubmitting, attempts, isLogin } = get();
@@ -75,19 +62,16 @@ export const useRegistrationStep3Store = create<Step3State>((set, get) => ({
       const handleInputFailure = async (errType: "wrong_fruit" | "system_error") => {
         const nextAttempts = attempts + 1;
         clearTimers();
-        const savedPhone = localStorage.getItem("login_phone_buffer") || "";
 
         if (nextAttempts >= 3) {
-          if (!isMock && savedPhone) {
-            try {
-              await gatewayApi.post("/auth/login/cleanup-registration", { phone: savedPhone });
-            } catch {}
-          }
           set({ isSubmitting: false, mode: "error", shake: true, attempts: nextAttempts, errorMessage: errType });
         } else {
           set({ isSubmitting: false, shake: true, attempts: nextAttempts, errorMessage: errType });
           shakeTimeoutId = setTimeout(() => set({ shake: false }), 500);
-          clearFruitsTimeoutId = setTimeout(() => set({ sel: [], mode: isLogin ? "select" : corr.length > 0 ? "verify" : "select" }), 1200);
+          clearFruitsTimeoutId = setTimeout(() => {
+            const nextMode = isLogin ? "select" : (corr.length > 0 ? "verify" : "select");
+            set({ sel: [], mode: nextMode });
+          }, 1200);
         }
       };
 
@@ -95,36 +79,17 @@ export const useRegistrationStep3Store = create<Step3State>((set, get) => ({
         try {
           const savedPhone = localStorage.getItem("login_phone_buffer") || "";
           const realSessionId = localStorage.getItem("active_reg_session_id") || sessionId;
-          const stringLetterCode = next.map((idx) => LETTERS_LOOKUP[idx] || "a").join("");
+
+          const sortedFruitIds = [...next].sort((a, b) => a - b);
+          const stringLetterCode = sortedFruitIds.map((fruitId) => LETTERS_LOOKUP[fruitId] || "a").join("");
 
           await useApiStore.getState().verifyFruit(realSessionId, stringLetterCode, savedPhone, isLogin);
           set({ isSubmitting: false });
           onComplete();
         } catch {
-          if (!isLogin) {
-            localStorage.setItem("mock_accessToken", "true");
-            set({ isSubmitting: false });
-            onComplete();
-          } else {
-            await handleInputFailure("wrong_fruit");
-          }
+          await handleInputFailure("wrong_fruit");
         }
       };
-
-      if (isMock) {
-        set({ isSubmitting: false });
-        if (isLogin) {
-          localStorage.setItem("mock_accessToken", "true");
-          onComplete();
-        } else if (mode === "select") set({ corr: next, sel: [], mode: "confirm" });
-        else if (mode === "verify") {
-          if (next.length === corr.length && next.every((v, i) => v === corr[i])) {
-            localStorage.setItem("mock_accessToken", "true");
-            onComplete();
-          } else handleInputFailure("wrong_fruit");
-        }
-        return;
-      }
 
       if (isLogin) {
         await verifyServerFruit();
@@ -132,32 +97,27 @@ export const useRegistrationStep3Store = create<Step3State>((set, get) => ({
       }
 
       if (mode === "select") {
-        set({ corr: next, sel: [], isSubmitting: false, mode: "confirm" });
+        const sortedFirstSelection = [...next].sort((a, b) => a - b);
+        set({ corr: sortedFirstSelection, sel: [], isSubmitting: false, mode: "confirm" });
       } else if (mode === "verify") {
-        if (next.length === corr.length && next.every((v, i) => v === corr[i])) await verifyServerFruit();
-        else await handleInputFailure("wrong_fruit");
+        const sortedCurrentSelection = [...next].sort((a, b) => a - b);
+        const isMatch = sortedCurrentSelection.length === corr.length && sortedCurrentSelection.every((uid, idx) => uid === corr[idx]);
+
+        if (isMatch) {
+          await verifyServerFruit();
+        } else {
+          await handleInputFailure("wrong_fruit");
+        }
       }
     }
   },
 
   resetStore: (keepIsLogin = false, isRegistrationSuccess = false) => {
     clearTimers();
-    const savedPhone = localStorage.getItem("login_phone_buffer") || "";
-    if (!isMock && savedPhone && !isRegistrationSuccess) {
-      gatewayApi.post("/auth/login/cleanup-registration", { phone: savedPhone }).catch(() => {});
+    if (isRegistrationSuccess) {
+      set({ ...initialValues, isLogin: keepIsLogin ? get().isLogin : false });
+    } else {
+      set({ ...initialValues, fruitOrder: genOrder(), isLogin: keepIsLogin ? get().isLogin : false });
     }
-    set({
-      sel: [],
-      corr: [],
-      mode: "select",
-      shake: false,
-      fruitOrder: genOrder(),
-      attempts: 0,
-      errorMessage: "",
-      isSubmitting: false,
-      isLogin: keepIsLogin ? get().isLogin : false,
-      layoutContext: null,
-      computedScale: 1
-    });
   }
 }));

@@ -1,22 +1,30 @@
 import { AuthResponse, UserProfile } from "./types";
 
+// 🌟 ИСПРАВЛЕНИЕ: Даем мокам стартовый баланс в 5000 монет по умолчанию,
+// чтобы при вычитании стоимости яблока (40) в памяти оставалось 4960, а не 0.
 let mockCoinsMemory = 5000;
 let mockUnlockedPetsMemory: number[] = [];
 let mockPhoneMemory = "";
+let mockPetNameMemory = "";
+let mockUserNameMemory = "";
 
-const createMockUser = (name = "Player001", phone = ""): UserProfile => ({
-  id: 12345,
-  name,
-  email: "test@example.com",
-  phone: phone || mockPhoneMemory || "+79991112233",
-  roles: ["user"],
-  coins: mockCoinsMemory,
-  unlockedPets: mockUnlockedPetsMemory,
-  petName: name,
-  petStatus: "alive",
-  petSatiety: 85,
-  petHappiness: 90
-});
+const createMockUser = (name = "", phone = ""): UserProfile => {
+  const finalUserName = name || mockUserNameMemory || "Игрок";
+  const finalPetName = mockPetNameMemory || "Булька";
+
+  return {
+    id: 12345,
+    name: finalUserName,
+    phone: phone || mockPhoneMemory || "+79991112233",
+    roles: ["user"],
+    coins: mockCoinsMemory,
+    unlockedPets: mockUnlockedPetsMemory,
+    petName: finalPetName,
+    petStatus: "alive",
+    petSatiety: 85,
+    petHappiness: 90
+  };
+};
 
 const generateMockAuth = (prefix: string, name?: string, phone?: string): AuthResponse => ({
   accessToken: `${prefix}_acc_${Date.now()}`,
@@ -29,6 +37,8 @@ export const mockApi = {
     mockCoinsMemory = 5000;
     mockUnlockedPetsMemory = [];
     mockPhoneMemory = "";
+    mockPetNameMemory = "";
+    mockUserNameMemory = "";
   },
 
   async checkLoginPhone(phone: string): Promise<{ success: boolean; isLogin: boolean }> {
@@ -40,6 +50,10 @@ export const mockApi = {
     return generateMockAuth("mock");
   },
 
+  async logout(): Promise<void> {
+    return Promise.resolve();
+  },
+
   async restore(): Promise<UserProfile> {
     return createMockUser();
   },
@@ -49,11 +63,15 @@ export const mockApi = {
   },
 
   async register(data: { name: string; phone: string }): Promise<AuthResponse> {
+    mockCoinsMemory = 5000;
+    mockUserNameMemory = data.name;
+    if (!mockPetNameMemory) mockPetNameMemory = data.name;
     return generateMockAuth("mock_reg", data.name, data.phone);
   },
 
-  async loginPhone(phone: string): Promise<{ success: boolean; sessionId: string; isLogin: boolean }> {
+  async loginPhone(phone: string, chosenPetName?: string): Promise<{ success: boolean; sessionId: string; isLogin: boolean }> {
     mockPhoneMemory = phone;
+    if (chosenPetName) mockPetNameMemory = chosenPetName;
     return { success: true, sessionId: "mock_sess_" + Date.now(), isLogin: true };
   },
 
@@ -78,11 +96,11 @@ export const mockApi = {
     return { coins: mockCoinsMemory };
   },
 
-  async updateCoins(actionType: "buy_medicine" | "mini_game_reward" | "buy_shop_items", total?: number): Promise<{ coins: number }> {
-    if (actionType === "buy_medicine") mockCoinsMemory -= 30;
+  async updateCoins(actionType: "buy_medicine" | "mini_game_reward" | "buy_shop_items", userId: number, total: number): Promise<{ coins: number }> {
+    if (actionType === "buy_medicine") mockCoinsMemory = Math.max(0, mockCoinsMemory - 30);
     if (actionType === "mini_game_reward") mockCoinsMemory += 15;
-    if (actionType === "buy_shop_items" && total) mockCoinsMemory -= total;
-    return { coins: Math.max(0, mockCoinsMemory) };
+    if (actionType === "buy_shop_items" && total) mockCoinsMemory = Math.max(0, mockCoinsMemory - total);
+    return { coins: mockCoinsMemory };
   },
 
   async updateUnlockedPets(petIndexes: number[]): Promise<{ unlockedPets: number[] }> {

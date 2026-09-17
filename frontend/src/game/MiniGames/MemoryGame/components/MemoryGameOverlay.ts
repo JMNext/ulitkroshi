@@ -30,36 +30,30 @@ export class MemoryGameOverlay {
 
     const ReactiveOverlay = () => {
       const isGameOver = useMemoryGameStore((s) => s.isGameOver);
+      const score = useMemoryGameStore((s) => s.score);
 
       const { width, height } = this.scene.scale;
       const currentScale = height > width ? height / 1080 : Math.min(width / 1920, height / 1080);
 
       return React.createElement(
         "div",
-        {
-          className: "absolute inset-0 w-full h-full pointer-events-none"
-        },
+        { className: "absolute inset-0 w-full h-full pointer-events-none" },
         React.createElement(
           "div",
-          {
-            className: "pointer-events-auto absolute inset-x-0 top-0 z-50"
-          },
+          { className: "pointer-events-auto absolute inset-x-0 top-0 z-50" },
           React.createElement(GameHeaderUI, {
             currentScale,
             onBack: () => this.scene.exitGameSession()
           })
         ),
-
         isGameOver &&
           React.createElement(
             "div",
-            {
-              className: "pointer-events-auto absolute inset-0 z-50 flex items-center justify-center bg-black/40"
-            },
+            { className: "pointer-events-auto absolute inset-0 z-50 flex items-center justify-center bg-black/40" },
             React.createElement(GameOverModalUI, {
-              score: 0,
-              isWin: true,
-              difficulty: this.scene.difficulty,
+              score: score,
+              isWin: isGameOver,
+              difficulty: "memory" as any,
               onRestart: () => this.scene.restartGame(),
               onBack: () => this.scene.exitGameSession()
             })

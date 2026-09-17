@@ -1,21 +1,18 @@
 import { useRegistrationStep2Store } from "../store/useRegistrationStep2Store";
 
+// Вынесли маску телефона в чистую читалку подстрок
+const formatPhoneNumber = (phone: string): string => {
+  const p = phone.padEnd(10, "_");
+  return `+7 ( ${p.slice(0, 3)} ) ${p.slice(3, 6)} - ${p.slice(6, 8)} - ${p.slice(8, 10)}`;
+};
+
 export const DisplayFields = () => {
   const { mode, code, rawPhone, errorMessage } = useRegistrationStep2Store();
 
-  let displayText = "";
-
-  if (mode === "code" && errorMessage !== "user_not_found") {
-    displayText = code.padEnd(4, "_").split("").join(" ");
-  } else {
-    let f = "+7 ( ";
-    for (let i = 0; i < 10; i++) {
-      f += rawPhone[i] || "_";
-      if (i === 2) f += " ) ";
-      if (i === 5 || i === 7) f += " - ";
-    }
-    displayText = f;
-  }
+  // Прямое и плоское вычисление текста без циклов
+  const displayText = mode === "code" && errorMessage !== "user_not_found"
+    ? code.padEnd(4, "_").split("").join(" ")
+    : formatPhoneNumber(rawPhone);
 
   return (
     <div className="pointer-events-none relative flex h-[76px] w-[460px] shrink-0 origin-center items-center justify-center font-black text-slate-700 transition-all duration-150 select-none">

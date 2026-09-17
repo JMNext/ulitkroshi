@@ -6,10 +6,7 @@ import fonGorizUrl from "../../assets/background/fon_goriz.png";
 import fonVertUrl from "../../assets/background/fon_vert.png";
 import { Step3UiManager } from "./Step3UiManager";
 
-const CONFIG = {
-  BASE_W: 460,
-  BASE_H: 780
-};
+const CONFIG = { BASE_W: 460, BASE_H: 780 };
 
 export class Step3Scene extends Phaser.Scene {
   public backgroundIm!: Phaser.GameObjects.Image;
@@ -24,7 +21,7 @@ export class Step3Scene extends Phaser.Scene {
 
   public init(data?: { sessionId?: string }): void {
     this.sessionId = data?.sessionId || "";
-    document.querySelectorAll("#phaser-native-step1-bubble, #phaser-native-success-bubble").forEach((el) => el.remove());
+    document.querySelectorAll("#phaser-native-step1-bubble, #phaser-native-success-bubble").forEach(el => el.remove());
   }
 
   public preload(): void {
@@ -35,62 +32,68 @@ export class Step3Scene extends Phaser.Scene {
   public create(): void {
     if (this.game.canvas) this.game.canvas.className = "absolute inset-0 w-full h-full z-1";
 
-    const { width, height } = this.scale;
-    this.backgroundIm = this.add
-      .image(width / 2, height / 2, "step3_bg_fon_goriz")
-      .setOrigin(0.5)
-      .setDepth(-2);
+    const width = Number(this.scale.width);
+    const height = Number(this.scale.height);
+
+    const initialOrientation = height > width ? "vert" : "goriz";
+    this.backgroundIm = this.add.image(width / 2, height / 2, `step3_bg_fon_${initialOrientation}`).setOrigin(0.5).setDepth(-2);
+    this.currentOrientation = initialOrientation;
 
     this.uiContainer = document.createElement("div");
     this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden";
     (document.getElementById("game-container") || document.body).appendChild(this.uiContainer);
 
-    if (width > 0 && height > 0) this.executeResizeLogic(width, height);
+    if (width && height) this.executeResizeLogic(width, height);
 
     this.reactRoot = createRoot(this.uiContainer);
-    this.reactRoot.render(React.createElement(Step3UiManager, { phaserScene: this, sessionId: this.sessionId }));
+    this.reactRoot.render(<Step3UiManager phaserScene={this} sessionId={this.sessionId} />);
 
     this.scale.on("resize", this.triggerResize, this);
     this.events.on("wake", this.handleWake, this);
     this.events.on("sleep", this.handleSleep, this);
     this.events.once("shutdown", this.cleanUp, this);
 
-    setTimeout(() => {
-      if (this.sys?.isActive()) this.triggerResize();
-    }, 0);
+    this.triggerResize();
   }
 
   public triggerResize(): void {
-    if (!this.sys?.isActive() || !this.scale) return;
-    const { width, height } = this.scale;
+    if (!this.sys.isActive() || !this.scale) return;
+    const width = Number(this.scale.width);
+    const height = Number(this.scale.height);
     if (width && height) this.executeResizeLogic(width, height);
   }
 
   private executeResizeLogic(width: number, height: number): void {
-    const isVert = height > width;
+    const w = Number(width);
+    const h = Number(height);
+    const isVert = h > w;
     const nextOrientation = isVert ? "vert" : "goriz";
 
     if (this.currentOrientation !== nextOrientation) {
       this.currentOrientation = nextOrientation;
       this.backgroundIm.setTexture(`step3_bg_fon_${nextOrientation}`);
     }
-    this.backgroundIm.setPosition(width / 2, height / 2).setDisplaySize(width, height);
+    this.backgroundIm.setPosition(w / 2, h / 2).setDisplaySize(w, h);
 
-    const scaleX = width / CONFIG.BASE_W;
-    const scaleY = height / CONFIG.BASE_H;
-    const aspect = width / height;
+    const scaleX = w / CONFIG.BASE_W;
+    const scaleY = h / CONFIG.BASE_H;
+    const aspect = w / h;
 
     let computedScale = Math.min(scaleX, scaleY);
     if (isVert) {
-      computedScale = aspect > 0.6 ? Math.min(scaleY * 0.95, scaleX * 0.95) : aspect < 0.48 ? scaleX * 0.92 : scaleX * 0.96;
+      if (aspect >= 0.7) {
+        computedScale = scaleY * 0.95;
+      } else {
+        computedScale = aspect > 0.6 ? Math.min(scaleY * 0.95, scaleX * 0.95) : aspect < 0.48 ? scaleX * 0.92 : scaleX * 0.96;
+      }
     }
     computedScale = Math.max(0.42, Math.min(1.3, computedScale));
 
-    const viewW = width / computedScale;
+    const viewW = w / computedScale;
     const screenMode = isVert ? (viewW < 750 ? "fold" : "mobile") : aspect < 1.6 ? "tablet" : "desktop";
 
     useRegistrationStep3Store.getState().setLayout({ screenMode, viewW, scale: computedScale, isVert }, computedScale);
-    window.dispatchEvent(new CustomEvent("phaser_scene_resize", { detail: { width, height, isVert } }));
+    this.events.emit("phaser_scene_resize", { width: w, height: h, isVert });
   }
 
   private handleWake(): void {

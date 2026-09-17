@@ -4,10 +4,10 @@ import { FRUIT_URLS } from "./fruitAssets";
 const MESSAGES = {
   title: "Код запутался.\nНачнем сначала?",
   btnReset: "Выбрать заново"
-};
+} as const;
 
 export const CaptchaBlockModal = () => {
-  const { generateNewOrder, resetStore, sel: selected = [] } = useRegistrationStep3Store();
+  const { generateNewOrder, resetStore, sel: selected } = useRegistrationStep3Store();
 
   const handleResetClick = () => {
     resetStore(true);
@@ -22,13 +22,11 @@ export const CaptchaBlockModal = () => {
         </h3>
 
         <div className="flex h-7 w-full items-center justify-center gap-1.5 select-none">
-          {selected.map((id: number, idx: number) => {
+          {selected.map((id, idx) => {
             const url = FRUIT_URLS[id];
-            return (
-              url && (
-                <img key={`block-fruit-${id}-${idx}`} src={url} width="28" height="28" className="block h-7 w-7 object-contain" alt="" />
-              )
-            );
+            if (!url) return null;
+
+            return <img key={idx} src={url} width="28" height="28" className="block h-7 w-7 object-contain" alt="" />;
           })}
         </div>
 

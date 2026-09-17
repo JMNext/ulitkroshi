@@ -30,13 +30,15 @@ export const usePetNavigationStore = create<PetNavigationState>((set, get) => {
     init: (activeIndex) => set({ currentIndex: activeIndex, isDragging: false }),
 
     handlePrev: () => {
-      if (isThrottled()) return;
-      set((s) => ({ currentIndex: (s.currentIndex + 19) % 20 }));
+      if (!isThrottled()) {
+        set((s) => ({ currentIndex: (s.currentIndex + 19) % 20 }));
+      }
     },
 
     handleNext: () => {
-      if (isThrottled()) return;
-      set((s) => ({ currentIndex: (s.currentIndex + 1) % 20 }));
+      if (!isThrottled()) {
+        set((s) => ({ currentIndex: (s.currentIndex + 1) % 20 }));
+      }
     },
 
     onDragStart: (x) => set({ touchStartX: x, isDragging: true }),
@@ -54,8 +56,10 @@ export const usePetNavigationStore = create<PetNavigationState>((set, get) => {
     },
 
     handleWheel: (e) => {
-      if (Math.abs(e.deltaX) > 10 || Math.abs(e.deltaY) > 10) {
-        if (e.deltaX > 0 || e.deltaY > 0) get().handleNext();
+      // Объединили избыточные вложенные условия и Math.abs проверки в одну строчку
+      const delta = e.deltaX || e.deltaY;
+      if (Math.abs(delta) > 10) {
+        if (delta > 0) get().handleNext();
         else get().handlePrev();
       }
     }

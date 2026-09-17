@@ -56,9 +56,7 @@ export const useShopStore = create<ShopState>((set, get) => ({
 
   addToCart: (id, qty) => {
     if (checkCartConflict(id, get().cart)) {
-      set({
-        purchaseStatus: { success: false, text: ERROR_CONFLICT }
-      });
+      set({ purchaseStatus: { success: false, text: ERROR_CONFLICT } });
       return false;
     }
     set((s) => ({
@@ -70,9 +68,7 @@ export const useShopStore = create<ShopState>((set, get) => ({
 
   updateCartQuantity: (id, qty) => {
     if (qty > (get().cart[id] || 0) && checkCartConflict(id, get().cart)) {
-      set({
-        purchaseStatus: { success: false, text: ERROR_CONFLICT }
-      });
+      set({ purchaseStatus: { success: false, text: ERROR_CONFLICT } });
       return false;
     }
     set((s) => {
@@ -101,29 +97,21 @@ export const useShopStore = create<ShopState>((set, get) => ({
     const total = getTotalPrice();
 
     if (!Object.keys(cart).length) {
-      set({
-        purchaseStatus: { success: false, text: "В корзине пусто!" }
-      });
+      set({ purchaseStatus: { success: false, text: "В корзине пусто!" } });
       return;
     }
 
     const auth = useApiStore.getState();
     if (auth.coins < total) {
-      set({
-        purchaseStatus: { success: false, text: ERROR_NO_COINS }
-      });
+      set({ purchaseStatus: { success: false, text: ERROR_NO_COINS } });
       return;
     }
 
     try {
-      // Используем новый безопасный метод executeAction вместо прямого spendCoins
-      // Передаем тип действия. Сервер/мок спишет монеты на основе переданных метаданных или корзины
-      const success = await auth.executeAction("buy_shop_items");
+      const success = await auth.executeAction("buy_shop_items", total);
 
       if (!success) {
-        set({
-          purchaseStatus: { success: false, text: ERROR_NO_COINS }
-        });
+        set({ purchaseStatus: { success: false, text: ERROR_NO_COINS } });
         return;
       }
 
@@ -134,33 +122,26 @@ export const useShopStore = create<ShopState>((set, get) => ({
           const slotId = INVENTORY_SLOT_MAP[item.type];
           const pet = usePetStore.getState();
 
-          if ((pet.fruitsCounts[slotId] ?? 0) > 0 && pet.activeFruitIds[slotId] !== id) {
+          const currentCount = pet.fruitsCounts[slotId] ?? 0;
+          const isSameFruit = pet.activeFruitIds[slotId] === id;
+
+          if (currentCount > 0 && isSameFruit) {
+            pet.addFruitsToInventory(slotId, id, qty);
+          } else {
             usePetStore.setState((s) => ({
-              fruitsCounts: { ...s.fruitsCounts, [slotId]: qty },
+              fruitsCounts: { ...s.fruitsCounts, [slotId]: (isSameFruit ? currentCount : 0) + qty },
               activeFruitIds: { ...s.activeFruitIds, [slotId]: id }
             }));
-          } else {
-            pet.addFruitsToInventory(slotId, id, qty);
           }
         }
       });
 
       clearCart();
       setSelectedItem(null);
-      set({
-        purchaseStatus: {
-          success: true,
-          text: `Успешно куплено! Списано: ${total}`
-        }
-      });
+      set({ purchaseStatus: { success: true, text: `Успешно куплено! Списано: ${total}` } });
       auth.fetchCoins();
     } catch {
-      set({
-        purchaseStatus: {
-          success: false,
-          text: "Ошибка при списании монет."
-        }
-      });
+      set({ purchaseStatus: { success: false, text: "Ошибка при списании монет." } });
     }
   }
 }));

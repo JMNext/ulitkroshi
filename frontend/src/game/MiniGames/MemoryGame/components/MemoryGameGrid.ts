@@ -42,10 +42,9 @@ export class MemoryGameGrid {
         isOpen: true
       });
 
-      container.on(
-        "pointerdown",
-        () => useMemoryGameStore.getState().canClick && useMemoryGameStore.getState().handleCardClick(i, this.scene.totalPairs)
-      );
+      container.on("pointerdown", () => {
+        if (useMemoryGameStore.getState().canClick) useMemoryGameStore.getState().handleCardClick(i, this.scene.totalPairs);
+      });
 
       this.mainGridContainer.add(container);
       this.cards.push(container);
@@ -96,9 +95,7 @@ export class MemoryGameGrid {
           scale: 0.75,
           alpha: 0,
           duration: 400,
-          onComplete: () => {
-            c.setVisible(false).disableInteractive();
-          }
+          onComplete: () => c.setVisible(false).disableInteractive()
         });
         return;
       }
@@ -120,9 +117,7 @@ export class MemoryGameGrid {
               duration: 200,
               ease: "Quad.easeOut",
               onComplete: () => {
-                if (shouldBeOpen && !isMatched) {
-                  this.runShimmerEffect(c);
-                }
+                if (shouldBeOpen && !isMatched) this.runShimmerEffect(c);
               }
             });
           }
@@ -142,14 +137,12 @@ export class MemoryGameGrid {
       yoyo: true,
       repeat: 1,
       ease: "Sine.easeInOut",
-      onComplete: () => {
-        cardContainer.setAlpha(1);
-      }
+      onComplete: () => cardContainer.setAlpha(1)
     });
   };
 
   public runMixAnimation = (): void => {
-    let currentDeck = [...this.cards];
+    const currentDeck = [...this.cards];
     let swapCount = 0;
 
     const executeStep = () => {

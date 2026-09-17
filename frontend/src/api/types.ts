@@ -2,7 +2,6 @@ export interface UserProfile {
   id: number;
   name: string;
   phone: string;
-  email?: string;
   roles: string[];
   coins: number;
   unlockedPets: number[];

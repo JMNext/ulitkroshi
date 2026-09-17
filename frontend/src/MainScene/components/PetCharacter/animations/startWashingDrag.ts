@@ -2,16 +2,6 @@ import { createBaseDrag } from "@/MainScene/components/PetCharacter/animations/c
 import { WASH_SOUND_URL } from "@/MainScene/components/PetCharacter/constants/petCharacter.constants";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 
-if (typeof document !== "undefined" && !document.getElementById("react-wash-keyframes")) {
-  const style = document.createElement("style");
-  style.id = "react-wash-keyframes";
-  style.innerHTML = `
-    @keyframes spongeAbsorb { 0% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; } }
-    @keyframes bubbleLife { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 15% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.95; } 80% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; } 100% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; } }
-  `;
-  document.head.appendChild(style);
-}
-
 const cachedWashAudio = typeof window !== "undefined" ? new Audio(WASH_SOUND_URL) : null;
 
 export const startWashingDrag = (
@@ -21,13 +11,6 @@ export const startWashingDrag = (
   scale: number = 1,
   s: number = 1
 ) => {
-  let isFinalized = false;
-  const handleDragEnd = () => {
-    if (isFinalized) return;
-    isFinalized = true;
-    onDragEndCallback?.();
-  };
-
   createBaseDrag(
     initialEvent,
     {
@@ -73,7 +56,6 @@ export const startWashingDrag = (
 
           let bubbleCount = 0;
           const totalBubbles = 3200 / 25;
-
           const staticRect = pet?.getBoundingClientRect();
           const cx = staticRect ? staticRect.left + staticRect.width / 2 : window.innerWidth / 2;
           const cy = staticRect ? staticRect.top + staticRect.height / 2 : window.innerHeight / 2;
@@ -108,7 +90,7 @@ export const startWashingDrag = (
           }, 25);
         }, 400);
       },
-      onEnd: handleDragEnd
+      onEnd: onDragEndCallback
     },
     scale,
     s

@@ -1,6 +1,10 @@
 import nextBtnImg from "/src/assets/registration/next_button.png";
 
-export const NextButton = ({ onComplete }: { onComplete: () => void }) => {
+interface NextButtonProps {
+  onComplete: () => void;
+}
+
+export const NextButton = ({ onComplete }: NextButtonProps) => {
   return (
     <button
       type="button"

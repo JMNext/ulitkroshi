@@ -32,20 +32,19 @@ export const ShopHeader = ({ isCartView, setIsCartView, setPurchaseStatus }: Sho
         )}
       </div>
 
-      <div className="mr-2 ml-auto flex shrink-0 items-center gap-2 sm:mr-14">
-        {totalItemsInCart > 0 && !isCartView && (
-          <button
-            type="button"
-            onClick={() => toggleCartView(true)}
-            className="relative box-border flex h-9 w-10 shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-full border-[3px] border-[#ffb300] bg-white shadow-[inset_0_-3px_0_rgba(0,0,0,0.03)] transition-transform select-none active:scale-95 sm:h-10 sm:w-11"
-          >
-            <span className="mt-[-2px] block text-[16px] leading-none opacity-75 grayscale sm:text-[18px]">🛒</span>
-            <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-[#ff5722] text-[10px] leading-none font-black text-white antialiased shadow-sm sm:h-5 sm:w-5">
-              {totalItemsInCart}
-            </span>
-          </button>
-        )}
-      </div>
+      {/* Убрали лишний вложенный div-контейнер, так как кнопка позиционируется флексами родителя */}
+      {totalItemsInCart > 0 && !isCartView && (
+        <button
+          type="button"
+          onClick={() => toggleCartView(true)}
+          className="relative mr-2 ml-auto box-border flex h-9 w-10 shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-full border-[3px] border-[#ffb300] bg-white shadow-[inset_0_-3px_0_rgba(0,0,0,0.03)] transition-transform select-none active:scale-95 sm:mr-14 sm:h-10 sm:w-11"
+        >
+          <span className="mt-[-2px] block text-[16px] leading-none opacity-75 grayscale sm:text-[18px]">🛒</span>
+          <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-[#ff5722] text-[10px] leading-none font-black text-white antialiased shadow-sm sm:h-5 sm:w-5">
+            {totalItemsInCart}
+          </span>
+        </button>
+      )}
     </div>
   );
 };

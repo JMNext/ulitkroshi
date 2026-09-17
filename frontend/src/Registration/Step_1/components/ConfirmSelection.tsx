@@ -1,5 +1,16 @@
-import React from "react";
-import { useRegistrationStep1Store } from "../store/useRegistrationStep1Store";
+import { useRegistrationStep1Store, Step1State } from "../store/useRegistrationStep1Store";
+
+// 1. Расширяем глобальный интерфейс Window
+declare global {
+  interface Window {
+    __phaserSceneContext?: any;
+  }
+}
+
+// 2. Расширяем типы Zustand-стора, сообщая TS, что на нём может висеть phaserScene
+interface ExtendedStep1Store extends Step1State {
+  phaserScene?: any;
+}
 
 export const ConfirmSelection = () => {
   const setStage = useRegistrationStep1Store((state) => state.setStage);
@@ -8,7 +19,10 @@ export const ConfirmSelection = () => {
     e.preventDefault();
     setStage(4);
 
-    const globalContext = (window as any).__phaserSceneContext || (useRegistrationStep1Store as any).phaserScene;
+    // Кастуем Zustand-стор к расширенному типу ExtendedStep1Store
+    const storeWithPhaser = useRegistrationStep1Store as unknown as ExtendedStep1Store;
+    const globalContext = window.__phaserSceneContext || storeWithPhaser.phaserScene;
+
     if (globalContext?.scene?.start) {
       globalContext.scene.start("Step2Scene");
     } else {

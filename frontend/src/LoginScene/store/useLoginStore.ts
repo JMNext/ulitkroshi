@@ -19,20 +19,15 @@ const initialValues = {
   height: 0,
   scale: 1,
   isVert: true
-};
+} as const; // Зафиксировали неизменяемость дефолтных настроек
 
 let activeAnimationFrameId: number | null = null;
-let activeTimeoutId: any = null;
+let activeTimeoutId: ReturnType<typeof setTimeout> | null = null; // Заменили any на строгий тип таймера
 
 const clearActiveTimers = () => {
-  if (activeAnimationFrameId) {
-    cancelAnimationFrame(activeAnimationFrameId);
-    activeAnimationFrameId = null;
-  }
-  if (activeTimeoutId) {
-    clearTimeout(activeTimeoutId);
-    activeTimeoutId = null;
-  }
+  if (activeAnimationFrameId) cancelAnimationFrame(activeAnimationFrameId);
+  if (activeTimeoutId) clearTimeout(activeTimeoutId);
+  activeAnimationFrameId = activeTimeoutId = null;
 };
 
 export const useLoginStore = create<LoginState>((set) => ({

@@ -1,11 +1,11 @@
-import React, { memo } from "react";
-import phoneImgUrl from "../../../assets/interface-icons/phone.svg";
-import { useScannerStore } from "./store/useScannerStore";
+import { clsx } from "clsx";
+import { memo } from "react";
+import phoneImgUrl from "../../assets/interface-icons/phone.svg";
+import { useScannerStore } from "../store/useScannerStore";
 
 interface ScannerViewAreaProps {
   mode: "qr" | "code";
   digitalCode: string;
-  cameraError: string | null;
   inputRef: React.RefObject<HTMLInputElement | null>;
   setDigitalCode: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
@@ -19,12 +19,13 @@ export const ScannerViewArea = memo(({ mode, digitalCode, inputRef, setDigitalCo
     return (
       <div className="animate-fade-in pointer-events-auto relative flex h-full max-h-[500px] w-full max-w-[310px] items-center justify-center sm:max-h-[540px] [@media(orientation:landscape)_and_(max-height:500px)]:h-[310px] [@media(orientation:landscape)_and_(max-height:500px)]:max-w-[210px]">
         <img src={phoneImgUrl} className="pointer-events-none absolute inset-0 z-20 block h-full w-full object-contain" alt="" />
-
-        {/* Чёрный фон внутри контура телефона включается ТОЛЬКО тогда, когда пошла трансляция камеры. До этого момента всё прозрачно */}
         <div
-          className={`absolute top-[3%] right-[5%] bottom-[4%] left-[5%] z-10 box-border flex items-center justify-center overflow-hidden rounded-[36px] sm:rounded-[42px] ${isScanning ? "bg-black" : "bg-transparent"}`}
+          className={clsx(
+            "absolute top-[3%] right-[5%] bottom-[4%] left-[5%] z-10 box-border flex items-center justify-center overflow-hidden rounded-[36px] transition-colors duration-150 sm:rounded-[42px]",
+            isScanning ? "bg-black" : "bg-transparent"
+          )}
         >
-          <div id="add-pet-qr-container" className="h-full w-full [&_video]:!h-full [&_video]:!w-full [&_video]:object-cover" />
+          <div id="add-pet-qr-container" className="h-full w-full [&_video]:h-full [&_video]:w-full [&_video]:object-cover" />
         </div>
       </div>
     );

@@ -54,10 +54,18 @@ export class SnakeGameLogicManager {
     this.dir = this.nextDir;
     const head: Point = { x: this.snake[0].x, y: this.snake[0].y };
 
-    if (this.dir === "UP") head.y -= 1;
-    else if (this.dir === "DOWN") head.y += 1;
-    else if (this.dir === "LEFT") head.x -= 1;
-    else if (this.dir === "RIGHT") head.x += 1;
+    const OFFSETS: Record<string, { x: number; y: number }> = {
+      UP: { x: 0, y: -1 },
+      DOWN: { x: 0, y: 1 },
+      LEFT: { x: -1, y: 0 },
+      RIGHT: { x: 1, y: 0 }
+    };
+
+    const offset = OFFSETS[this.dir];
+    if (offset) {
+      head.x += offset.x;
+      head.y += offset.y;
+    }
 
     if (head.x < 0 || head.x >= 12 || head.y < 0 || head.y >= 12 || this.snake.slice(0, -1).some((s) => s.x === head.x && s.y === head.y)) {
       this.handleCollisionPenalty();

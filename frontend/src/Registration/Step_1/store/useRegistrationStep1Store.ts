@@ -49,7 +49,8 @@ const formatName = (s: string): string => {
 const cleanTextRegex = (text: string) => text.replace(/[^a-zA-Zа-яА-ЯёЁ0-9\s-]/g, "");
 
 export const useRegistrationStep1Store = create<Step1State>((set, get) => {
-  const triggerNameCheck = async (value: string): Promise<boolean> => {
+  // Убран async/await: внутренняя проверка выполняется синхронно
+  const triggerNameCheck = (value: string): boolean => {
     const trimmed = value.trim();
     if (!trimmed) return false;
 
@@ -64,7 +65,7 @@ export const useRegistrationStep1Store = create<Step1State>((set, get) => {
     return true;
   };
 
-  const processAndSubmitName = async (targetText: string): Promise<void> => {
+  const processAndSubmitName = (targetText: string): void => {
     const textToProcess = targetText.trim() || get().input.trim();
     if (!textToProcess) {
       set({ stage: 3, nameStatus: "idle", nameSuggestions: [] });
@@ -72,23 +73,27 @@ export const useRegistrationStep1Store = create<Step1State>((set, get) => {
     }
 
     const formatted = formatName(cleanTextRegex(textToProcess));
-    if (formatted === get().name && ["profane", "spaces", "song"].includes(get().nameStatus)) return;
+    const state = get();
+    if (formatted === state.name && ["profane", "spaces", "song"].includes(state.nameStatus)) return;
 
     set({ name: formatted });
-    await triggerNameCheck(formatted);
+    triggerNameCheck(formatted);
   };
 
   return {
     ...initialValues,
     setLayout: (layoutContext, finalScale) => set({ layoutContext, finalScale }),
+
     setInput: (val) => {
       set({ input: val, nameStatus: "idle", nameSuggestions: [] });
       if (get().stage === 3) set({ stage: 1 });
     },
+
     setStage: (stage) => {
-      if (stage === 1 && get().stage === 2) {
-        const currentName = get().name;
-        const history = get().nameHistory;
+      const state = get();
+      if (stage === 1 && state.stage === 2) {
+        const currentName = state.name;
+        const history = state.nameHistory;
         set({
           stage,
           nameStatus: "idle",
@@ -99,22 +104,23 @@ export const useRegistrationStep1Store = create<Step1State>((set, get) => {
         set({ stage });
       }
     },
+
     selectSuggestion: (suggestion) => {
       const formatted = formatName(suggestion);
       usePetStore.getState().updateField("petName", formatted);
       set({ input: "", name: formatted, nameStatus: "available", nameSuggestions: [], stage: 2 });
     },
-    submit: async (value) => {
-      await processAndSubmitName(value);
-    },
-    setSpeechResult: async (text) => {
+
+    submit: (value) => processAndSubmitName(value),
+
+    setSpeechResult: (text) => {
       const cleanSpeech = cleanTextRegex(text.trim());
       set({ input: cleanSpeech });
-      await processAndSubmitName(cleanSpeech);
+      processAndSubmitName(cleanSpeech);
     },
-    setSpeechError: async () => {
-      await processAndSubmitName("");
-    },
+
+    setSpeechError: () => processAndSubmitName(""),
+
     resetStore: () => set(initialValues)
   };
 });
