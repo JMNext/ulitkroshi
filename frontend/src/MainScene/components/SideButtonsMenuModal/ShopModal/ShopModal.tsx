@@ -28,7 +28,6 @@ export const ShopModal = NiceModal.create(() => {
   }, [purchaseStatus, setPurchaseStatus]);
 
   useEffect(() => {
-    // Убрали проверку cart на undefined и сократили условие
     const totalItemsInCart = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
     if (totalItemsInCart === 0 && isCartView && !purchaseStatus) {
       setIsCartView(false);
@@ -51,7 +50,11 @@ export const ShopModal = NiceModal.create(() => {
 
             <Dialog.Title className="sr-only">Магазин питомцев</Dialog.Title>
 
-            <ShopHeader isCartView={isCartView} setIsCartView={setIsCartView} setPurchaseStatus={setPurchaseStatus} />
+            <ShopHeader
+              isCartView={isCartView}
+              setIsCartView={setIsCartView}
+              setPurchaseStatus={(val) => setPurchaseStatus(val ? { success: val === "SUCCESS", text: "" } : null)}
+            />
 
             {purchaseStatus && (
               <div

@@ -2,12 +2,18 @@ import { clsx } from "clsx";
 import { useRegistrationStep2Store } from "../store/useRegistrationStep2Store";
 
 export const SubmitButton = () => {
-  const { rawPhone, sendPhone } = useRegistrationStep2Store();
-  const isReady = rawPhone.length === 10;
+  const { isLogin, loginRawPhone, registerRawPhone, sendLoginPhone, sendRegisterPhone } = useRegistrationStep2Store();
+
+  const currentRawPhone = isLogin ? loginRawPhone : registerRawPhone;
+  const isReady = currentRawPhone.length === 10;
 
   const handleClick = () => {
     (document.activeElement as HTMLElement)?.blur?.();
-    sendPhone();
+    if (isLogin) {
+      sendLoginPhone();
+    } else {
+      sendRegisterPhone();
+    }
   };
 
   return (

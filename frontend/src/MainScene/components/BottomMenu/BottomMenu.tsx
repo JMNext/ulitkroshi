@@ -24,7 +24,8 @@ interface BottomMenuProps {
 }
 
 export const BottomMenu = ({ styles, className }: BottomMenuProps) => {
-  const { currentAnim, canExecuteAction, currentFruitId, fruitsCounts, activeFruitIds, triggerSleepAction } = usePetStore();
+  const { currentAnim, canExecuteAction, triggerSleepAction, inventory } = usePetStore();
+  const { currentId: currentFruitId, counts: fruitsCounts, activeIds: activeFruitIds } = inventory;
   const { scale, s } = useMainGameStore();
   const activeClickRef = useRef<boolean>(false);
 

@@ -14,6 +14,10 @@ export interface BaseDragConfig {
   onEnd?: () => void;
 }
 
+interface CustomWindow extends Window {
+  isGlobalDragActive?: boolean;
+}
+
 const DRAG_METHODS = {
   play: startPlayingDrag,
   wash: startWashingDrag
@@ -39,7 +43,10 @@ export const handleCareActionDown = (
 
   if (type === "feed") {
     e.stopPropagation();
-    const { currentFruitId: fId, fruitsCounts: fCounts } = petStore;
+    const { inventory } = petStore;
+    const fId = inventory.currentId;
+    const fCounts = inventory.counts;
+
     const hasFruit = fId && fCounts[fId] > 0;
     const startX = e.nativeEvent.clientX;
     const startY = e.nativeEvent.clientY;
@@ -89,7 +96,7 @@ export const handleFruitActionDown = (id: string, isZero: boolean, scale: number
   if (isZero) return gameStore.setModal("shop");
 
   const petStore = usePetStore.getState();
-  const iconUrl = getFruitUrlByStoreId(petStore.activeFruitIds[id] ?? 1) || "";
+  const iconUrl = getFruitUrlByStoreId(petStore.inventory.activeIds[id] ?? 1) || "";
 
   gameStore.setIsFoodOpen(false);
   startFeedingDrag(e, iconUrl, id, undefined, scale, s);
@@ -136,16 +143,17 @@ export const createBaseDrag = (ie: React.PointerEvent<HTMLDivElement> | PointerE
   ghost.appendChild(img);
   document.body.appendChild(ghost);
 
-  (window as any).isGlobalDragActive = true;
+  const customWindow = window as CustomWindow;
+  customWindow.isGlobalDragActive = true;
 
   const handleDragMove = (e: PointerEvent) => {
-    if (!(window as any).isGlobalDragActive) return;
+    if (!customWindow.isGlobalDragActive) return;
     updateTransform(e.clientX, e.clientY);
   };
 
   const handleDragUp = (e: PointerEvent) => {
-    if (!(window as any).isGlobalDragActive) return;
-    (window as any).isGlobalDragActive = false;
+    if (!customWindow.isGlobalDragActive) return;
+    customWindow.isGlobalDragActive = false;
 
     window.removeEventListener("pointermove", handleDragMove);
     window.removeEventListener("pointerup", handleDragUp);
@@ -162,6 +170,7 @@ export const createBaseDrag = (ie: React.PointerEvent<HTMLDivElement> | PointerE
     const dy = e.clientY - targetY;
 
     if (dx * dx + dy * dy <= radiusSq) {
+      usePetStore.getState().triggerCareAction(config.action);
       config.onSuccess();
     }
     config.onEnd?.();

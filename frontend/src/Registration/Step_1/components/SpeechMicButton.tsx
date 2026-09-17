@@ -2,12 +2,43 @@ import { useEffect, useRef } from "react";
 import { useRegistrationStep1Store } from "../store/useRegistrationStep1Store";
 import micBtnImg from "/src/assets/registration/microphone_button.png";
 
-// Расширяем глобальный интерфейс Window
+interface SpeechRecognitionEvent {
+  resultIndex: number;
+  results: {
+    [index: number]: {
+      [index: number]: {
+        transcript: string;
+      };
+    };
+  };
+}
+
+interface SpeechRecognitionErrorEvent {
+  error: string;
+}
+
+interface ISpeechRecognition {
+  continuous: boolean;
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onstart: (() => void) | null;
+  onend: (() => void) | null;
+  onerror: ((ev: SpeechRecognitionErrorEvent) => void) | null;
+  onresult: ((ev: SpeechRecognitionEvent) => void) | null;
+  start: () => void;
+  abort: () => void;
+}
+
+interface SpeechRecognitionConstructor {
+  new (): ISpeechRecognition;
+}
+
 declare global {
   interface Window {
     __globalBgAudio?: HTMLAudioElement;
-    SpeechRecognition?: any;
-    webkitSpeechRecognition?: any;
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
   }
 }
 
@@ -22,7 +53,7 @@ const toggleGlobalAudio = (play: boolean) => {
 };
 
 export const SpeechMicButton = () => {
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const isListeningRef = useRef<boolean>(false);
   const { setSpeechResult, setSpeechError, setInput } = useRegistrationStep1Store();
 
@@ -45,7 +76,7 @@ export const SpeechMicButton = () => {
       isListeningRef.current = false;
     };
 
-    rec.onerror = (e: any) => {
+    rec.onerror = (e: SpeechRecognitionErrorEvent) => {
       isListeningRef.current = false;
       toggleGlobalAudio(true);
       if (e.error !== "aborted" && ["no-speech", "audio-capture", "not-allowed"].includes(e.error)) {
@@ -53,7 +84,7 @@ export const SpeechMicButton = () => {
       }
     };
 
-    rec.onresult = (e: any) => {
+    rec.onresult = (e: SpeechRecognitionEvent) => {
       isListeningRef.current = false;
       toggleGlobalAudio(true);
       const text = e.results?.[0]?.[0]?.transcript;

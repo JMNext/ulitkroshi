@@ -13,13 +13,13 @@ export class SnakeGameOverlay {
 
   public create = (): void => {
     const gameContainer = document.getElementById("game-container") || document.body;
-    const existing = document.getElementById("phaser-catch-root");
+    const existing = document.getElementById("phaser-snake-root");
     if (existing) {
       this.container = existing as HTMLDivElement;
       return;
     }
     this.container = document.createElement("div");
-    this.container.id = "phaser-catch-root";
+    this.container.id = "phaser-snake-root";
     this.container.className = "absolute inset-0 w-full h-full z-50 overflow-hidden bg-transparent pointer-events-none";
     gameContainer.appendChild(this.container);
   };

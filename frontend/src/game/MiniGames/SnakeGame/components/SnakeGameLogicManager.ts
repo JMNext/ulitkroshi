@@ -9,6 +9,13 @@ export interface Point {
   y: number;
 }
 
+interface CustomSnakeScene extends Phaser.Scene {
+  addScore: () => void;
+  overlayManager: {
+    render: () => void;
+  };
+}
+
 export class SnakeGameLogicManager {
   public snake: Point[] = [];
   public dir = "RIGHT";
@@ -75,7 +82,7 @@ export class SnakeGameLogicManager {
     this.snake.unshift(head);
 
     if (head.x === this.fruitSpawner.fruit.x && head.y === this.fruitSpawner.fruit.y) {
-      (this.scene as any).addScore();
+      (this.scene as unknown as CustomSnakeScene).addScore();
       this.fruitSpawner.spawn();
     } else if (this.bombManager.hasBomb && head.x === this.bombManager.bomb.x && head.y === this.bombManager.bomb.y) {
       this.bombManager.removeBomb();
@@ -90,7 +97,7 @@ export class SnakeGameLogicManager {
 
   private handleCollisionPenalty = (): void => {
     if (this.snake.length === 1) {
-      useSnakeGameStore.getState().applyPenalty(() => (this.scene as any).overlayManager.render(), true);
+      useSnakeGameStore.getState().applyPenalty(() => (this.scene as unknown as CustomSnakeScene).overlayManager.render(), true);
       return;
     }
     this.snake.pop();
@@ -106,7 +113,7 @@ export class SnakeGameLogicManager {
       RIGHT: "LEFT"
     };
     this.nextDir = OPP_DIR[this.dir] || this.dir;
-    useSnakeGameStore.getState().applyPenalty(() => (this.scene as any).overlayManager.render(), false);
+    useSnakeGameStore.getState().applyPenalty(() => (this.scene as unknown as CustomSnakeScene).overlayManager.render(), false);
   };
 
   public changeDirection = (newDir: string): void => {

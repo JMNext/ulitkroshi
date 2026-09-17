@@ -3,7 +3,7 @@ import { useShopStore } from "../store/useShopStore";
 interface ShopHeaderProps {
   isCartView: boolean;
   setIsCartView: (val: boolean) => void;
-  setPurchaseStatus: (val: any) => void;
+  setPurchaseStatus: (val: "SUCCESS" | "COINS_NOT_ENOUGH" | "ERROR" | null) => void;
 }
 
 export const ShopHeader = ({ isCartView, setIsCartView, setPurchaseStatus }: ShopHeaderProps) => {
@@ -32,7 +32,6 @@ export const ShopHeader = ({ isCartView, setIsCartView, setPurchaseStatus }: Sho
         )}
       </div>
 
-      {/* Убрали лишний вложенный div-контейнер, так как кнопка позиционируется флексами родителя */}
       {totalItemsInCart > 0 && !isCartView && (
         <button
           type="button"

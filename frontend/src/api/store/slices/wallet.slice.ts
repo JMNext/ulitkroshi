@@ -1,0 +1,64 @@
+import { StateCreator } from "zustand";
+import { api, isMock } from "../../api";
+import { ApiStateCombined, WalletSliceState } from "../useApiStore";
+
+const getLocalCoins = (): number => (typeof window === "undefined" ? 0 : Number(localStorage.getItem("local_user_coins") || "0"));
+
+const saveLocalCoins = (amount: number) => {
+  if (typeof window !== "undefined") localStorage.setItem("local_user_coins", String(amount));
+};
+
+let lastActionTime = 0;
+
+export const createWalletSlice: StateCreator<ApiStateCombined, [], [], WalletSliceState> = (set, get) => ({
+  coins: getLocalCoins(),
+
+  fetchCoins: async () => {
+    try {
+      const res = await api.getCoins();
+      const cc = res?.coins ?? getLocalCoins();
+      saveLocalCoins(cc);
+      set({ coins: cc });
+    } catch {
+      set({ coins: getLocalCoins() });
+    }
+  },
+
+  executeAction: async (actionType, total, difficulty) => {
+    const now = Date.now();
+    if (actionType === "mini_game_reward" && now - lastActionTime < 1500) return true;
+    if (actionType === "mini_game_reward") lastActionTime = now;
+
+    let nextCoins = get().coins;
+    let amountToSendToServer = total;
+
+    if (actionType === "mini_game_reward") {
+      let earned = 0;
+      if (typeof difficulty === "string")
+        earned = difficulty === "memory" ? total : total === 999 || total >= 20 ? (difficulty === "hard" ? 2 : 1) : 2;
+      else if (typeof difficulty === "boolean") earned = difficulty ? 1 : 2;
+      else earned = total === 999 ? 1 : total >= 20 ? 10 : 3;
+
+      nextCoins += earned;
+      amountToSendToServer = earned;
+    } else if (actionType === "buy_medicine") {
+      nextCoins = Math.max(0, nextCoins - 30);
+      amountToSendToServer = 30;
+    } else if (actionType === "buy_shop_items" && total) {
+      nextCoins = Math.max(0, nextCoins - total);
+    }
+
+    saveLocalCoins(nextCoins);
+    set({ coins: nextCoins });
+
+    try {
+      const res = await api.updateCoins(actionType, amountToSendToServer);
+      const serverCoins = res && typeof res.coins === "number" ? res.coins : nextCoins;
+      saveLocalCoins(serverCoins);
+      set({ coins: serverCoins });
+      return true;
+    } catch {
+      return isMock;
+    }
+  }
+});

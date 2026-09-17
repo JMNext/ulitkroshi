@@ -1,7 +1,7 @@
 import lifeImgUrl from "@/assets/interface-icons/life.svg";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 import { clsx } from "clsx";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { ACTION_ANIMATIONS, PET_ANIMATION_URLS, LOOPING_ANIMATIONS } from "./constants/petCharacter.constants";
 
 interface PetCharacterProps {
@@ -13,54 +13,36 @@ interface PetCharacterProps {
 const ALL_ANIM_KEYS = Object.keys(PET_ANIMATION_URLS);
 
 export const PetCharacter = ({ styles, alertText, onAnimationEnd }: PetCharacterProps) => {
-  const { hp, petName, currentAnim } = usePetStore();
-  const lastAnim = useRef<string>("");
-  const isEndCalledRef = useRef<boolean>(false);
-  const videoElementsRef = useRef<Record<string, HTMLVideoElement | null>>({});
+  const { hp, petName, currentAnim, registerVideoElement, completeCareAction, getVideoElements } = usePetStore();
 
   const isActionActive = ACTION_ANIMATIONS.includes(currentAnim);
-
-  useEffect(() => {
-    if (lastAnim.current !== currentAnim) {
-      lastAnim.current = currentAnim;
-      isEndCalledRef.current = false;
-
-      ALL_ANIM_KEYS.forEach((key) => {
-        const video = videoElementsRef.current[key];
-        if (!video) return;
-
-        if (currentAnim === key) {
-          video.currentTime = 0;
-          video.play().catch(() => {});
-        } else {
-          video.pause();
-          video.currentTime = 0;
-        }
-      });
-    }
-
-    return () => {
-      if (!currentAnim) {
-        ALL_ANIM_KEYS.forEach((key) => {
-          const video = videoElementsRef.current[key];
-          if (video) {
-            video.pause();
-            video.src = "";
-            video.load();
-          }
-        });
-      }
-    };
-  }, [currentAnim]);
-
-  const handleNativeVideoEnded = (key: string) => {
-    if (isEndCalledRef.current) return;
-    isEndCalledRef.current = true;
-    onAnimationEnd(key);
-  };
-
   const isLow = hp < 10;
   const safeHp = Math.min(Math.max(hp, 0), 100);
+
+  useEffect(() => {
+    const videos = getVideoElements();
+    ALL_ANIM_KEYS.forEach((key) => {
+      const video = videos[key];
+      if (!video) return;
+
+      if (currentAnim === key) {
+        video.currentTime = 0;
+        video.play().catch(() => {});
+      } else if (!ACTION_ANIMATIONS.includes(key) && key !== "sad_state" && !key.startsWith("sleep")) {
+        if (video.paused) video.play().catch(() => {});
+      } else {
+        video.pause();
+        video.currentTime = 0;
+      }
+    });
+  }, [currentAnim, getVideoElements]);
+
+  const handleVideoEnded = (animKey: string) => {
+    if (animKey === currentAnim) {
+      completeCareAction();
+      onAnimationEnd(animKey);
+    }
+  };
 
   return (
     <div
@@ -82,27 +64,31 @@ export const PetCharacter = ({ styles, alertText, onAnimationEnd }: PetCharacter
         <span className={clsx("mt-3 text-center text-[24px] font-black", isLow ? "animate-bounce text-red-600" : "text-[#1a3d1c]")}>{hp}%</span>
       </div>
 
-      <div id="phaser-native-html-pet" className="pointer-events-auto absolute inset-0 h-full w-full [transform:translate3d(0,0,0)] overflow-visible">
+      <div id="phaser-native-html-pet" className="pointer-events-auto absolute inset-0 h-full w-full overflow-visible">
         {ALL_ANIM_KEYS.map((animKey) => {
           const sources = PET_ANIMATION_URLS[animKey];
           if (!sources) return null;
 
+          const isActive = currentAnim === animKey;
+
           return (
             <video
-              key={`static_pet_video_${animKey}`}
-              ref={(el) => { videoElementsRef.current[animKey] = el; }}
-              muted playsInline preload="auto"
+              key={animKey}
+              ref={(el) => registerVideoElement(animKey, el)}
+              muted
+              playsInline
+              preload="auto"
               loop={LOOPING_ANIMATIONS.includes(animKey)}
-              onEnded={() => animKey === currentAnim && handleNativeVideoEnded(animKey)}
+              onEnded={() => handleVideoEnded(animKey)}
               className={clsx(
                 "pointer-events-auto absolute block h-auto w-full border-none bg-transparent object-contain object-bottom left-1/2 -translate-x-1/2",
                 animKey === "wash" ? "bottom-[-156px]" : "bottom-0",
-                currentAnim === animKey ? "z-20 opacity-100 visible" : "z-10 opacity-0 invisible pointer-events-none"
+                isActive ? "z-30 opacity-100 visible" : "z-10 opacity-0 invisible pointer-events-none"
               )}
               style={{ imageRendering: "crisp-edges" }}
             >
-              <source src={sources.mov} type='video/quicktime; codecs="hvc1"' />
               <source src={sources.webm} type="video/webm; codecs=vp9,vorbis" />
+              <source src={sources.mov} type='video/quicktime; codecs="hvc1"' />
             </video>
           );
         })}

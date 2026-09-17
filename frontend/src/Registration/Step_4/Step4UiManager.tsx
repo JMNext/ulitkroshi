@@ -1,4 +1,6 @@
+import { EventBus } from "@/eventbus/EventBus";
 import { useEffect } from "react";
+import Phaser from "phaser";
 import { FinalPlayButton } from "./components/FinalPlayButton";
 import { HappyPetVideo } from "./components/HappyPetVideo";
 import { SuccessBubble } from "./components/SuccessBubble";
@@ -7,6 +9,10 @@ import { useRegistrationStep4Store } from "./store/useRegistrationStep4Store";
 
 interface Step4UiManagerProps {
   phaserScene: Step4Scene;
+}
+
+interface CustomWindow extends Window {
+  phaserGame: Phaser.Game | null;
 }
 
 export function Step4UiManager({ phaserScene }: Step4UiManagerProps) {
@@ -42,7 +48,17 @@ export function Step4UiManager({ phaserScene }: Step4UiManagerProps) {
               phaserScene.cameras.main.fadeOut(200, 0, 0, 0);
               phaserScene.time.delayedCall(200, () => {
                 if (phaserScene.sys.isActive()) {
-                  phaserScene.scene.start("MainScene");
+                  EventBus.emit("step4_scene_stop");
+                  EventBus.emit("main_scene_start");
+
+                  if (typeof window !== "undefined") {
+                    const customWindow = window as unknown as CustomWindow;
+                    const game = customWindow.phaserGame;
+                    if (game) {
+                      game.scene.stop("Step4Scene");
+                      game.scene.start("MainScene");
+                    }
+                  }
                 }
               });
             }}

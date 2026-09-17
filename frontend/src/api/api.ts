@@ -1,8 +1,8 @@
 import axios from "axios";
 import { mockApi } from "./api.mock";
-import { AuthResponse, UserProfile } from "./types";
+import { AuthResponse, UserProfile } from "@/api/types/types";
 
-export const isMock = true;
+export const isMock = false;
 
 export const gatewayApi = axios.create({
   baseURL: "http://localhost:3001",
@@ -33,9 +33,9 @@ export const api = {
     return (await gatewayApi.post<{ success: boolean; isLogin: boolean }>("/auth/login/phone-check", { phone })).data;
   },
 
-  async login(email: string, password: string): Promise<AuthResponse> {
-    if (isMock) return mockApi.login();
-    const data = (await gatewayApi.post<AuthResponse>("/auth/login", { emailOrPhone: email, password })).data;
+  async login(phone: string, password: string): Promise<AuthResponse> {
+    if (isMock) return mockApi.login(phone, password);
+    const data = (await gatewayApi.post<AuthResponse>("/auth/login", { phone, password })).data;
     if (data?.accessToken) {
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
@@ -56,7 +56,7 @@ export const api = {
   },
 
   async refresh(refreshToken: string): Promise<AuthResponse> {
-    if (isMock) return mockApi.refresh();
+    if (isMock) return mockApi.refresh(refreshToken);
     return (await gatewayApi.post<AuthResponse>("/auth/refresh", { refreshToken })).data;
   },
 
@@ -67,7 +67,8 @@ export const api = {
 
   async loginPhone(phone: string, chosenPetName?: string): Promise<{ success: boolean; sessionId: string; isLogin: boolean }> {
     if (isMock) return mockApi.loginPhone(phone, chosenPetName);
-    return (await gatewayApi.post<{ success: boolean; sessionId: string; isLogin: boolean }>("/auth/login/phone", { phone, chosenPetName })).data;
+    return (await gatewayApi.post<{ success: boolean; sessionId: string; isLogin: boolean }>("/auth/login/phone", { phone, chosenPetName }))
+      .data;
   },
 
   async verifySms(phone: string, code: string): Promise<{ sessionId: string }> {
@@ -75,42 +76,36 @@ export const api = {
     return (await gatewayApi.post<{ sessionId: string }>("/auth/login/verify-sms", { phone, code })).data;
   },
 
-  async verifyFruit(sessionId: string, fruits: string, phone?: string, isLoginFlow?: boolean): Promise<AuthResponse> {
-    if (isMock) return mockApi.verifyFruit();
-    const data = (await gatewayApi.post<AuthResponse>("/auth/login/fruit", { sessionId, fruitCode: fruits, phone, isLoginFlow })).data;
-    if (isLoginFlow && data?.accessToken) {
+  async verifyFruit(sessionId: string, fruits: string, phone?: string): Promise<AuthResponse> {
+    if (isMock) return mockApi.verifyFruit(sessionId, fruits, phone);
+    const data = (await gatewayApi.post<AuthResponse>("/auth/login/fruit", { sessionId, fruitCode: fruits, phone })).data;
+    if (data?.accessToken) {
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
     }
     return data;
   },
 
-  async loginQr(qrData: string): Promise<AuthResponse> {
-    if (isMock) return mockApi.loginQr();
-    return (await gatewayApi.post<AuthResponse>("/auth/login/qr", { qrData })).data;
-  },
-
-  async checkName(name: string): Promise<{ available: boolean; suggestions?: string[] }> {
-    if (isMock) return mockApi.checkName(name);
-    return (await gatewayApi.get<{ available: boolean; suggestions?: string[] }>("/auth/check-name", { params: { name } })).data;
-  },
-
-  async getCoins(userId: number): Promise<{ coins: number }> {
+  async getCoins(): Promise<{ coins: number }> {
     if (isMock) return mockApi.getCoins();
-    return (await gatewayApi.get<{ coins: number }>(`/game/pharmacy/coins/${userId}`)).data;
+    return (await gatewayApi.get<{ coins: number }>("/game/pharmacy/coins")).data;
   },
 
   async updateCoins(
     actionType: "buy_medicine" | "mini_game_reward" | "buy_shop_items",
-    userId: number,
-    total: number
+    total?: number
   ): Promise<{ coins: number }> {
-    if (isMock) return mockApi.updateCoins(actionType, userId, total);
-    return (await gatewayApi.post<{ coins: number }>("/game/pharmacy/action", { actionType, userId, total })).data;
+    if (isMock) return mockApi.updateCoins(actionType, total);
+    return (await gatewayApi.post<{ coins: number }>("/game/pharmacy/action", { actionType, total })).data;
   },
 
-  async updateUnlockedPets(petIndexes: number[]): Promise<{ unlockedPets: number[] }> {
-    if (isMock) return mockApi.updateUnlockedPets(petIndexes);
-    return (await gatewayApi.post<{ unlockedPets: number[] }>("/user/pets/update", { petIndexes })).data;
+  async feedPet(): Promise<UserProfile> {
+    if (isMock) return mockApi.feedPet();
+    return (await gatewayApi.post<UserProfile>("/game/pharmacy/feed")).data;
+  },
+
+  async getPetStatus(): Promise<UserProfile> {
+    if (isMock) return mockApi.getPetStatus();
+    return (await gatewayApi.get<UserProfile>("/game/pharmacy/status")).data;
   }
 };

@@ -7,7 +7,9 @@ const MESSAGES = {
 } as const;
 
 export const CaptchaBlockModal = () => {
-  const { generateNewOrder, resetStore, sel: selected } = useRegistrationStep3Store();
+  const { isLogin, loginSel, registerSel, generateNewOrder, resetStore } = useRegistrationStep3Store();
+
+  const selected = isLogin ? loginSel : registerSel;
 
   const handleResetClick = () => {
     resetStore(true);

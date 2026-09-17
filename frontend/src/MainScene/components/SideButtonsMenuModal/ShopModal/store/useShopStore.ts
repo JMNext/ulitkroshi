@@ -1,7 +1,6 @@
-import { useApiStore } from "@/api/store/useApiStore";
-import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
-import { create } from "zustand";
-import { DYNAMIC_BOOSTS, INVENTORY_SLOT_MAP } from "../constants/shop.constants";
+import { create, StoreApi } from "zustand";
+import { createCartSlice } from "./slices/cart.slice";
+import { createCheckoutSlice } from "./slices/checkout.slice";
 
 export interface BoostItem {
   id: number;
@@ -11,7 +10,11 @@ export interface BoostItem {
   description: string;
 }
 
-interface ShopState {
+export interface CustomMainGameStore extends StoreApi<unknown> {
+  getState: () => { resetStore?: () => void };
+}
+
+export interface CartState {
   selectedItem: BoostItem | null;
   cart: { [key: number]: number };
   purchaseStatus: { success: boolean; text: string } | null;
@@ -21,9 +24,15 @@ interface ShopState {
   updateCartQuantity: (id: number, qty: number) => boolean;
   removeFromCart: (id: number) => void;
   clearCart: () => void;
-  resetStore: () => void;
   getTotalPrice: () => number;
+}
+
+export interface CheckoutState {
   checkout: () => Promise<void>;
+}
+
+export interface ShopStateCombined extends CartState, CheckoutState {
+  resetStore: () => void;
 }
 
 const initialValues = {
@@ -32,116 +41,9 @@ const initialValues = {
   purchaseStatus: null
 };
 
-const ERROR_CONFLICT = "В корзине уже находится другой фрукт для этого слота инвентаря!";
-const ERROR_NO_COINS = "Недостаточно монет для покупки!";
+export const useShopStore = create<ShopStateCombined>()((set, get, ...a) => ({
+  ...createCartSlice(set, get, ...a),
+  ...createCheckoutSlice(set, get, ...a),
 
-const checkCartConflict = (targetId: number, currentCart: { [key: number]: number }): boolean => {
-  const targetItem = DYNAMIC_BOOSTS.find((b) => b.id === targetId);
-  if (!targetItem) return false;
-
-  const targetSlot = INVENTORY_SLOT_MAP[targetItem.type];
-
-  return Object.keys(currentCart).some((cartIdStr) => {
-    const cartId = Number(cartIdStr);
-    if (cartId === targetId) return false;
-    const cartItem = DYNAMIC_BOOSTS.find((b) => b.id === cartId);
-    return cartItem && INVENTORY_SLOT_MAP[cartItem.type] === targetSlot;
-  });
-};
-
-export const useShopStore = create<ShopState>((set, get) => ({
-  ...initialValues,
-  setSelectedItem: (selectedItem) => set({ selectedItem }),
-  setPurchaseStatus: (purchaseStatus) => set({ purchaseStatus }),
-
-  addToCart: (id, qty) => {
-    if (checkCartConflict(id, get().cart)) {
-      set({ purchaseStatus: { success: false, text: ERROR_CONFLICT } });
-      return false;
-    }
-    set((s) => ({
-      purchaseStatus: null,
-      cart: { ...s.cart, [id]: (s.cart[id] || 0) + qty }
-    }));
-    return true;
-  },
-
-  updateCartQuantity: (id, qty) => {
-    if (qty > (get().cart[id] || 0) && checkCartConflict(id, get().cart)) {
-      set({ purchaseStatus: { success: false, text: ERROR_CONFLICT } });
-      return false;
-    }
-    set((s) => {
-      const cart = { ...s.cart };
-      if (qty <= 0) delete cart[id];
-      else cart[id] = qty;
-      return { cart, purchaseStatus: null };
-    });
-    return true;
-  },
-
-  removeFromCart: (id) =>
-    set((s) => {
-      const cart = { ...s.cart };
-      delete cart[id];
-      return { cart, purchaseStatus: null };
-    }),
-
-  clearCart: () => set({ cart: {} }),
-  resetStore: () => set(initialValues),
-  getTotalPrice: () =>
-    Object.entries(get().cart).reduce((sum, [id, qty]) => sum + (DYNAMIC_BOOSTS.find((b) => b.id === Number(id))?.price || 0) * qty, 0),
-
-  checkout: async () => {
-    const { cart, getTotalPrice, clearCart, setSelectedItem } = get();
-    const total = getTotalPrice();
-
-    if (!Object.keys(cart).length) {
-      set({ purchaseStatus: { success: false, text: "В корзине пусто!" } });
-      return;
-    }
-
-    const auth = useApiStore.getState();
-    if (auth.coins < total) {
-      set({ purchaseStatus: { success: false, text: ERROR_NO_COINS } });
-      return;
-    }
-
-    try {
-      const success = await auth.executeAction("buy_shop_items", total);
-
-      if (!success) {
-        set({ purchaseStatus: { success: false, text: ERROR_NO_COINS } });
-        return;
-      }
-
-      Object.entries(cart).forEach(([idStr, qty]) => {
-        const id = Number(idStr);
-        const item = DYNAMIC_BOOSTS.find((b) => b.id === id);
-        if (item) {
-          const slotId = INVENTORY_SLOT_MAP[item.type];
-          const pet = usePetStore.getState();
-
-          const currentCount = pet.fruitsCounts[slotId] ?? 0;
-          const isSameFruit = pet.activeFruitIds[slotId] === id;
-
-          if (currentCount > 0 && isSameFruit) {
-            pet.addFruitsToInventory(slotId, id, qty);
-          } else {
-            usePetStore.setState((s) => ({
-              fruitsCounts: { ...s.fruitsCounts, [slotId]: (isSameFruit ? currentCount : 0) + qty },
-              activeFruitIds: { ...s.activeFruitIds, [slotId]: id }
-            }));
-          }
-        }
-      });
-
-      clearCart();
-      setSelectedItem(null);
-      set({ purchaseStatus: { success: true, text: `Успешно куплено! Списано: ${total}` } });
-      auth.fetchCoins();
-    } catch {
-      set({ purchaseStatus: { success: false, text: "Ошибка при списании монет." } });
-    }
-  }
+  resetStore: () => set(initialValues)
 }));

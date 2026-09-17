@@ -35,7 +35,6 @@ export const startWashingDrag = (
           animation: "spongeAbsorb 0.4s ease-in forwards"
         });
         document.body.appendChild(sponge);
-        usePetStore.getState().triggerCareAction("wash");
 
         setTimeout(() => {
           sponge.remove();

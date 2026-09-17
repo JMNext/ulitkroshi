@@ -7,8 +7,7 @@ export interface UserProfile {
   unlockedPets: number[];
   petName: string;
   petStatus: string;
-  petSatiety: number;
-  petHappiness: number;
+  petHealth: number;
 }
 
 export interface AuthResponse {

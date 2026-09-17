@@ -17,7 +17,7 @@ interface Step4State {
 const initialValues = {
   layoutContext: null,
   finalScale: 1
-} as const; // Зафиксировали неизменяемость начальных значений
+} as const;
 
 export const useRegistrationStep4Store = create<Step4State>((set) => ({
   ...initialValues,

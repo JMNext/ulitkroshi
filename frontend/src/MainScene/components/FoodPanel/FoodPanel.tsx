@@ -17,7 +17,8 @@ interface FoodPanelProps {
 }
 
 export const FoodPanel = ({ isOpen, onClose, styles }: FoodPanelProps) => {
-  const { fruitsCounts, fruitsCooldowns, activeFruitIds, currentFruitId, selectFruitId } = usePetStore();
+  const { inventory, selectFruitId } = usePetStore();
+  const { counts: fruitsCounts, cooldowns: fruitsCooldowns, activeIds: activeFruitIds, currentId: currentFruitId } = inventory;
   const panelRef = useRef<HTMLDivElement | null>(null);
   const [now, setNow] = useState(Date.now());
 

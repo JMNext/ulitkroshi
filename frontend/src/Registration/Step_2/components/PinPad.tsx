@@ -5,21 +5,31 @@ import { useRegistrationStep2Store } from "../store/useRegistrationStep2Store";
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "0", "delete"] as const;
 
 export const PinPad = () => {
-  const { mode, handleKeyboardInput } = useRegistrationStep2Store();
-  const isDisabled = mode === "sent";
+  const { isLogin, registerMode, handleLoginKeyboard, handleRegisterKeyboard } = useRegistrationStep2Store();
+
+  const currentMode = isLogin ? "phone" : registerMode;
+  const isDisabled = currentMode === "sent";
+
+  const handleInput = (key: string) => {
+    if (isLogin) {
+      handleLoginKeyboard(key);
+    } else {
+      handleRegisterKeyboard(key);
+    }
+  };
 
   useEffect(() => {
     const handlePhysicalKeyDown = (e: KeyboardEvent) => {
       if (isDisabled) return;
       if (/^\d$/.test(e.key) || e.key === "+") {
-        handleKeyboardInput(e.key);
+        handleInput(e.key);
       } else if (e.key === "Backspace" || e.key === "Delete") {
-        handleKeyboardInput("delete");
+        handleInput("delete");
       }
     };
     window.addEventListener("keydown", handlePhysicalKeyDown);
     return () => window.removeEventListener("keydown", handlePhysicalKeyDown);
-  }, [isDisabled, handleKeyboardInput]);
+  }, [isDisabled, isLogin]);
 
   return (
     <div className="pointer-events-none relative flex h-[500px] w-[368px] shrink-0 origin-center items-center justify-center font-black select-none">
@@ -38,7 +48,7 @@ export const PinPad = () => {
               disabled={isDisabled}
               onPointerDown={(e) => {
                 e.preventDefault();
-                handleKeyboardInput(key);
+                handleInput(key);
                 (document.activeElement as HTMLElement)?.blur?.();
               }}
               className={clsx(

@@ -1,5 +1,4 @@
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
-import { useApiStore } from "@/api/store/useApiStore";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
@@ -24,7 +23,7 @@ const createGameDeck = (pairsCount: number, availableCards: string[]): string[] 
 };
 
 interface MemoryGameState {
-  score: number; isGameOver: boolean; isWash: boolean; deck: string[]; openedCards: number[]; matchedCards: string[]; canClick: boolean; isPreview: boolean;
+  score: number; isGameOver: boolean; isWash: boolean; deck: string[]; openedCards: number[]; matchedCards: string[]; canClick: boolean; isPreview: boolean; hasMisses: boolean;
   initGame: (pairsCount: number, availableCards: string[]) => void;
   setSwappedDeck: (newDeck: string[]) => void;
   setCanClickTrue: () => void;
@@ -33,21 +32,23 @@ interface MemoryGameState {
   resetStore: () => void;
 }
 
-const initialValues = { score: 0, isGameOver: false, isWash: false, deck: [], openedCards: [], matchedCards: [], canClick: false, isPreview: true };
+type MemoryDifficulty = "easy" | "medium" | "hard" | "memory";
+
+const initialValues = { score: 0, isGameOver: false, isWash: false, deck: [], openedCards: [], matchedCards: [], canClick: false, isPreview: true, hasMisses: false };
 
 export const useMemoryGameStore = create<MemoryGameState>()(
   subscribeWithSelector((set, get) => ({
     ...initialValues,
 
     initGame: (pairsCount, availableCards) => {
-      set({ ...initialValues, deck: createGameDeck(pairsCount, availableCards), isPreview: true, canClick: false });
+      set({ ...initialValues, deck: createGameDeck(pairsCount, availableCards), isPreview: true, canClick: false, hasMisses: false });
     },
 
     setSwappedDeck: (newDeck) => set({ deck: newDeck }),
     setCanClickTrue: () => set({ canClick: true }),
 
     handleCardClick: (clickedIndex, totalPairs) => {
-      const { canClick, openedCards, deck, matchedCards, score } = get();
+      const { canClick, openedCards, deck, matchedCards, score, hasMisses } = get();
       if (!canClick || openedCards.includes(clickedIndex) || matchedCards.includes(deck[clickedIndex])) return;
 
       const nextOpenedCards = [...openedCards, clickedIndex];
@@ -63,8 +64,8 @@ export const useMemoryGameStore = create<MemoryGameState>()(
         const isWin = nextScore === totalPairs;
 
         if (isWin) {
-          useApiStore.getState().executeAction("mini_game_reward", 1, "memory");
-          useMainGameStore.setState({ gameOverResult: { isWin: true, rewardText: "+1" } });
+          const modeKey = !hasMisses ? `memory_perfect_${totalPairs}` : "memory";
+          useMainGameStore.getState().setGameOver(nextScore, modeKey as MemoryDifficulty, true);
         }
 
         setTimeout(() => {
@@ -78,7 +79,9 @@ export const useMemoryGameStore = create<MemoryGameState>()(
           });
         }, 300);
       } else {
-        setTimeout(() => set({ openedCards: [], canClick: true }), 800);
+        setTimeout(() => {
+          set({ openedCards: [], canClick: true, hasMisses: true });
+        }, 800);
       }
     },
 

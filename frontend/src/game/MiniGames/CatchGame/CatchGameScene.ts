@@ -2,6 +2,8 @@ import { CatchGameOverlay } from "@/game/MiniGames/CatchGame/components/CatchGam
 import { CatchGamePet } from "@/game/MiniGames/CatchGame/components/CatchGamePet";
 import { CatchGamePhysicsManager } from "@/game/MiniGames/CatchGame/components/CatchGamePhysicsManager";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
+import { registerSceneEvent } from "@/eventbus/registerSceneEvent";
+import { EventBus } from "@/eventbus/EventBus";
 import { Scene } from "phaser";
 import { CATCH_ASSETS, DIFFICULTY_CONFIGS } from "./constants/catchGame.constants";
 import { useCatchGameStore } from "./store/useCatchGameStore";
@@ -12,7 +14,7 @@ export class CatchGameScene extends Scene {
   public hp = 100;
   public physicsManager!: CatchGamePhysicsManager;
   public petEntity!: CatchGamePet;
-  public overlayManager!: any;
+  public overlayManager!: CatchGameOverlay;
   public bgImage: Phaser.GameObjects.Image | null = null;
   private unsubscribeStore: (() => void) | null = null;
   private resizeTimer: Phaser.Time.TimerEvent | null = null;
@@ -22,7 +24,7 @@ export class CatchGameScene extends Scene {
   }
 
   public init(data: { difficulty?: "easy" | "medium" | "hard" }): void {
-    this.difficulty = data.difficulty || "medium";
+    this.difficulty = data?.difficulty || "medium";
     this.score = 0;
     this.hp = 100;
 
@@ -65,7 +67,12 @@ export class CatchGameScene extends Scene {
         }
       }
     );
-    this.events.once("shutdown", () => this.cleanup());
+
+    this.sys.events.once("shutdown", () => this.cleanup(), this);
+
+    registerSceneEvent(this, "minigame_catch_start", (data) => {
+      this.scene.start("CatchGameScene", data);
+    });
   }
 
   public update(time: number, delta: number): void {
@@ -103,9 +110,16 @@ export class CatchGameScene extends Scene {
       usePetStore.getState().handleGameLoss();
     }
     window.dispatchEvent(new CustomEvent("minigame_stopped"));
+
+    EventBus.emit("minigame_stop_to_main");
+    EventBus.emit("main_scene_wake");
+
     this.scene.stop(this.scene.key);
-    if (this.scene.manager.isSleeping("MainScene")) this.scene.wake("MainScene");
-    else this.scene.start("MainScene");
+    if (this.scene.manager.isSleeping("MainScene")) {
+      this.scene.wake("MainScene");
+    } else {
+      this.scene.start("MainScene");
+    }
   };
 
   private cleanup(): void {

@@ -1,12 +1,11 @@
-import { AuthResponse, UserProfile } from "./types";
+import { UserProfile, AuthResponse } from "@/api/types/types";
 
-// 🌟 ИСПРАВЛЕНИЕ: Даем мокам стартовый баланс в 5000 монет по умолчанию,
-// чтобы при вычитании стоимости яблока (40) в памяти оставалось 4960, а не 0.
 let mockCoinsMemory = 5000;
 let mockUnlockedPetsMemory: number[] = [];
 let mockPhoneMemory = "";
 let mockPetNameMemory = "";
 let mockUserNameMemory = "";
+let mockPetHealthMemory = 100;
 
 const createMockUser = (name = "", phone = ""): UserProfile => {
   const finalUserName = name || mockUserNameMemory || "Игрок";
@@ -15,14 +14,13 @@ const createMockUser = (name = "", phone = ""): UserProfile => {
   return {
     id: 12345,
     name: finalUserName,
-    phone: phone || mockPhoneMemory || "+79991112233",
+    phone: phone || mockPhoneMemory || "79991112233",
     roles: ["user"],
     coins: mockCoinsMemory,
     unlockedPets: mockUnlockedPetsMemory,
     petName: finalPetName,
     petStatus: "alive",
-    petSatiety: 85,
-    petHappiness: 90
+    petHealth: mockPetHealthMemory
   };
 };
 
@@ -39,6 +37,7 @@ export const mockApi = {
     mockPhoneMemory = "";
     mockPetNameMemory = "";
     mockUserNameMemory = "";
+    mockPetHealthMemory = 100;
   },
 
   async checkLoginPhone(phone: string): Promise<{ success: boolean; isLogin: boolean }> {
@@ -46,7 +45,8 @@ export const mockApi = {
     return { success: true, isLogin: true };
   },
 
-  async login(): Promise<AuthResponse> {
+  async login(phone: string, password: string): Promise<AuthResponse> {
+    mockPhoneMemory = phone;
     return generateMockAuth("mock");
   },
 
@@ -58,7 +58,7 @@ export const mockApi = {
     return createMockUser();
   },
 
-  async refresh(): Promise<AuthResponse> {
+  async refresh(refreshToken: string): Promise<AuthResponse> {
     return generateMockAuth("mock");
   },
 
@@ -79,32 +79,31 @@ export const mockApi = {
     return { sessionId: "mock_sess_verified_" + Date.now() };
   },
 
-  async verifyFruit(): Promise<AuthResponse> {
+  async verifyFruit(sessionId: string, fruits: string, phone?: string): Promise<AuthResponse> {
+    if (phone) mockPhoneMemory = phone;
     return generateMockAuth("mock_fruit");
-  },
-
-  async loginQr(): Promise<AuthResponse> {
-    return generateMockAuth("mock_qr");
-  },
-
-  async checkName(name: string): Promise<{ available: boolean; suggestions?: string[] }> {
-    const isTaken = name.toLowerCase() === "admin";
-    return { available: !isTaken, suggestions: isTaken ? [name + "777"] : [] };
   },
 
   async getCoins(): Promise<{ coins: number }> {
     return { coins: mockCoinsMemory };
   },
 
-  async updateCoins(actionType: "buy_medicine" | "mini_game_reward" | "buy_shop_items", userId: number, total: number): Promise<{ coins: number }> {
+  async updateCoins(
+    actionType: "buy_medicine" | "mini_game_reward" | "buy_shop_items",
+    total?: number
+  ): Promise<{ coins: number }> {
     if (actionType === "buy_medicine") mockCoinsMemory = Math.max(0, mockCoinsMemory - 30);
-    if (actionType === "mini_game_reward") mockCoinsMemory += 15;
+    if (actionType === "mini_game_reward") mockCoinsMemory += Number(total || 0);
     if (actionType === "buy_shop_items" && total) mockCoinsMemory = Math.max(0, mockCoinsMemory - total);
     return { coins: mockCoinsMemory };
   },
 
-  async updateUnlockedPets(petIndexes: number[]): Promise<{ unlockedPets: number[] }> {
-    mockUnlockedPetsMemory = petIndexes;
-    return { unlockedPets: mockUnlockedPetsMemory };
+  async feedPet(): Promise<UserProfile> {
+    mockPetHealthMemory = Math.min(100, mockPetHealthMemory + 20);
+    return createMockUser();
+  },
+
+  async getPetStatus(): Promise<UserProfile> {
+    return createMockUser();
   }
 };

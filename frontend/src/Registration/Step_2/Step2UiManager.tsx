@@ -4,7 +4,8 @@ import { createContext, useEffect } from "react";
 import { DisplayFields } from "./components/DisplayFields";
 import { HeaderBlock } from "./components/HeaderBlock";
 import { PinPad } from "./components/PinPad";
-import { SentModal } from "./components/SentModal";
+import { UserNotFoundModal } from "./components/UserNotFoundModal";
+import { SmsSentModal } from "./components/SmsSentModal";
 import { SubmitButton } from "./components/SubmitButton";
 import { Step2Scene } from "./Step2Scene";
 
@@ -15,10 +16,13 @@ interface Step2UiManagerProps {
 export const PhaserGameContext = createContext<Step2Scene | null>(null);
 
 export function Step2UiManager({ phaserScene }: Step2UiManagerProps) {
-  const storeMode = useRegistrationStep2Store((state) => state.mode);
   const isLogin = useRegistrationStep2Store((state) => state.isLogin);
+  const loginError = useRegistrationStep2Store((state) => state.loginError);
+  const registerMode = useRegistrationStep2Store((state) => state.registerMode);
   const layoutContext = useRegistrationStep2Store((state) => state.layoutContext);
   const computedScale = useRegistrationStep2Store((state) => state.computedScale);
+
+  const currentMode = isLogin ? (loginError === "user_not_found" ? "sent" : "phone") : registerMode;
 
   useEffect(() => {
     if (phaserScene.sys.isActive()) {
@@ -40,9 +44,10 @@ export function Step2UiManager({ phaserScene }: Step2UiManagerProps) {
         >
           <HeaderBlock />
           <DisplayFields />
-          {storeMode === "phone" && !isLogin && <SubmitButton />}
+          {currentMode === "phone" && !isLogin && <SubmitButton />}
           <PinPad />
-          {storeMode === "sent" && <SentModal />}
+          {currentMode === "sent" && isLogin && <UserNotFoundModal />}
+          {currentMode === "sent" && !isLogin && <SmsSentModal />}
         </div>
       </div>
     </PhaserGameContext.Provider>

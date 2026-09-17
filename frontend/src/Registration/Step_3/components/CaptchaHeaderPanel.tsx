@@ -13,7 +13,6 @@ const MESSAGES = {
   attemptsLeft: (left: number) => `Неверный порядок.\nОсталось попыток: ${left}`
 } as const;
 
-// Карта статических текстовых состояний
 const STATIC_MESSAGES: Record<string, string> = {
   system_error: MESSAGES.systemError,
   wrong_fruit: MESSAGES.wrongFruit,
@@ -24,18 +23,32 @@ const STATIC_MESSAGES: Record<string, string> = {
 };
 
 export const CaptchaHeaderPanel = () => {
-  const { mode, sel: selected, attempts, errorMessage, isLogin } = useRegistrationStep3Store();
+  const {
+    isLogin,
+    loginMode,
+    loginSel,
+    loginAttempts,
+    loginError,
+    registerMode,
+    registerSel,
+    registerAttempts,
+    registerError
+  } = useRegistrationStep3Store();
 
-  // Декларативное и чистое вычисление текста без гигантского каскада тернаров
+  const currentMode = isLogin ? loginMode : registerMode;
+  const currentSelected = isLogin ? loginSel : registerSel;
+  const currentAttempts = isLogin ? loginAttempts : registerAttempts;
+  const currentError = isLogin ? loginError : registerError;
+
   const targetText =
-    STATIC_MESSAGES[errorMessage ?? ""] ||
-    (mode === "error" || attempts >= 3
+    STATIC_MESSAGES[currentError ?? ""] ||
+    (currentMode === "error" || currentAttempts >= 3
       ? MESSAGES.totalError
-      : attempts > 0
-        ? MESSAGES.attemptsLeft(3 - attempts)
+      : currentAttempts > 0
+        ? MESSAGES.attemptsLeft(3 - currentAttempts)
         : isLogin
           ? MESSAGES.loginPrompt
-          : STATIC_MESSAGES[mode ?? ""] || MESSAGES.modeSelect);
+          : STATIC_MESSAGES[currentMode ?? ""] || MESSAGES.modeSelect);
 
   return (
     <div className="relative flex h-[190px] w-[424px] max-w-full shrink-0 flex-col items-center justify-between rounded-[32px] border border-slate-200/50 bg-white p-4 text-slate-700 shadow-md select-none">
@@ -44,15 +57,14 @@ export const CaptchaHeaderPanel = () => {
       </h2>
 
       <div className="mb-1 flex items-center justify-center gap-3">
-        {/* Оптимизированный цикл на фиксированные 4 слота через нативный массив */}
         {[0, 1, 2, 3].map((i) => {
-          const fruitId = selected[i];
+          const fruitId = currentSelected[i];
           const hasFruit = fruitId !== undefined;
           const resolvedUrl = hasFruit ? FRUIT_URLS[fruitId] : "";
 
           return (
             <div
-              key={i} // Упростили ключ до чистого индекса
+              key={i}
               className={clsx(
                 "box-border flex h-[58px] w-[58px] items-center justify-center overflow-hidden rounded-full border",
                 hasFruit ? "border-slate-100 bg-[#f9fafb] shadow-md" : "border-slate-200 bg-[#f5f5f4] shadow-inner"

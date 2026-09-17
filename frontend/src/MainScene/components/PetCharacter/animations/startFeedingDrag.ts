@@ -29,8 +29,6 @@ export const startFeedingDrag = (
         if (isFeedingProcessing) return;
 
         const store = usePetStore.getState();
-        if (["wash", "play", "eat"].includes(store.currentAnim)) return;
-
         const config = FOOD_CONFIGS[fruitId || foodKey] || DEFAULT_FOOD_CONFIG;
         const result = fruitId
           ? store.useFruitId(fruitId, config.hpRestoreValue, config.restoresHp, false)
@@ -49,9 +47,6 @@ export const startFeedingDrag = (
             cachedEatAudio.currentTime = 0;
             cachedEatAudio.play().catch(() => {});
           }
-
-          store.updateField("currentAnim", "eat");
-          store.updateField("washState", "hidden");
 
           setTimeout(() => {
             isFeedingProcessing = false;

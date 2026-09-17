@@ -1,4 +1,5 @@
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
+import { registerSceneEvent } from "@/eventbus/registerSceneEvent";
 import NiceModal from "@ebay/nice-modal-react";
 import Phaser from "phaser";
 import React from "react";
@@ -41,18 +42,9 @@ export class MainScene extends Phaser.Scene {
     this.backgroundIm = this.add.image(w / 2, h / 2, `ui_bg_fon_${initialOrientation}`).setOrigin(0.5).setDepth(-2);
     this.currentOrientation = initialOrientation;
 
-    this.uiContainer = document.createElement("div");
-    this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden !will-change-auto";
-    (document.getElementById("game-container") || document.body).appendChild(this.uiContainer);
+    this.mountReactUI();
 
     if (w && h) this.executeResizeLogic(w, h);
-
-    this.reactRoot = createRoot(this.uiContainer);
-    this.reactRoot.render(
-      <NiceModal.Provider>
-        <MainSceneUI />
-      </NiceModal.Provider>
-    );
 
     this.scale.on("resize", this.triggerResize, this);
 
@@ -61,9 +53,28 @@ export class MainScene extends Phaser.Scene {
       .on("sleep", this.handleSceneSleep, this)
       .once("shutdown", this.cleanUp, this);
 
+    registerSceneEvent(this, "main_scene_start", this.handleExternalStart);
+    registerSceneEvent(this, "main_scene_wake", this.handleExternalWake);
+    registerSceneEvent(this, "main_scene_stop", this.handleExternalStop);
+
     this.events.once("postupdate", () => {
       if (this.sys.isActive()) this.triggerResize();
     });
+  }
+
+  private mountReactUI(): void {
+    if (this.uiContainer) return;
+
+    this.uiContainer = document.createElement("div");
+    this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden !will-change-auto";
+    (document.getElementById("game-container") || document.body).appendChild(this.uiContainer);
+
+    this.reactRoot = createRoot(this.uiContainer);
+    this.reactRoot.render(
+      <NiceModal.Provider>
+        <MainSceneUI />
+      </NiceModal.Provider>
+    );
   }
 
   public triggerResize(): void {
@@ -80,6 +91,22 @@ export class MainScene extends Phaser.Scene {
 
   private handleSceneSleep(): void {
     this.uiContainer?.classList.add("hidden");
+  }
+
+  private handleExternalStart(): void {
+    this.scene.start("MainScene");
+  }
+
+  private handleExternalWake(): void {
+    if (this.sys.isSleeping()) {
+      this.scene.wake();
+    }
+  }
+
+  private handleExternalStop(): void {
+    if (this.sys.isActive()) {
+      this.scene.stop();
+    }
   }
 
   private executeResizeLogic(width: number, height: number): void {
@@ -165,7 +192,9 @@ export class MainScene extends Phaser.Scene {
   private cleanUp(): void {
     this.scale.off("resize", this.triggerResize, this);
     this.sys.events.off("wake", this.handleSceneWake, this).off("sleep", this.handleSceneSleep, this);
-    this.reactRoot?.unmount();
+    try {
+      this.reactRoot?.unmount();
+    } catch (_) {}
     this.uiContainer?.remove();
     this.reactRoot = this.uiContainer = null;
   }

@@ -1,15 +1,18 @@
-import { useRegistrationStep1Store, Step1State } from "../store/useRegistrationStep1Store";
+import { useRegistrationStep1Store, Step1StateCombined } from "../store/useRegistrationStep1Store";
+import Phaser from "phaser";
 
-// 1. Расширяем глобальный интерфейс Window
+interface SceneContainer {
+  scene?: Phaser.Scene;
+}
+
 declare global {
   interface Window {
-    __phaserSceneContext?: any;
+    __phaserSceneContext?: SceneContainer;
   }
 }
 
-// 2. Расширяем типы Zustand-стора, сообщая TS, что на нём может висеть phaserScene
-interface ExtendedStep1Store extends Step1State {
-  phaserScene?: any;
+interface ExtendedStep1Store extends Step1StateCombined {
+  phaserScene?: SceneContainer;
 }
 
 export const ConfirmSelection = () => {
@@ -19,12 +22,11 @@ export const ConfirmSelection = () => {
     e.preventDefault();
     setStage(4);
 
-    // Кастуем Zustand-стор к расширенному типу ExtendedStep1Store
     const storeWithPhaser = useRegistrationStep1Store as unknown as ExtendedStep1Store;
     const globalContext = window.__phaserSceneContext || storeWithPhaser.phaserScene;
 
-    if (globalContext?.scene?.start) {
-      globalContext.scene.start("Step2Scene");
+    if (globalContext?.scene?.scene) {
+      globalContext.scene.scene.start("Step2Scene");
     } else {
       window.dispatchEvent(new CustomEvent("switch_scene_forced", { detail: "login" }));
     }

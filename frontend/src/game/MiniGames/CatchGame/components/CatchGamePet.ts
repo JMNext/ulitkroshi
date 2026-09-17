@@ -3,19 +3,25 @@ import { CATCH_ASSETS, getCatchResizeMetrics } from "@/game/MiniGames/CatchGame/
 import { useCatchGameStore } from "@/game/MiniGames/CatchGame/store/useCatchGameStore";
 import Phaser from "phaser";
 
+interface CustomCanvasTexture extends Phaser.Textures.CanvasTexture {
+  hasAlpha?: boolean;
+}
+
+interface WASDKeys {
+  left: Phaser.Input.Keyboard.Key;
+  right: Phaser.Input.Keyboard.Key;
+}
+
 export class CatchGamePet {
   public width = 230;
   public height = 230;
   public x = 0;
   public y = 0;
   private videoElement: HTMLVideoElement | null = null;
-  private textureCanvas: Phaser.Textures.CanvasTexture | null = null;
+  private textureCanvas: CustomCanvasTexture | null = null;
   private petSprite: Phaser.GameObjects.Sprite | null = null;
   private keyboardCursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
-  private wasdKeys: {
-    left: Phaser.Input.Keyboard.Key;
-    right: Phaser.Input.Keyboard.Key;
-  } | null = null;
+  private wasdKeys: WASDKeys | null = null;
   private keyboardSpeed = 0.8;
 
   constructor(private scene: CatchGameScene) {}
@@ -40,13 +46,13 @@ export class CatchGamePet {
     this.videoElement.play().catch((err) => console.warn(err));
 
     if (this.scene.textures.exists("pet-video-stream")) {
-      this.textureCanvas = this.scene.textures.get("pet-video-stream") as Phaser.Textures.CanvasTexture;
+      this.textureCanvas = this.scene.textures.get("pet-video-stream") as CustomCanvasTexture;
     } else {
-      this.textureCanvas = this.scene.textures.createCanvas("pet-video-stream", 256, 256);
+      this.textureCanvas = this.scene.textures.createCanvas("pet-video-stream", 256, 256) as CustomCanvasTexture;
     }
 
     if (this.textureCanvas) {
-      (this.textureCanvas as any).hasAlpha = true;
+      this.textureCanvas.hasAlpha = true;
     }
 
     this.y = this.scene.scale.height - 150;
@@ -64,7 +70,7 @@ export class CatchGamePet {
       this.wasdKeys = this.scene.input.keyboard.addKeys({
         left: Phaser.Input.Keyboard.KeyCodes.A,
         right: Phaser.Input.Keyboard.KeyCodes.D
-      }) as any;
+      }) as unknown as WASDKeys;
     }
     this.scene.input.on("pointerdown", (p: Phaser.Input.Pointer) => this.updatePosition(p.x));
     this.scene.input.on("pointermove", (p: Phaser.Input.Pointer) => p.isDown && this.updatePosition(p.x));
@@ -87,7 +93,7 @@ export class CatchGamePet {
     if (this.videoElement && !this.videoElement.paused && this.videoElement.readyState >= 2 && this.textureCanvas) {
       const ctx = this.textureCanvas.context;
       ctx.clearRect(0, 0, 256, 256);
-      (this.textureCanvas as any).hasAlpha = true;
+      this.textureCanvas.hasAlpha = true;
       ctx.drawImage(this.videoElement, 0, 0, 256, 256);
       this.textureCanvas.refresh();
     }

@@ -1,14 +1,13 @@
-import { PetState } from "@/MainScene/components/PetCharacter/store/usePetStore";
+import { PetStateCombined } from "@/MainScene/components/PetCharacter/store/usePetStore";
 import { clsx } from "clsx";
 
 interface PetsTrackProps {
   currentIndex: number;
   startPetImg: string;
-  updateField: <K extends keyof PetState>(field: K, value: PetState[K]) => void;
+  updateField: <K extends keyof PetStateCombined>(field: K, value: PetStateCombined[K]) => void;
 }
 
 export const PetsTrack = ({ currentIndex, startPetImg, updateField }: PetsTrackProps) => {
-  // Вынесли конфигурацию элементов в чистый массив
   const items = [
     { id: (currentIndex - 1 + 20) % 20, cls: "opacity-30 scale-90 pointer-events-none" },
     { id: currentIndex, cls: "scale-105 shadow-md border-amber-400 bg-amber-50/50 z-20" },

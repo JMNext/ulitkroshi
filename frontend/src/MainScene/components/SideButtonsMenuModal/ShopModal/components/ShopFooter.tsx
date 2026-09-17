@@ -10,7 +10,6 @@ export const ShopFooter = ({ isCartView }: ShopFooterProps) => {
   const coins = useMainGameStore((s) => s.coins);
   const { purchaseStatus, getTotalPrice, checkout, cart } = useShopStore();
 
-  // Вместо ручного Object.values().reduce используем готовый расчет
   const totalItemsInCart = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
   const showCartDetails = isCartView && (totalItemsInCart > 0 || purchaseStatus?.success);
 

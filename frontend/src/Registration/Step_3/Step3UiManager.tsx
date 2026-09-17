@@ -1,3 +1,4 @@
+import { EventBus } from "@/eventbus/EventBus";
 import { useRegistrationStep3Store } from "@/Registration/Step_3/store/useRegistrationStep3Store";
 import Phaser from "phaser";
 import { useEffect } from "react";
@@ -13,8 +14,23 @@ interface Step3UiManagerProps {
   sessionId: string;
 }
 
+interface CustomWindow extends Window {
+  phaserGame: Phaser.Game | null;
+}
+
 export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) {
-  const { mode, attempts, isLogin, layoutContext, computedScale } = useRegistrationStep3Store();
+  const {
+    isLogin,
+    loginMode,
+    loginAttempts,
+    registerMode,
+    registerAttempts,
+    layoutContext,
+    computedScale
+  } = useRegistrationStep3Store();
+
+  const currentMode = isLogin ? loginMode : registerMode;
+  const currentAttempts = isLogin ? loginAttempts : registerAttempts;
 
   useEffect(() => {
     if (phaserScene.sys.isActive()) {
@@ -40,14 +56,27 @@ export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) 
             phaserScene.cameras.main.fadeOut(200, 0, 0, 0);
             phaserScene.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
               useRegistrationStep3Store.getState().resetStore(true, true);
-              phaserScene.scene.start(isLogin ? "MainScene" : "Step4Scene", { sessionId: activeSessionId });
+
+              EventBus.emit("step3_scene_stop");
+
+              const targetScene = isLogin ? "MainScene" : "Step4Scene";
+              EventBus.emit(isLogin ? "main_scene_start" : "step4_scene_start", { sessionId: activeSessionId });
+
+              if (typeof window !== "undefined") {
+                const customWindow = window as unknown as CustomWindow;
+                const game = customWindow.phaserGame;
+                if (game) {
+                  game.scene.stop("Step3Scene");
+                  game.scene.start(targetScene, { sessionId: activeSessionId });
+                }
+              }
             });
           }}
         />
         <CaptchaResetButton />
 
-        {mode === "confirm" && attempts < 3 && <CaptchaConfirmModal />}
-        {attempts >= 3 && <CaptchaBlockModal />}
+        {currentMode === "confirm" && currentAttempts < 3 && <CaptchaConfirmModal />}
+        {currentAttempts >= 3 && <CaptchaBlockModal />}
       </div>
     </div>
   );

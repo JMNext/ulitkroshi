@@ -1,6 +1,5 @@
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
-import { useApiStore } from "@/api/store/useApiStore";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
@@ -25,8 +24,7 @@ export const useSnakeGameStore = create<SnakeGameState>()(
       const isWin = nextScore >= 20;
 
       if (isWin) {
-        useApiStore.getState().executeAction("mini_game_reward", 5);
-        useMainGameStore.setState({ gameOverResult: { isWin: true, rewardText: "+5" } });
+        useMainGameStore.getState().setGameOver(nextScore, undefined, true);
       }
 
       set({ score: nextScore, isGameOver: isWin, isWin });
@@ -41,9 +39,7 @@ export const useSnakeGameStore = create<SnakeGameState>()(
       const isWin = get().score >= 20;
 
       if (isOver) {
-        const finalCoins = isWin ? 5 : 2;
-        useApiStore.getState().executeAction("mini_game_reward", finalCoins);
-        useMainGameStore.setState({ gameOverResult: { isWin, rewardText: `+${finalCoins}` } });
+        useMainGameStore.getState().setGameOver(nextScore, undefined, isWin);
         if (!isWin) usePetStore.getState().handleGameLoss();
       }
 

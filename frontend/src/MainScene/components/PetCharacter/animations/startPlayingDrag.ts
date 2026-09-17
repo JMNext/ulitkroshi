@@ -100,7 +100,6 @@ export const startPlayingDrag = (
         };
 
         requestAnimationFrame(animate);
-        usePetStore.getState().triggerCareAction("play");
       },
       onEnd: onDragEndCallback
     },

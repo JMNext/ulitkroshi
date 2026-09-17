@@ -1,18 +1,24 @@
 import { toPng } from "html-to-image";
+import Phaser from "phaser";
+
+interface CustomWindow extends Window {
+  phaserGame: Phaser.Game | null;
+}
 
 export const takeScreenshot = async () => {
   const canvasElement = document.querySelector("canvas");
   const gameContainer = canvasElement?.parentElement;
   const uiRoot = gameContainer?.querySelector(".phaser-ui-root-container") as HTMLDivElement;
+  const customWindow = window as unknown as CustomWindow;
 
-  if (!gameContainer || !canvasElement || !uiRoot || !window.phaserGame) return;
+  if (!gameContainer || !canvasElement || !uiRoot || !customWindow.phaserGame) return;
 
   try {
     const width = gameContainer.clientWidth;
     const height = gameContainer.clientHeight;
     const pRatio = window.devicePixelRatio || 2;
 
-    window.phaserGame.renderer.snapshot((snapshotImage: any) => {
+    customWindow.phaserGame.renderer.snapshot((snapshotImage: unknown) => {
       if (!snapshotImage || !(snapshotImage instanceof HTMLImageElement)) return;
 
       uiRoot.style.pointerEvents = "auto";
@@ -23,7 +29,7 @@ export const takeScreenshot = async () => {
         skipFonts: true,
         width: width,
         height: height,
-        filter: (node: any) => !(node instanceof HTMLElement && node.innerText === "✕")
+        filter: (node: Node) => !(node instanceof HTMLElement && node.innerText === "✕")
       })
         .then(async (uiDataUrl) => {
           uiRoot.style.pointerEvents = "none";
@@ -50,7 +56,7 @@ export const takeScreenshot = async () => {
           link.href = dataUrl;
           link.click();
         })
-        .catch((uiError) => {
+        .catch((uiError: unknown) => {
           uiRoot.style.pointerEvents = "none";
           console.error("[SCREENSHOT] Ошибка интерфейса:", uiError);
         });

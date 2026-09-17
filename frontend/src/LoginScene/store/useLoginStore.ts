@@ -19,10 +19,10 @@ const initialValues = {
   height: 0,
   scale: 1,
   isVert: true
-} as const; // Зафиксировали неизменяемость дефолтных настроек
+} as const;
 
 let activeAnimationFrameId: number | null = null;
-let activeTimeoutId: ReturnType<typeof setTimeout> | null = null; // Заменили any на строгий тип таймера
+let activeTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 const clearActiveTimers = () => {
   if (activeAnimationFrameId) cancelAnimationFrame(activeAnimationFrameId);

@@ -1,4 +1,5 @@
 import { useRegistrationStep2Store } from "@/Registration/Step_2/store/useRegistrationStep2Store";
+import { registerSceneEvent } from "@/eventbus/registerSceneEvent";
 import Phaser from "phaser";
 import React from "react";
 import { createRoot, Root } from "react-dom/client";
@@ -21,7 +22,7 @@ export class Step2Scene extends Phaser.Scene {
   private syncStore(): void {
     const store = useRegistrationStep2Store.getState();
     store.setPhaserScene(this);
-    store.clearError();
+    store.clearErrors();
     store.checkSavedDevicePhone(() => this.triggerResize());
   }
 
@@ -44,22 +45,33 @@ export class Step2Scene extends Phaser.Scene {
     this.backgroundIm = this.add.image(width / 2, height / 2, `step2_bg_fon_${initialOrientation}`).setOrigin(0.5).setDepth(-2);
     this.currentOrientation = initialOrientation;
 
-    this.uiContainer = document.createElement("div");
-    this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden";
-    (document.getElementById("game-container") || document.body).appendChild(this.uiContainer);
+    this.mountReactUI();
 
     if (width && height) this.executeResizeLogic(width, height);
     this.syncStore();
 
-    this.reactRoot = createRoot(this.uiContainer);
-    this.reactRoot.render(<Step2UiManager phaserScene={this} />);
-
     this.scale.on("resize", this.triggerResize, this);
-    this.events.on("wake", this.handleWake, this);
-    this.events.on("sleep", this.handleSleep, this);
-    this.events.once("shutdown", this.cleanUp, this);
+
+    this.sys.events
+      .on("wake", this.handleWake, this)
+      .on("sleep", this.handleSleep, this)
+      .once("shutdown", this.cleanUp, this);
+
+    registerSceneEvent(this, "step2_scene_start", this.handleExternalStart.bind(this));
+    registerSceneEvent(this, "step2_scene_stop", this.handleExternalStop.bind(this));
 
     this.triggerResize();
+  }
+
+  private mountReactUI(): void {
+    if (this.uiContainer) return;
+
+    this.uiContainer = document.createElement("div");
+    this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden";
+    (document.getElementById("game-container") || document.body).appendChild(this.uiContainer);
+
+    this.reactRoot = createRoot(this.uiContainer);
+    this.reactRoot.render(<Step2UiManager phaserScene={this} />);
   }
 
   public triggerResize(): void {
@@ -67,6 +79,16 @@ export class Step2Scene extends Phaser.Scene {
     const width = Number(this.scale.width);
     const height = Number(this.scale.height);
     if (width && height) this.executeResizeLogic(width, height);
+  }
+
+  private handleExternalStart(): void {
+    this.scene.start();
+  }
+
+  private handleExternalStop(): void {
+    if (this.sys.isActive()) {
+      this.scene.stop();
+    }
   }
 
   private executeResizeLogic(width: number, height: number): void {
@@ -105,21 +127,26 @@ export class Step2Scene extends Phaser.Scene {
   }
 
   private handleWake(): void {
-    this.uiContainer?.classList.remove("hidden");
-    useRegistrationStep2Store.getState().setPhaserScene(this);
+    this.mountReactUI();
     this.syncStore();
   }
 
   private handleSleep(): void {
-    this.uiContainer?.classList.add("hidden");
+    try {
+      this.reactRoot?.unmount();
+    } catch (_) {}
+    this.uiContainer?.remove();
+    this.reactRoot = null;
+    this.uiContainer = null;
   }
 
   private cleanUp(): void {
     this.scale.off("resize", this.triggerResize, this);
-    this.events.off("wake", this.handleWake, this);
-    this.events.off("sleep", this.handleSleep, this);
-    useRegistrationStep2Store.getState().setPhaserScene(null);
-    this.reactRoot?.unmount();
+    this.sys.events.off("wake", this.handleWake, this).off("sleep", this.handleSleep, this);
+    useRegistrationStep2Store.getState().resetStore();
+    try {
+      this.reactRoot?.unmount();
+    } catch (_) {}
     this.uiContainer?.remove();
     this.reactRoot = this.uiContainer = null;
   }

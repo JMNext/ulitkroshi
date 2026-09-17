@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from "react";
 
 export const ProfileEdit = NiceModal.create(() => {
   const modal = useModal();
-  const { username, avatarId, userId, setUsername, resetStore } = useMainGameStore();
+  const { username, avatarId, userId, setUsername, startScanner, resetStore } = useMainGameStore();
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(username);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -110,7 +110,7 @@ export const ProfileEdit = NiceModal.create(() => {
               type="button"
               onClick={() => {
                 modal.hide();
-                window.phaserGame?.scene.start("ScannerScene");
+                startScanner();
               }}
               className="mx-auto mt-6 flex h-[48px] w-full max-w-[280px] cursor-pointer items-center justify-center rounded-[24px] border-0 bg-[#ff9800] text-[15px] font-black text-white uppercase shadow-sm active:scale-[0.98]"
             >

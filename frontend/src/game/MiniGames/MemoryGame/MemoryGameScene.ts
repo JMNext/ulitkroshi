@@ -1,4 +1,5 @@
-import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
+import { registerSceneEvent } from "@/eventbus/registerSceneEvent";
+import { EventBus } from "@/eventbus/EventBus";
 import { Scene } from "phaser";
 import { MemoryGameGrid } from "./components/MemoryGameGrid";
 import { MemoryGameOverlay } from "./components/MemoryGameOverlay";
@@ -14,14 +15,13 @@ export class MemoryGameScene extends Scene {
   public gridManager!: MemoryGameGrid;
   private bgImage: Phaser.GameObjects.Image | null = null;
   private unsubscribeStore: (() => void) | null = null;
-  private unsubscribeGameOver: (() => void) | null = null;
 
   constructor() {
     super("MemoryGameScene");
   }
 
   public init(data: { difficulty?: "easy" | "medium" | "hard" }): void {
-    this.difficulty = data.difficulty || "medium";
+    this.difficulty = data?.difficulty || "medium";
     this.totalPairs = this.difficulty === "hard" ? 8 : this.difficulty === "easy" ? 4 : 6;
     this.overlayManager = new MemoryGameOverlay(this);
     this.gridManager = new MemoryGameGrid(this);
@@ -59,20 +59,17 @@ export class MemoryGameScene extends Scene {
       () => this.gridManager.updateVisuals()
     );
 
-    this.unsubscribeGameOver = useMemoryGameStore.subscribe(
-      (s) => s.isGameOver,
-      (isGameOver) => {
-        if (isGameOver) useMainGameStore.getState().addTestCoins();
-      }
-    );
-
     this.time.delayedCall(2200, () => {
       useMemoryGameStore.setState({ isPreview: false });
       this.gridManager.updateVisuals();
       this.time.delayedCall(400, () => this.gridManager.runMixAnimation());
     });
 
-    this.events.once("shutdown", () => this.cleanup());
+    this.events.once("shutdown", () => this.cleanup(), this);
+
+    registerSceneEvent(this, "minigame_memory_start", () => {
+      this.scene.start("MemoryGameScene");
+    });
   }
 
   private handleResize = (): void => {
@@ -89,15 +86,21 @@ export class MemoryGameScene extends Scene {
 
   public exitGameSession = (): void => {
     window.dispatchEvent(new CustomEvent("minigame_stopped"));
+
+    EventBus.emit("minigame_stop_to_main");
+    EventBus.emit("main_scene_wake");
+
     this.scene.stop(this.scene.key);
-    if (this.scene.manager.isSleeping("MainScene")) this.scene.wake("MainScene");
-    else this.scene.start("MainScene");
+    if (this.scene.manager.isSleeping("MainScene")) {
+      this.scene.wake("MainScene");
+    } else {
+      this.scene.start("MainScene");
+    }
   };
 
   private cleanup(): void {
     this.scale.off("resize", this.handleResize, this);
     this.unsubscribeStore?.();
-    this.unsubscribeGameOver?.();
     this.overlayManager?.destroy();
     this.gridManager?.destroy();
     useMemoryGameStore.getState().resetStore();

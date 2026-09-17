@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev:front": "vite",
-    "dev:back": "tsx backend/index.ts",
+    "dev:back": "tsx backend/server.ts",
     "dev": "concurrently \"npm run dev:front\" \"npm run dev:back\"",
     "build:front": "tsc && vite build",
     "build:back": "tsc --project tsconfig.backend.json",

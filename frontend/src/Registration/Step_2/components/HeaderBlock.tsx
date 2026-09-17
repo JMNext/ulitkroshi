@@ -19,23 +19,36 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 
 export const HeaderBlock = () => {
-  const { mode, secs, attempts, errorMessage, sendPhone, startTimer } = useRegistrationStep2Store();
+  const {
+    isLogin,
+    loginError,
+    registerMode,
+    registerSecs,
+    registerAttempts,
+    registerError,
+    sendRegisterPhone,
+    startRegisterTimer
+  } = useRegistrationStep2Store();
+
+  const currentMode = isLogin ? "phone" : registerMode;
+  const currentError = isLogin ? loginError : registerError;
+  const currentAttempts = isLogin ? 0 : registerAttempts;
 
   const handleResendClick = async () => {
-    if (secs <= 0) {
-      await sendPhone();
-      startTimer();
+    if (registerSecs <= 0) {
+      await sendRegisterPhone();
+      startRegisterTimer();
     }
   };
 
-  const isTimerActive = secs > 0;
+  const isTimerActive = registerSecs > 0;
+  const isRealError = currentError && currentError !== "user_not_found";
 
-  const isRealError = errorMessage && errorMessage !== "user_not_found";
-
-  const titleStr = isRealError ? (ERROR_MESSAGES[errorMessage ?? ""] ||
-    (errorMessage === "wrong_code" ? MESSAGES.wrongCode(3 - attempts) :
-    (mode === "code" ? MESSAGES.enterCode : MESSAGES.enterPhone))) :
-    (mode === "code" ? MESSAGES.enterCode : MESSAGES.enterPhone);
+  const titleStr = isRealError
+    ? (ERROR_MESSAGES[currentError ?? ""] ||
+      (currentError === "wrong_code" ? MESSAGES.wrongCode(3 - currentAttempts) :
+      (currentMode === "code" ? MESSAGES.enterCode : MESSAGES.enterPhone)))
+    : (currentMode === "code" ? MESSAGES.enterCode : MESSAGES.enterPhone);
 
   return (
     <div className="pointer-events-none relative flex h-[140px] w-[460px] shrink-0 origin-center items-center justify-center font-black transition-all duration-150 select-none">
@@ -48,7 +61,7 @@ export const HeaderBlock = () => {
         >
           {titleStr}
         </h2>
-        {mode === "code" && (
+        {currentMode === "code" && (
           <button
             type="button"
             onClick={handleResendClick}
@@ -58,7 +71,7 @@ export const HeaderBlock = () => {
               isTimerActive ? "cursor-not-allowed text-slate-400" : "cursor-pointer text-emerald-600 hover:text-emerald-700"
             )}
           >
-            {isTimerActive ? MESSAGES.resendWithTimer(secs) : MESSAGES.resendReady}
+            {isTimerActive ? MESSAGES.resendWithTimer(registerSecs) : MESSAGES.resendReady}
           </button>
         )}
       </div>

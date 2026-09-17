@@ -5,6 +5,8 @@ import { createRoot, Root } from "react-dom/client";
 import { MemoryGameScene } from "../MemoryGameScene";
 import { useMemoryGameStore } from "../store/useMemoryGameStore";
 
+type MemoryDifficulty = "easy" | "medium" | "hard" | "memory";
+
 export class MemoryGameOverlay {
   private root: Root | null = null;
   private container: HTMLDivElement | null = null;
@@ -13,13 +15,13 @@ export class MemoryGameOverlay {
 
   public create = (): void => {
     const gameContainer = document.getElementById("game-container") || document.body;
-    const existing = document.getElementById("phaser-catch-root");
+    const existing = document.getElementById("phaser-memory-root");
     if (existing) {
       this.container = existing as HTMLDivElement;
       return;
     }
     this.container = document.createElement("div");
-    this.container.id = "phaser-catch-root";
+    this.container.id = "phaser-memory-root";
     this.container.className = "absolute inset-0 w-full h-full z-50 overflow-hidden bg-transparent pointer-events-none";
     gameContainer.appendChild(this.container);
   };
@@ -53,7 +55,7 @@ export class MemoryGameOverlay {
             React.createElement(GameOverModalUI, {
               score: score,
               isWin: isGameOver,
-              difficulty: "memory" as any,
+              difficulty: "memory" as MemoryDifficulty,
               onRestart: () => this.scene.restartGame(),
               onBack: () => this.scene.exitGameSession()
             })

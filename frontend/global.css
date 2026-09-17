@@ -26,8 +26,9 @@
   html,
   body,
   #root {
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
+    height: -webkit-fill-available;
     margin: 0;
     padding: 0;
     overflow: hidden;
@@ -42,27 +43,35 @@
 
 @font-face {
   font-family: "Arteks-Forced";
-  src: local("Arteks Regular"), local("ArteksRegular"), url("/fonts/Arteks%20Regular.otf") format("opentype");
+  src: url("./fonts/Arteks Regular.otf") format("opentype"),
+       url("/fonts/Arteks Regular.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 @font-face {
   font-family: "Arteks-Forced";
-  src: local("Arteks Medium"), local("ArteksMedium"), url("/fonts/Arteks%20Medium.otf") format("opentype");
+  src: url("./fonts/Arteks Medium.otf") format("opentype"),
+       url("/fonts/Arteks Medium.otf") format("opentype");
   font-weight: 500;
   font-style: normal;
+  font-display: swap;
 }
 @font-face {
   font-family: "Arteks-Forced";
-  src: local("Arteks Bold"), local("ArteksBold"), url("/fonts/Arteks%20Bold.otf") format("opentype");
+  src: url("./fonts/Arteks Bold.otf") format("opentype"),
+       url("/fonts/Arteks Bold.otf") format("opentype");
   font-weight: 700;
   font-style: normal;
+  font-display: swap;
 }
 @font-face {
   font-family: "Arteks-Forced";
-  src: local("Arteks Black"), local("ArteksBlack"), url("/fonts/Arteks%20Black.otf") format("opentype");
+  src: url("./fonts/Arteks Black.otf") format("opentype"),
+       url("/fonts/Arteks Black.otf") format("opentype");
   font-weight: 900;
   font-style: normal;
+  font-display: swap;
 }
 
 #game-container {
@@ -80,12 +89,32 @@
     max-height: 100%;
   }
 
-  & > div {
+  & .phaser-ui-root-container {
     position: absolute;
     top: 0;
     left: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
     overflow: hidden;
-    will-change: opacity;
+    will-change: opacity, transform;
+    z-index: 10;
   }
+
+  & .phaser-ui-root-container * {
+    pointer-events: auto;
+  }
+
+  & .phaser-ui-root-container .pointer-events-none,
+  & .phaser-ui-root-container .pointer-events-none * {
+    pointer-events: none;
+  }
+}
+
+.pointer-events-auto {
+  pointer-events: auto !important;
+}
+
+.pointer-events-none {
+  pointer-events: none !important;
 }

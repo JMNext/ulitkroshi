@@ -1,9 +1,15 @@
 import { CloseButton } from "@/CloseButton/CloseButton";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
+import { EventBus } from "@/eventbus/EventBus";
 import NiceModal, { useModal } from "@ebay/nice-modal-react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Phaser from "phaser";
 import { BTN_BASE_CLASS, GAME_COLORS, GAME_SVGS, GAMES, MODES } from "./constants/games.constants";
+
+interface CustomWindow extends Window {
+  phaserGame: Phaser.Game | null;
+}
 
 export const MiniGamesModal = NiceModal.create(() => {
   const modal = useModal();
@@ -15,21 +21,40 @@ export const MiniGamesModal = NiceModal.create(() => {
   const isBlocked = hp < 10 || ["sleep_circle", "sleep_begin", "sleep_awake"].includes(currentAnim);
   const isMainView = view === "main";
 
-  // Сброс стейта происходит в момент изменения видимости Dialog.Root (onOpenChange)
+  useEffect(() => {
+    if (modal.visible) {
+      setView("main");
+      setSelectedScene("");
+    }
+  }, [modal.visible]);
+
   const handleClose = () => {
+    setView("main");
+    setSelectedScene("");
     modal.hide();
   };
 
   const handleResetState = (open: boolean) => {
     if (!open) {
-      modal.hide();
       setView("main");
       setSelectedScene("");
+      modal.hide();
     }
   };
 
-  const handleSelectMode = (difficulty: string) => {
-    const phaserGame = (window as any).phaserGame;
+  const handleSelectMode = (difficulty: "easy" | "medium" | "hard") => {
+    EventBus.emit("main_scene_sleep");
+
+    if (selectedScene === "CatchGameScene") {
+      EventBus.emit("minigame_catch_start", { difficulty });
+    } else if (selectedScene === "MemoryGameScene") {
+      EventBus.emit("minigame_memory_start");
+    } else if (selectedScene === "SnakeGameScene") {
+      EventBus.emit("minigame_snake_start", { difficulty });
+    }
+
+    const customWindow = window as unknown as CustomWindow;
+    const phaserGame = customWindow.phaserGame;
     if (phaserGame) {
       phaserGame.scene.getScene("MainScene")?.scene.sleep();
       phaserGame.scene.start(selectedScene, { difficulty });
@@ -97,7 +122,7 @@ export const MiniGamesModal = NiceModal.create(() => {
                     <button
                       key={mode.diff}
                       type="button"
-                      onClick={() => handleSelectMode(mode.diff)}
+                      onClick={() => handleSelectMode(mode.diff as "easy" | "medium" | "hard")}
                       className={`${BTN_BASE_CLASS} h-[48px] text-[15px]`}
                       style={{ backgroundColor: mode.bgColor, color: mode.textColor }}
                     >

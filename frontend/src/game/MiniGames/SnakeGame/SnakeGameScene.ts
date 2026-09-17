@@ -1,4 +1,6 @@
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
+import { registerSceneEvent } from "@/eventbus/registerSceneEvent";
+import { EventBus } from "@/eventbus/EventBus";
 import { Scene } from "phaser";
 import { SnakeGameLogicManager } from "./components/SnakeGameLogicManager";
 import { SnakeGameOverlay } from "./components/SnakeGameOverlay";
@@ -22,7 +24,7 @@ export class SnakeGameScene extends Scene {
   }
 
   public init(data: { difficulty?: "easy" | "medium" | "hard" }): void {
-    this.difficulty = data.difficulty || "medium";
+    this.difficulty = data?.difficulty || "medium";
     this.score = 0;
     this.hp = 100;
     const speed = this.difficulty === "hard" ? 120 : this.difficulty === "easy" ? 340 : 200;
@@ -77,7 +79,12 @@ export class SnakeGameScene extends Scene {
     });
 
     if (this.input.keyboard) this.cursors = this.input.keyboard.createCursorKeys();
-    this.events.once("shutdown", () => this.cleanup());
+
+    this.sys.events.once("shutdown", () => this.cleanup(), this);
+
+    registerSceneEvent(this, "minigame_snake_start", (data) => {
+      this.scene.start("SnakeGameScene", data);
+    });
   }
 
   public update(time: number): void {
@@ -110,9 +117,16 @@ export class SnakeGameScene extends Scene {
     const snakeState = useSnakeGameStore.getState();
     if (!snakeState.isGameOver && snakeState.score < 20) usePetStore.getState().handleGameLoss();
     window.dispatchEvent(new CustomEvent("minigame_stopped"));
+
+    EventBus.emit("minigame_stop_to_main");
+    EventBus.emit("main_scene_wake");
+
     this.scene.stop(this.scene.key);
-    if (this.scene.manager.isSleeping("MainScene")) this.scene.wake("MainScene");
-    else this.scene.start("MainScene");
+    if (this.scene.manager.isSleeping("MainScene")) {
+      this.scene.wake("MainScene");
+    } else {
+      this.scene.start("MainScene");
+    }
   };
 
   private cleanup(): void {
