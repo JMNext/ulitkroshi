@@ -27,9 +27,6 @@ export function Step1UiManager({ phaserScene }: Step1UiManagerProps) {
     if (phaserScene.sys.isActive()) {
       phaserScene.triggerResize();
     }
-    return () => {
-      useRegistrationStep1Store.getState().setStage(1);
-    };
   }, [phaserScene]);
 
   if (!layoutContext) return null;
@@ -37,6 +34,27 @@ export function Step1UiManager({ phaserScene }: Step1UiManagerProps) {
   const isMobile = layoutContext.screenMode === "mobile" || layoutContext.screenMode === "fold";
   const sharedTransform = `translate(-50%, -50%) scale(${isMobile ? 1.2 : 1})`;
   const sharedTop = isMobile ? "965px" : "910px";
+
+  const handleNextComplete = () => {
+    if (!phaserScene.sys.isActive()) return;
+
+    phaserScene.cameras.main.fadeOut(200, 0, 0, 0);
+    phaserScene.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      if (!phaserScene.sys.isActive()) return;
+
+      EventBus.emit("step1_scene_stop");
+      EventBus.emit("step2_scene_start");
+
+      if (typeof window !== "undefined") {
+        const customWindow = window as unknown as CustomWindow;
+        const game = customWindow.phaserGame;
+        if (game) {
+          game.scene.stop("Step1Scene");
+          game.scene.start("Step2Scene");
+        }
+      }
+    });
+  };
 
   return (
     <div className="pointer-events-none absolute inset-0 h-full w-full overflow-hidden select-none">
@@ -72,25 +90,7 @@ export function Step1UiManager({ phaserScene }: Step1UiManagerProps) {
 
         {stage === 4 && (
           <div className="pointer-events-none absolute left-1/2 z-10 origin-center" style={{ top: sharedTop, transform: sharedTransform }}>
-            <NextButton
-              onComplete={() => {
-                if (!phaserScene.sys.isActive()) return;
-                phaserScene.cameras.main.fadeOut(200, 0, 0, 0);
-                phaserScene.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-                  EventBus.emit("step1_scene_stop");
-                  EventBus.emit("step2_scene_start");
-
-                  if (typeof window !== "undefined") {
-                    const customWindow = window as unknown as CustomWindow;
-                    const game = customWindow.phaserGame;
-                    if (game) {
-                      game.scene.stop("Step1Scene");
-                      game.scene.start("Step2Scene");
-                    }
-                  }
-                });
-              }}
-            />
+            <NextButton onComplete={handleNextComplete} />
           </div>
         )}
       </div>

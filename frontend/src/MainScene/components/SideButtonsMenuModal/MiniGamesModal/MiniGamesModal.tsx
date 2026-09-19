@@ -26,6 +26,10 @@ export const MiniGamesModal = NiceModal.create(() => {
       setView("main");
       setSelectedScene("");
     }
+    return () => {
+      setView("main");
+      setSelectedScene("");
+    };
   }, [modal.visible]);
 
   const handleClose = () => {
@@ -36,9 +40,7 @@ export const MiniGamesModal = NiceModal.create(() => {
 
   const handleResetState = (open: boolean) => {
     if (!open) {
-      setView("main");
-      setSelectedScene("");
-      modal.hide();
+      handleClose();
     }
   };
 

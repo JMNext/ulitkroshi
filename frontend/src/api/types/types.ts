@@ -6,7 +6,6 @@ export interface UserProfile {
   coins: number;
   unlockedPets: number[];
   petName: string;
-  petStatus: string;
   petHealth: number;
 }
 

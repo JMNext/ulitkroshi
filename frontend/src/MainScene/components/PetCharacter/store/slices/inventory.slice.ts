@@ -18,14 +18,19 @@ export const createInventorySlice: StateCreator<PetStateCombined, [], [], Invent
     if (!isStd && hp >= 100 && rHp) return "FULL_HP";
     const isEmpty = (inventory.counts[id] ?? 0) <= 0;
     const std = isStd || isEmpty;
-    const now = Date.now();
-    if (!std && now < (inventory.cooldowns[id] ?? 0)) return "COOLDOWN_OR_EMPTY";
+
+    if (!std && performance.now() < (inventory.cooldowns[id] ?? 0)) return "COOLDOWN_OR_EMPTY";
+
     const nextHp = Math.min(100, hp + (std ? (hp < 10 ? 1 : 0) : rHp ? val : 0));
     let nextAnim = currentAnim;
     if (nextHp > 25 && currentAnim === "sad_state") {
       nextAnim = "prostoi1";
       playVideo(nextAnim);
     }
+
+    const cdOffset = std ? 10000 : !rHp ? 180000 : val === 100 ? 300000 : val <= 25 ? 95000 : 180000;
+    const nextCd = performance.now() + cdOffset;
+
     set({
       hp: nextHp,
       miniGamesClickCount: 0,
@@ -33,9 +38,7 @@ export const createInventorySlice: StateCreator<PetStateCombined, [], [], Invent
       inventory: {
         ...inventory,
         counts: std ? inventory.counts : { ...inventory.counts, [id]: inventory.counts[id] - 1 },
-        cooldowns: std
-          ? inventory.cooldowns
-          : { ...inventory.cooldowns, [id]: now + (std ? 10000 : !rHp ? 180000 : val === 100 ? 300000 : val <= 25 ? 95000 : 180000) },
+        cooldowns: std ? inventory.cooldowns : { ...inventory.cooldowns, [id]: nextCd },
         currentId: id && (std ? inventory.counts[id] : inventory.counts[id] - 1) <= 0 ? "" : inventory.currentId
       }
     });

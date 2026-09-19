@@ -1,8 +1,6 @@
-import { useApiStore } from "@/api/store/useApiStore";
+import { api } from "@/api/api";
 import { StateCreator } from "zustand";
-import { LoginState, Step3CombinedState, clearTimers, setShakeTimeoutId, setClearFruitsTimeoutId } from "../useRegistrationStep3Store";
-
-const LETTERS_LOOKUP = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p"] as const;
+import { LoginState, Step3CombinedState, setShakeTimeoutId, setClearFruitsTimeoutId } from "../useRegistrationStep3Store";
 
 export const createLoginSlice: StateCreator<Step3CombinedState, [], [], LoginState> = (set, get) => ({
   loginSel: [],
@@ -16,7 +14,9 @@ export const createLoginSlice: StateCreator<Step3CombinedState, [], [], LoginSta
     const { loginMode, loginSel, isLoginSubmitting, loginAttempts } = get();
     if (loginMode === "error" || isLoginSubmitting || loginAttempts >= 3) return;
 
-    const next = loginSel.includes(id) ? loginSel.filter((v) => v !== id) : [...loginSel, id];
+    if (loginSel.includes(id)) return;
+
+    const next = [...loginSel, id];
     if (next.length > 4) return;
     set({ loginSel: next, loginError: "" });
 
@@ -25,8 +25,6 @@ export const createLoginSlice: StateCreator<Step3CombinedState, [], [], LoginSta
 
       const handleFailure = () => {
         const nextAttempts = loginAttempts + 1;
-        clearTimers();
-
         if (nextAttempts >= 3) {
           set({ isLoginSubmitting: false, loginMode: "error", loginShake: true, loginAttempts: nextAttempts, loginError: "wrong_fruit" });
         } else {
@@ -39,13 +37,13 @@ export const createLoginSlice: StateCreator<Step3CombinedState, [], [], LoginSta
       try {
         const savedPhone = localStorage.getItem("login_phone_buffer") || "";
         const realSessionId = localStorage.getItem("active_reg_session_id") || sessionId;
+        const numericStringCode = next.join("");
 
-        const stringLetterCode = next.map((fruitId) => LETTERS_LOOKUP[fruitId] || "a").join("");
-
-        await useApiStore.getState().verifyFruit(realSessionId, stringLetterCode, savedPhone);
+        await api.verifyFruit(realSessionId, numericStringCode, savedPhone);
         set({ isLoginSubmitting: false, loginSel: [] });
         onComplete();
-      } catch {
+      } catch (error) {
+        console.error("🚨 [ZUSTAND LOGIN ERR]:", error);
         handleFailure();
       }
     }

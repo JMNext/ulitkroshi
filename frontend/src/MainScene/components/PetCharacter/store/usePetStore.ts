@@ -37,7 +37,7 @@ export interface PetStateCombined extends InventoryState, PetLogicState {
   resetStore: () => void;
 }
 
-const _videos: Record<string, HTMLVideoElement | null> = {};
+let _videos: Record<string, HTMLVideoElement | null> = {};
 
 export const usePetStore = create<PetStateCombined>()((set, get, ...a) => ({
   petName: useApiStore.getState().user?.petName || "Улитка",
@@ -49,9 +49,11 @@ export const usePetStore = create<PetStateCombined>()((set, get, ...a) => ({
 
   getVideoElements: () => _videos,
   registerVideoElement: (key, el) => {
-    _videos[key] = el;
-    if (el && (get().currentAnim === key || (!["wash", "play", "eat", "sad_state"].includes(key) && !key.startsWith("sleep") && el.paused)))
-      get().playVideo(key);
+    if (!el) {
+      delete _videos[key];
+    } else {
+      _videos[key] = el;
+    }
   },
   updateField: (field, value) => set((state) => ({ ...state, [field]: value })),
 
@@ -68,14 +70,22 @@ export const usePetStore = create<PetStateCombined>()((set, get, ...a) => ({
       hp: 100,
       miniGamesClickCount: 0,
       activePetIndex: 0,
-      unlockedPetIndexes: [0],
+      unlockedPetIndexes:[0],
       currentAnim: "prostoi1",
       washState: "idle",
       petTargetX: 960,
       petTargetY: 518,
       inventory: getInitInventory()
     });
-    Object.keys(_videos).forEach((k) => (_videos[k] = null));
+    Object.keys(_videos).forEach((k) => {
+      const v = _videos[k];
+      if (v) {
+        v.pause();
+        v.removeAttribute("src");
+        v.load();
+      }
+    });
+    _videos = {};
     localStorage.setItem("mock_unlocked_pets", JSON.stringify([0]));
   }
 }));

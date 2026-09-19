@@ -33,13 +33,23 @@ export const createWalletSlice: StateCreator<ApiStateCombined, [], [], WalletSli
     let amountToSendToServer = total;
 
     if (actionType === "mini_game_reward") {
-      let earned = 0;
-      if (typeof difficulty === "string")
-        earned = difficulty === "memory" ? total : total === 999 || total >= 20 ? (difficulty === "hard" ? 2 : 1) : 2;
-      else if (typeof difficulty === "boolean") earned = difficulty ? 1 : 2;
-      else earned = total === 999 ? 1 : total >= 20 ? 10 : 3;
+      if (!isMock && total >= 5000) {
+        return true;
+      }
 
-      nextCoins += earned;
+      let earned = total;
+      if (earned === 0) {
+        if (typeof difficulty === "string")
+          earned = difficulty === "memory" ? total : total === 999 || total >= 20 ? (difficulty === "hard" ? 2 : 1) : 2;
+        else if (typeof difficulty === "boolean") earned = difficulty ? 1 : 2;
+        else earned = total === 999 ? 1 : total >= 20 ? 10 : 3;
+      }
+
+      if (!isMock) {
+        earned = total >= 5000 ? 0 : total;
+      }
+
+      nextCoins = nextCoins + earned;
       amountToSendToServer = earned;
     } else if (actionType === "buy_medicine") {
       nextCoins = Math.max(0, nextCoins - 30);
@@ -51,13 +61,18 @@ export const createWalletSlice: StateCreator<ApiStateCombined, [], [], WalletSli
     saveLocalCoins(nextCoins);
     set({ coins: nextCoins });
 
+    if (!isMock && actionType === "mini_game_reward" && amountToSendToServer === 0) {
+      return true;
+    }
+
     try {
       const res = await api.updateCoins(actionType, amountToSendToServer);
       const serverCoins = res && typeof res.coins === "number" ? res.coins : nextCoins;
       saveLocalCoins(serverCoins);
       set({ coins: serverCoins });
       return true;
-    } catch {
+    } catch (err) {
+      console.error("🚨 [FRONTEND WALLET CATCH ERROR]:", err);
       return isMock;
     }
   }

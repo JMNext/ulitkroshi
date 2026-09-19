@@ -67,8 +67,8 @@ export class MemoryGameScene extends Scene {
 
     this.events.once("shutdown", () => this.cleanup(), this);
 
-    registerSceneEvent(this, "minigame_memory_start", () => {
-      this.scene.start("MemoryGameScene");
+    registerSceneEvent(this, "minigame_memory_start", (data) => {
+      this.scene.start("MemoryGameScene", data);
     });
   }
 

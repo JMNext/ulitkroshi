@@ -28,18 +28,37 @@ export const PetCharacter = ({ styles, alertText, onAnimationEnd }: PetCharacter
       if (currentAnim === key) {
         video.currentTime = 0;
         video.play().catch(() => {});
-      } else if (!ACTION_ANIMATIONS.includes(key) && key !== "sad_state" && !key.startsWith("sleep")) {
-        if (video.paused) video.play().catch(() => {});
       } else {
-        video.pause();
+        if (!video.paused) {
+          video.pause();
+        }
         video.currentTime = 0;
       }
     });
   }, [currentAnim, getVideoElements]);
 
+  useEffect(() => {
+    return () => {
+      const videos = getVideoElements();
+      ALL_ANIM_KEYS.forEach((key) => {
+        const video = videos[key];
+        if (video) {
+          video.pause();
+          video.removeAttribute("src");
+          video.load();
+        }
+        registerVideoElement(key, null);
+      });
+    };
+  }, [getVideoElements, registerVideoElement]);
+
   const handleVideoEnded = (animKey: string) => {
-    if (animKey === currentAnim) {
-      completeCareAction();
+    if (animKey !== currentAnim) return;
+    if (LOOPING_ANIMATIONS.includes(animKey)) return;
+
+    completeCareAction();
+
+    if (animKey !== "sleep_begin") {
       onAnimationEnd(animKey);
     }
   };

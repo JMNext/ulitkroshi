@@ -25,12 +25,14 @@ export const LoginUiManager = ({ phaserScene }: LoginUiProps) => {
     if (updateField) {
       updateField("status", "button");
     }
-    if (phaserScene && phaserScene.triggerResize) {
+    if (phaserScene.sys.isActive()) {
       phaserScene.triggerResize();
     }
-  }, [phaserScene, updateField]);
+  }, [phaserScene, updateField, isVert, scale]);
 
   const handleSceneSwitch = (action: "login" | "register") => {
+    if (!phaserScene.sys.isActive()) return;
+
     EventBus.emit("login_scene_stop");
 
     if (action === "login") {

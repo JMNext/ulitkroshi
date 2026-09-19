@@ -23,13 +23,23 @@ export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) 
     isLogin,
     loginMode,
     loginAttempts,
-    registerMode,
+    step3Mode,
     registerAttempts,
     layoutContext,
-    computedScale
+    computedScale,
+    setIsLogin
   } = useRegistrationStep3Store();
 
-  const currentMode = isLogin ? loginMode : registerMode;
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedIsLoginFlow = localStorage.getItem("is_login_flow") === "true";
+      if (isLogin !== savedIsLoginFlow) {
+        setIsLogin(savedIsLoginFlow);
+      }
+    }
+  }, [isLogin, setIsLogin]);
+
+  const currentMode = isLogin ? loginMode : step3Mode;
   const currentAttempts = isLogin ? loginAttempts : registerAttempts;
 
   useEffect(() => {
@@ -42,6 +52,32 @@ export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) 
 
   const activeSessionId = sessionId || localStorage.getItem("active_reg_session_id") || "direct_login_session";
 
+  const handleSuccess = () => {
+    if (!phaserScene.sys.isActive()) return;
+
+    phaserScene.cameras.main.fadeOut(200, 0, 0, 0);
+    phaserScene.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      if (!phaserScene.sys.isActive()) return;
+
+      const savedIsLoginFlow = typeof window !== "undefined" && localStorage.getItem("is_login_flow") === "true";
+
+      useRegistrationStep3Store.getState().resetStore(true, true);
+      EventBus.emit("step3_scene_stop");
+
+      const targetScene = savedIsLoginFlow ? "MainScene" : "Step4Scene";
+      EventBus.emit(savedIsLoginFlow ? "main_scene_start" : "step4_scene_start", { sessionId: activeSessionId });
+
+      if (typeof window !== "undefined") {
+        const customWindow = window as unknown as CustomWindow;
+        const game = customWindow.phaserGame;
+        if (game) {
+          game.scene.stop("Step3Scene");
+          game.scene.start(targetScene, { sessionId: activeSessionId });
+        }
+      }
+    });
+  };
+
   return (
     <div className="pointer-events-none absolute inset-0 flex h-full w-full items-center justify-center overflow-hidden select-none">
       <div
@@ -49,30 +85,7 @@ export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) 
         style={{ transform: `scale(${computedScale})` }}
       >
         <CaptchaHeaderPanel />
-        <CaptchaFruitGrid
-          sessionId={activeSessionId}
-          onSuccess={() => {
-            if (!phaserScene.sys.isActive()) return;
-            phaserScene.cameras.main.fadeOut(200, 0, 0, 0);
-            phaserScene.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-              useRegistrationStep3Store.getState().resetStore(true, true);
-
-              EventBus.emit("step3_scene_stop");
-
-              const targetScene = isLogin ? "MainScene" : "Step4Scene";
-              EventBus.emit(isLogin ? "main_scene_start" : "step4_scene_start", { sessionId: activeSessionId });
-
-              if (typeof window !== "undefined") {
-                const customWindow = window as unknown as CustomWindow;
-                const game = customWindow.phaserGame;
-                if (game) {
-                  game.scene.stop("Step3Scene");
-                  game.scene.start(targetScene, { sessionId: activeSessionId });
-                }
-              }
-            });
-          }}
-        />
+        <CaptchaFruitGrid sessionId={activeSessionId} onSuccess={handleSuccess} />
         <CaptchaResetButton />
 
         {currentMode === "confirm" && currentAttempts < 3 && <CaptchaConfirmModal />}

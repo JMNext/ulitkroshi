@@ -19,7 +19,6 @@ const createMockUser = (name = "", phone = ""): UserProfile => {
     coins: mockCoinsMemory,
     unlockedPets: mockUnlockedPetsMemory,
     petName: finalPetName,
-    petStatus: "alive",
     petHealth: mockPetHealthMemory
   };
 };
@@ -38,11 +37,22 @@ export const mockApi = {
     mockPetNameMemory = "";
     mockUserNameMemory = "";
     mockPetHealthMemory = 100;
+
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("saved_user_phone");
+      localStorage.removeItem("login_phone_buffer");
+      localStorage.removeItem("active_reg_session_id");
+      localStorage.removeItem("is_login_flow");
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("local_user_coins");
+    }
   },
 
   async checkLoginPhone(phone: string): Promise<{ success: boolean; isLogin: boolean }> {
     mockPhoneMemory = phone;
-    return { success: true, isLogin: true };
+    const isRegistered = typeof window !== "undefined" && localStorage.getItem("saved_user_phone") === phone;
+    return { success: true, isLogin: isRegistered };
   },
 
   async login(phone: string, password: string): Promise<AuthResponse> {
@@ -51,6 +61,7 @@ export const mockApi = {
   },
 
   async logout(): Promise<void> {
+    this.resetMockMemory();
     return Promise.resolve();
   },
 
@@ -72,7 +83,8 @@ export const mockApi = {
   async loginPhone(phone: string, chosenPetName?: string): Promise<{ success: boolean; sessionId: string; isLogin: boolean }> {
     mockPhoneMemory = phone;
     if (chosenPetName) mockPetNameMemory = chosenPetName;
-    return { success: true, sessionId: "mock_sess_" + Date.now(), isLogin: true };
+    const isRegistered = typeof window !== "undefined" && localStorage.getItem("saved_user_phone") === phone;
+    return { success: true, sessionId: "mock_sess_" + Date.now(), isLogin: isRegistered };
   },
 
   async verifySms(phone: string, code: string): Promise<{ sessionId: string }> {
@@ -81,6 +93,18 @@ export const mockApi = {
 
   async verifyFruit(sessionId: string, fruits: string, phone?: string): Promise<AuthResponse> {
     if (phone) mockPhoneMemory = phone;
+    mockCoinsMemory = 5000;
+
+    const isLoginFlow = typeof window !== "undefined" && localStorage.getItem("is_login_flow") === "true";
+
+    if (!isLoginFlow) {
+      return {
+        accessToken: "",
+        refreshToken: "",
+        user: createMockUser("", phone)
+      };
+    }
+
     return generateMockAuth("mock_fruit");
   },
 

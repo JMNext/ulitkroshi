@@ -9,7 +9,9 @@ export const createAuthSlice: StateCreator<ApiStateCombined, [], [], AuthSliceSt
     }
     localStorage.setItem("accessToken", res.accessToken);
     localStorage.setItem("refreshToken", res.refreshToken);
-    const serverCoins = isMock ? res.user?.coins || 5000 : res.user && typeof res.user.coins === "number" ? res.user.coins : 0;
+
+    const serverCoins = isMock ? 5000 : (typeof res.user.coins === "number" ? res.user.coins : 0);
+
     if (typeof window !== "undefined") localStorage.setItem("local_user_coins", String(serverCoins));
     set({ user: res.user, token: res.accessToken, coins: serverCoins, isAuthenticated: true, isLoading: false });
     return res;
@@ -37,31 +39,14 @@ export const createAuthSlice: StateCreator<ApiStateCombined, [], [], AuthSliceSt
       }
     },
 
-    register: async (name: string, phone: string) => {
-      set({ isLoading: true, error: null });
-      try {
-        return handleAuth(await api.register({ name, phone }));
-      } catch (err) {
-        set({ isLoading: false, error: err instanceof Error ? err.message : "Ошибка" });
-        throw err;
-      }
-    },
-
-    login: async (phone: string, pass: string) => {
-      set({ isLoading: true, error: null });
-      try {
-        return handleAuth(await api.login(phone, pass));
-      } catch (err) {
-        set({ isLoading: false, error: err instanceof Error ? err.message : "Ошибка" });
-        throw err;
-      }
-    },
-
     loginPhone: async (phone: string, chosenPetName?: string) => {
       set({ isLoading: true, error: null });
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("local_user_coins");
+      }
       try {
         const res = await api.loginPhone(phone, chosenPetName);
-        set({ isLoading: false });
+        set({ isLoading: false, coins: 0 });
         return res;
       } catch (err) {
         set({ isLoading: false, error: err instanceof Error ? err.message : "Ошибка" });
@@ -81,21 +66,6 @@ export const createAuthSlice: StateCreator<ApiStateCombined, [], [], AuthSliceSt
       }
     },
 
-    verifyFruit: async (sid: string, fcode: string, phone?: string) => {
-      set({ isLoading: true, error: null });
-      try {
-        const res = await api.verifyFruit(sid, fcode, phone);
-        return handleAuth(res);
-      } catch (err) {
-        set({ isLoading: false, error: err instanceof Error ? err.message : "Ошибка капчи" });
-        throw err;
-      }
-    },
-
-    loginQr: async (qrData: string) => {
-      throw new Error("Метод не поддерживается сервером");
-    },
-
     refreshToken: async () => {
       const rt = localStorage.getItem("refreshToken");
       if (!rt) {
@@ -107,7 +77,7 @@ export const createAuthSlice: StateCreator<ApiStateCombined, [], [], AuthSliceSt
         const res = await api.refresh(rt);
         localStorage.setItem("accessToken", res.accessToken);
         localStorage.setItem("refreshToken", res.refreshToken);
-        const serverCoins = isMock ? res.user?.coins || 5000 : res.user && typeof res.user.coins === "number" ? res.user.coins : 0;
+        const serverCoins = isMock ? 5000 : (typeof res.user.coins === "number" ? res.user.coins : 0);
         if (typeof window !== "undefined") localStorage.setItem("local_user_coins", String(serverCoins));
         set({ user: res.user, token: res.accessToken, coins: serverCoins, isAuthenticated: true, isLoading: false });
         return true;

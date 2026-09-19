@@ -1,15 +1,17 @@
 import { SLEEP_SOUND_URL } from "@/MainScene/components/PetCharacter/constants/petCharacter.constants";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 
-const cachedSleepAudio = typeof window !== "undefined" ? new Audio(SLEEP_SOUND_URL) : null;
-if (cachedSleepAudio) cachedSleepAudio.loop = true;
-
+let cachedSleepAudio: HTMLAudioElement | null = null;
 let lastAnim: string | null = null;
+
+if (typeof window !== "undefined") {
+  cachedSleepAudio = new Audio(SLEEP_SOUND_URL);
+  cachedSleepAudio.loop = true;
+}
 
 usePetStore.subscribe((state) => {
   const current = state.currentAnim;
   if (current === lastAnim) return;
-
   lastAnim = current;
 
   if (cachedSleepAudio) {

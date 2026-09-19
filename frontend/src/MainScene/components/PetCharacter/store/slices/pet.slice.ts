@@ -20,7 +20,6 @@ export const createPetLogicSlice: StateCreator<PetStateCombined, [], [], PetLogi
 
   triggerCareAction: async (action) => {
     set({ currentAnim: action, washState: "hidden" });
-    get().playVideo(action);
 
     if (action === "eat") {
       try {
@@ -35,26 +34,33 @@ export const createPetLogicSlice: StateCreator<PetStateCombined, [], [], PetLogi
   },
 
   completeCareAction: () => {
-    const { currentAnim, hp, playVideo } = get();
+    const { currentAnim, hp } = get();
     let next = "prostoi1";
-    if (currentAnim === "sleep_begin") next = "sleep_circle";
-    else if (currentAnim === "sleep_awake") {
+
+    if (currentAnim === "sleep_begin") {
+      set({ currentAnim: "sleep_circle", washState: "hidden" });
+      return;
+    }
+
+    if (currentAnim === "sleep_awake") {
       window.dispatchEvent(new CustomEvent("ui_show_bubble", { detail: { text: null } }));
       useMainGameStore.getState().setAlertText(null);
       next = hp <= 25 ? "sad_state" : "prostoi1";
     } else if (["wash", "play", "eat"].includes(currentAnim)) {
       next = hp <= 25 ? "sad_state" : Math.random() < 0.3 ? "prostoi2" : "prostoi1";
     }
+
     set({ currentAnim: next, washState: next.startsWith("sleep") ? "hidden" : "idle" });
-    playVideo(next);
   },
 
-  triggerSleepAction: () =>
-    BASE_ANIMS.includes(get().currentAnim)
-      ? get().triggerCareAction("sleep_begin")
-      : get().currentAnim === "sleep_circle"
-        ? get().triggerCareAction("sleep_awake")
-        : null,
+  triggerSleepAction: () => {
+    const { currentAnim } = get();
+    if (BASE_ANIMS.includes(currentAnim)) {
+      get().triggerCareAction("sleep_begin");
+    } else if (currentAnim === "sleep_circle" || currentAnim === "sleep_begin") {
+      get().triggerCareAction("sleep_awake");
+    }
+  },
 
   incrementMiniGamesClick: () => {
     if (SLEEP_ANIMS.includes(get().currentAnim)) return PET_LOCK_BUBBLES.sleepAlert;
@@ -74,7 +80,6 @@ export const createPetLogicSlice: StateCreator<PetStateCombined, [], [], PetLogi
   handleGameLoss: () => {
     const nh = Math.max(1, get().hp - 25);
     const next = nh <= 25 && !SLEEP_ANIMS.includes(get().currentAnim) ? "sad_state" : get().currentAnim;
-    if (next === "sad_state") get().playVideo(next);
     set({ hp: nh, currentAnim: next });
     const currentUser = useApiStore.getState().user;
     if (currentUser) {

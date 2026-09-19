@@ -2,8 +2,7 @@ import { createBaseDrag } from "@/MainScene/components/PetCharacter/animations/c
 import { PLAY_SOUND_URL } from "@/MainScene/components/PetCharacter/constants/petCharacter.constants";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 
-const cachedBounceAudio = typeof window !== "undefined" ? new Audio(PLAY_SOUND_URL) : null;
-if (cachedBounceAudio) cachedBounceAudio.volume = 1.0;
+let cachedBounceAudio: HTMLAudioElement | null = null;
 
 export const startPlayingDrag = (
   initialEvent: React.PointerEvent<HTMLDivElement> | PointerEvent,
@@ -12,6 +11,11 @@ export const startPlayingDrag = (
   scale = 1,
   s = 1
 ) => {
+  if (typeof window !== "undefined" && !cachedBounceAudio) {
+    cachedBounceAudio = new Audio(PLAY_SOUND_URL);
+    cachedBounceAudio.volume = 1.0;
+  }
+
   const isPort = window.innerHeight > window.innerWidth;
   const finalX = isPort ? 1520 : 1130;
   const finalY = isPort ? 550 : 540;
@@ -64,8 +68,10 @@ export const startPlayingDrag = (
 
         let startTime: number | null = null;
         let hasPlayedSound = false;
+        let isDestroyed = false;
 
         const animate = (timestamp: number) => {
+          if (isDestroyed) return;
           if (!startTime) startTime = timestamp;
           const elapsed = timestamp - startTime;
 
@@ -92,6 +98,7 @@ export const startPlayingDrag = (
             dummy.angle = -540 * p;
             sync();
           } else {
+            isDestroyed = true;
             ballImg.remove();
             return;
           }

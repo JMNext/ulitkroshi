@@ -12,12 +12,8 @@ export interface AuthSliceState {
   error: string | null;
   clearError: () => void;
   checkName: (name: string) => Promise<{ available: boolean; suggestions?: string[] }>;
-  register: (name: string, phone: string) => Promise<AuthResponse>;
-  login: (phone: string, pass: string) => Promise<AuthResponse>;
   loginPhone: (phone: string, chosenPetName?: string) => Promise<{ success: boolean; sessionId: string; isLogin: boolean }>;
   verifySms: (phone: string, code: string) => Promise<{ sessionId: string }>;
-  verifyFruit: (sessionId: string, fruitCode: string, phone?: string) => Promise<AuthResponse>;
-  loginQr: (qrData: string) => Promise<AuthResponse>;
   refreshToken: () => Promise<boolean>;
   logout: () => Promise<void>;
 }
@@ -39,13 +35,23 @@ export const useApiStore = create<ApiStateCombined>()((set, get, ...a) => ({
   ...createWalletSlice(set, get, ...a)
 }));
 
-if (typeof window !== "undefined" && !isMock) {
-  const token = localStorage.getItem("accessToken");
-  if (token)
-    useApiStore
-      .getState()
-      .refreshToken()
-      .then((sc) => {
-        if (sc) useApiStore.getState().fetchCoins();
-      });
+if (typeof window !== "undefined") {
+  if (isMock) {
+    useApiStore.setState({ coins: 5000 });
+  } else {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      useApiStore
+        .getState()
+        .refreshToken()
+        .then((sc) => {
+          if (sc) useApiStore.getState().fetchCoins();
+        })
+        .catch(() => {
+          useApiStore.setState({ coins: 0 });
+        });
+    } else {
+      useApiStore.setState({ coins: 0 });
+    }
+  }
 }

@@ -2,53 +2,61 @@ import { StateCreator } from "zustand";
 import { DYNAMIC_BOOSTS, INVENTORY_SLOT_MAP } from "../../constants/shop.constants";
 import { CartState, ShopStateCombined } from "../useShopStore";
 
-const ERROR_CONFLICT = "В корзине уже находится другой фрукт для этого слота инвентаря!";
-
-const checkCartConflict = (targetId: number, currentCart: { [key: number]: number }): boolean => {
-  const targetItem = DYNAMIC_BOOSTS.find((b) => b.id === targetId);
-  if (!targetItem) return false;
-
-  const targetSlot = INVENTORY_SLOT_MAP[targetItem.type];
-
-  return Object.keys(currentCart).some((cartIdStr) => {
-    const cartId = Number(cartIdStr);
-    if (cartId === targetId) return false;
-    const cartItem = DYNAMIC_BOOSTS.find((b) => b.id === cartId);
-    return cartItem && INVENTORY_SLOT_MAP[cartItem.type] === targetSlot;
-  });
-};
-
 export const createCartSlice: StateCreator<ShopStateCombined, [], [], CartState> = (set, get) => ({
   selectedItem: null,
   cart: {},
   purchaseStatus: null,
+  inventoryConflict: null,
 
   setSelectedItem: (selectedItem) => set({ selectedItem }),
   setPurchaseStatus: (purchaseStatus) => set({ purchaseStatus }),
+  setInventoryConflict: (inventoryConflict) => set({ inventoryConflict }),
 
   addToCart: (id, qty) => {
-    if (checkCartConflict(id, get().cart)) {
-      set({ purchaseStatus: { success: false, text: ERROR_CONFLICT } });
-      return false;
-    }
-    set((s) => ({
-      purchaseStatus: null,
-      cart: { ...s.cart, [id]: (s.cart[id] || 0) + qty }
-    }));
+    const targetItem = DYNAMIC_BOOSTS.find((b) => b.id === id);
+    if (!targetItem) return false;
+
+    const targetSlot = INVENTORY_SLOT_MAP[targetItem.type];
+    const currentCart = { ...get().cart };
+
+    Object.keys(currentCart).forEach((cartIdStr) => {
+      const cartId = Number(cartIdStr);
+      if (cartId !== id) {
+        const cartItem = DYNAMIC_BOOSTS.find((b) => b.id === cartId);
+        if (cartItem && INVENTORY_SLOT_MAP[cartItem.type] === targetSlot) {
+          delete currentCart[cartId];
+        }
+      }
+    });
+
+    currentCart[id] = (currentCart[id] || 0) + qty;
+    set({ purchaseStatus: null, cart: currentCart });
     return true;
   },
 
   updateCartQuantity: (id, qty) => {
-    if (qty > (get().cart[id] || 0) && checkCartConflict(id, get().cart)) {
-      set({ purchaseStatus: { success: false, text: ERROR_CONFLICT } });
-      return false;
+    const targetItem = DYNAMIC_BOOSTS.find((b) => b.id === id);
+    if (!targetItem) return false;
+
+    const targetSlot = INVENTORY_SLOT_MAP[targetItem.type];
+    const currentCart = { ...get().cart };
+
+    if (qty > (currentCart[id] || 0)) {
+      Object.keys(currentCart).forEach((cartIdStr) => {
+        const cartId = Number(cartIdStr);
+        if (cartId !== id) {
+          const cartItem = DYNAMIC_BOOSTS.find((b) => b.id === cartId);
+          if (cartItem && INVENTORY_SLOT_MAP[cartItem.type] === targetSlot) {
+            delete currentCart[cartId];
+          }
+        }
+      });
     }
-    set((s) => {
-      const cart = { ...s.cart };
-      if (qty <= 0) delete cart[id];
-      else cart[id] = qty;
-      return { cart, purchaseStatus: null };
-    });
+
+    if (qty <= 0) delete currentCart[id];
+    else currentCart[id] = qty;
+
+    set({ cart: currentCart, purchaseStatus: null });
     return true;
   },
 

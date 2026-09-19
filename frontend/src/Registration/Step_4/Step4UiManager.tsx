@@ -29,6 +29,27 @@ export function Step4UiManager({ phaserScene }: Step4UiManagerProps) {
 
   const isMobile = layoutContext.screenMode === "mobile" || layoutContext.screenMode === "fold";
 
+  const handlePlayClick = () => {
+    if (!phaserScene.sys.isActive()) return;
+
+    phaserScene.cameras.main.fadeOut(200, 0, 0, 0);
+    phaserScene.time.delayedCall(200, () => {
+      if (!phaserScene.sys.isActive()) return;
+
+      EventBus.emit("step4_scene_stop");
+      EventBus.emit("main_scene_start");
+
+      if (typeof window !== "undefined") {
+        const customWindow = window as unknown as CustomWindow;
+        const game = customWindow.phaserGame;
+        if (game) {
+          game.scene.stop("Step4Scene");
+          game.scene.start("MainScene");
+        }
+      }
+    });
+  };
+
   return (
     <div className="pointer-events-none absolute inset-0 h-full w-full overflow-hidden select-none">
       <div
@@ -42,27 +63,7 @@ export function Step4UiManager({ phaserScene }: Step4UiManagerProps) {
           className="pointer-events-none absolute top-[865px] left-1/2 z-10 origin-center"
           style={{ transform: `translate(-50%, -50%) scale(${isMobile ? 1.2 : 1})` }}
         >
-          <FinalPlayButton
-            onClick={() => {
-              if (!phaserScene.sys.isActive()) return;
-              phaserScene.cameras.main.fadeOut(200, 0, 0, 0);
-              phaserScene.time.delayedCall(200, () => {
-                if (phaserScene.sys.isActive()) {
-                  EventBus.emit("step4_scene_stop");
-                  EventBus.emit("main_scene_start");
-
-                  if (typeof window !== "undefined") {
-                    const customWindow = window as unknown as CustomWindow;
-                    const game = customWindow.phaserGame;
-                    if (game) {
-                      game.scene.stop("Step4Scene");
-                      game.scene.start("MainScene");
-                    }
-                  }
-                }
-              });
-            }}
-          />
+          <FinalPlayButton onClick={handlePlayClick} />
         </div>
       </div>
     </div>

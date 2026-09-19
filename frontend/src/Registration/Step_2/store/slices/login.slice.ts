@@ -11,6 +11,8 @@ const savePhoneToStorage = (p: string) => {
   }
 };
 
+let isSubmittingPhone = false;
+
 export const createLoginSlice: StateCreator<Step2CombinedState, [], [], LoginState> = (set, get) => ({
   loginPhone: "",
   loginRawPhone: "",
@@ -18,12 +20,22 @@ export const createLoginSlice: StateCreator<Step2CombinedState, [], [], LoginSta
 
   sendLoginPhone: async () => {
     const { loginRawPhone } = get();
-    if (!isMock && loginRawPhone.length !== 10) return;
+    const cleanDigits = loginRawPhone.replace(/\D/g, "").slice(-10);
+
+    if (isSubmittingPhone) return;
+
+    if (!isMock && cleanDigits.length < 10) {
+      console.error(`[ZUSTAND] Длина телефона меньше 10 цифр (${cleanDigits.length}). Отмена.`);
+      return;
+    }
+
     set({ loginError: "" });
-    const fullPhone = `+7${loginRawPhone}`;
+    isSubmittingPhone = true;
+    const fullPhone = `7${cleanDigits}`;
 
     try {
       const res = await api.checkLoginPhone(fullPhone);
+
       if (res?.isLogin || isMock) {
         savePhoneToStorage(fullPhone);
         localStorage.removeItem("active_reg_session_id");
@@ -42,9 +54,12 @@ export const createLoginSlice: StateCreator<Step2CombinedState, [], [], LoginSta
         useRegistrationStep3Store.getState().setIsLogin(false);
         set({ loginError: "user_not_found" });
       }
-    } catch {
+    } catch (err: any) {
+      console.error(`[ZUSTAND] Критическая ошибка запроса:`, err.message || err);
       useRegistrationStep3Store.getState().setIsLogin(false);
       set({ loginError: "user_not_found" });
+    } finally {
+      isSubmittingPhone = false;
     }
   },
 
@@ -52,11 +67,15 @@ export const createLoginSlice: StateCreator<Step2CombinedState, [], [], LoginSta
     let cur = get().loginRawPhone;
 
     if (/backspace|delete/i.test(key)) cur = cur.slice(0, -1);
-    else if ("0123456789".includes(key) && cur.length < 10) cur += key;
-    else return;
+    else if ("0123456789".includes(key) && cur.replace(/\D/g, "").length < 10) cur += key;
+    else {
+      return;
+    }
 
-    set({ loginRawPhone: cur, loginPhone: `+7${cur}` });
-    if (cur.length === 10 && cur !== "") {
+    const digits = cur.replace(/\D/g, "").slice(0, 10);
+    set({ loginRawPhone: digits, loginPhone: `+7${digits}` });
+
+    if (digits.length === 10 && !isSubmittingPhone) {
       setTimeout(() => {
         get().sendLoginPhone();
       }, 50);

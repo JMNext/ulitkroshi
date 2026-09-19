@@ -43,3 +43,20 @@ class TypedEventBus {
 }
 
 export const EventBus = new TypedEventBus();
+
+export const registerSceneEvent = <K extends keyof EventPayloads>(
+  scene: Phaser.Scene,
+  event: K,
+  fn: (payload: EventPayloads[K]) => void,
+  context?: unknown
+): void => {
+  const handler = fn.bind(context || scene);
+  EventBus.on(event, handler);
+
+  scene.sys.events.once("shutdown", () => {
+    EventBus.off(event, handler);
+  });
+  scene.sys.events.once("destroy", () => {
+    EventBus.off(event, handler);
+  });
+};

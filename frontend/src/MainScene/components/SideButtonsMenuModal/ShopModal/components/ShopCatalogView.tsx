@@ -26,12 +26,12 @@ const CartBadge = ({ count, itemId, onAdd, onMinus, onPlus }: { count: number; i
     >
       {hasItems ? (
         <>
-          <button type="button" onClick={onMinus} className="flex cursor-pointer items-center justify-center border-none bg-transparent p-0 pb-0.5 text-[14px] font-black text-white transition-transform outline-none active:scale-75">-</button>
+          <button type="button" onClick={onMinus} className="flex cursor-pointer items-center justify-center border-none bg-transparent p-0 pb-0.5 text-[14px] font-black text-white transition-transform outline-none active:scale-77">-</button>
           <span className="mx-0.5 flex items-center justify-center text-[12px] font-black antialiased">{count}</span>
-          <button type="button" onClick={onPlus} className="flex cursor-pointer items-center justify-center border-none bg-transparent p-0 pb-0.5 text-[14px] font-black text-white transition-transform outline-none active:scale-75">+</button>
+          <button type="button" onClick={onPlus} className="flex cursor-pointer items-center justify-center border-none bg-transparent p-0 pb-0.5 text-[14px] font-black text-white transition-transform outline-none active:scale-77">+</button>
         </>
       ) : (
-        <button type="button" onClick={onAdd} className="flex h-full w-full cursor-pointer items-center justify-center border-none bg-transparent p-0 pb-0.5 text-[14px] font-black text-white transition-transform outline-none active:scale-75">+</button>
+        <button type="button" onClick={onAdd} className="flex h-full w-full cursor-pointer items-center justify-center border-none bg-transparent p-0 pb-0.5 text-[14px] font-black text-white transition-transform outline-none active:scale-77">+</button>
       )}
     </div>
   );
@@ -39,6 +39,22 @@ const CartBadge = ({ count, itemId, onAdd, onMinus, onPlus }: { count: number; i
 
 export const ShopCatalogView = ({ onSelected }: ShopCatalogViewProps) => {
   const { selectedItem, setSelectedItem, cart, addToCart, updateCartQuantity, removeFromCart } = useShopStore();
+
+  const handleBadgeAdd = (item: any) => {
+    const success = addToCart(item.id, 1);
+    if (!success) {
+      setSelectedItem(item);
+      onSelected();
+    }
+  };
+
+  const handleBadgeIncrease = (item: any, currentCount: number) => {
+    const success = updateCartQuantity(item.id, currentCount + 1);
+    if (!success) {
+      setSelectedItem(item);
+      onSelected();
+    }
+  };
 
   return (
     <div className="pointer-events-auto box-border flex h-full w-full [scrollbar-width:none] items-start justify-center overflow-y-auto px-1 py-2 select-none [&::-webkit-scrollbar]:hidden">
@@ -70,9 +86,9 @@ export const ShopCatalogView = ({ onSelected }: ShopCatalogViewProps) => {
                 <CartBadge
                   count={countInCart}
                   itemId={item.id}
-                  onAdd={() => addToCart(item.id, 1)}
+                  onAdd={() => handleBadgeAdd(item)}
                   onMinus={() => countInCart <= 1 ? removeFromCart(item.id) : updateCartQuantity(item.id, countInCart - 1)}
-                  onPlus={() => updateCartQuantity(item.id, countInCart + 1)}
+                  onPlus={() => handleBadgeIncrease(item, countInCart)}
                 />
               </div>
 

@@ -1,20 +1,14 @@
 import { useRegistrationStep1Store } from "@/Registration/Step_1/store/useRegistrationStep1Store";
 import { useRegistrationStep3Store } from "@/Registration/Step_3/store/useRegistrationStep3Store";
 import { api, gatewayApi, isMock } from "@/api/api";
-import { useApiStore } from "@/api/store/useApiStore";
 import { EventBus } from "@/eventbus/EventBus";
 import { StateCreator } from "zustand";
-import {
-  CustomWindow,
-  RegisterState,
-  Step2CombinedState,
-  clearTimers,
-  getActiveTimerId,
-  getSavedSessionId,
-  setActiveTimerId,
-  setMvpPollingId,
-  setSavedSessionId
-} from "../useRegistrationStep2Store";
+import { CustomWindow, RegisterState, Step2CombinedState, clearTimers, getActiveTimerId, setActiveTimerId, getSavedSessionId, setSavedSessionId, setMvpPollingId } from "../useRegistrationStep2Store";
+
+const getCleanFullPhone = (rawPhone: string): string => {
+  const digits = rawPhone.replace(/\D/g, "").slice(-10);
+  return `7${digits}`;
+};
 
 const savePhoneToStorage = (p: string) => {
   if (typeof window !== "undefined") {
@@ -26,35 +20,35 @@ const savePhoneToStorage = (p: string) => {
 export const createRegisterSlice: StateCreator<Step2CombinedState, [], [], RegisterState> = (set, get) => {
   const triggerAutoVerify = () => {
     get().verifyRegisterSms((id) => {
-      const cleanDigits = get().registerRawPhone.replace(/\D/g, "");
-      savePhoneToStorage(`7${cleanDigits}`);
-
-      setTimeout(() => {
-        EventBus.emit("step2_scene_stop");
-        EventBus.emit("step3_scene_start", { sessionId: id });
-        if (typeof window !== "undefined") {
-          const customWindow = window as unknown as CustomWindow;
-          const game = customWindow.phaserGame;
-          if (game) {
-            game.scene.stop("Step2Scene");
-            game.scene.start("Step3Scene", { sessionId: id });
-          }
+      const cleanPhone = getCleanFullPhone(get().registerRawPhone);
+      savePhoneToStorage(cleanPhone);
+      clearTimers();
+      EventBus.emit("step2_scene_stop");
+      EventBus.emit("step3_scene_start", { sessionId: id });
+      if (typeof window !== "undefined") {
+        const game = (window as unknown as CustomWindow).phaserGame;
+        if (game) {
+          game.scene.stop("Step2Scene");
+          game.scene.start("Step3Scene", { sessionId: id });
         }
-      }, 50);
+      }
     });
   };
 
   const pollMvpCode = async () => {
+    if (get().registerMode !== "code") return clearTimers();
     try {
       const sid = getSavedSessionId();
       if (!sid) return;
       const res = (await gatewayApi.get<{ code: string | null }>(`/auth/login/get-mvp-code?sessionId=${sid}`)).data;
+      if (get().registerMode !== "code") return;
       if (!res?.code) {
         setMvpPollingId(setTimeout(pollMvpCode, 1000));
         return;
       }
       let i = 0;
       const typing = setInterval(() => {
+        if (get().registerMode !== "code") return clearInterval(typing);
         if (i < res.code!.length) {
           get().handleRegisterKeyboard(res.code![i++]);
         } else {
@@ -63,7 +57,7 @@ export const createRegisterSlice: StateCreator<Step2CombinedState, [], [], Regis
         }
       }, 250);
     } catch {
-      setMvpPollingId(setTimeout(pollMvpCode, 1000));
+      if (get().registerMode === "code") setMvpPollingId(setTimeout(pollMvpCode, 1000));
     }
   };
 
@@ -83,31 +77,36 @@ export const createRegisterSlice: StateCreator<Step2CombinedState, [], [], Regis
     },
 
     sendRegisterPhone: async () => {
-      const { registerRawPhone } = get();
+      const fullPhone = getCleanFullPhone(get().registerRawPhone);
 
-      const cleanDigits = registerRawPhone.replace(/\D/g, "");
-      if (!isMock && cleanDigits.length < 10) {
-        // ИСПРАВЛЕНО: Возвращаем стандартный тип ошибки, разрешенный интерфейсом вашего стора
-        set({ registerError: "system_error" });
-        return;
+      if (!isMock && fullPhone.length !== 11) {
+        return set({ registerError: "system_error" });
       }
 
       clearTimers();
       set({ registerError: "" });
 
-      const fullPhone = `7${cleanDigits.slice(-10)}`;
-
       try {
         const checkRes = await api.checkLoginPhone(fullPhone);
 
+        if (checkRes && checkRes.isLogin) {
+          set({ registerMode: "exists", registerError: "" });
+          return;
+        }
+
+        if (typeof window !== "undefined" && checkRes) {
+          localStorage.setItem("is_login_flow", checkRes.isLogin.toString());
+        }
+
         const res = await api.loginPhone(fullPhone, useRegistrationStep1Store.getState().name || "Булька");
+
         if (res?.sessionId || isMock) {
           setSavedSessionId(isMock ? "mock_reg_session_id" : res.sessionId);
           useRegistrationStep3Store.getState().setIsLogin(checkRes ? checkRes.isLogin : false);
           set({ registerMode: "sent", registerError: "" });
         }
-      } catch (err: any) {
-        console.error("🚨 [FRONTEND ERROR] Ошибка при отправке телефона:", err.message);
+      } catch (err) {
+        console.error("🚨 [FRONTEND ERR SEND PHONE]:", err);
         set({ registerMode: "phone", registerError: "system_error" });
       }
     },
@@ -122,65 +121,59 @@ export const createRegisterSlice: StateCreator<Step2CombinedState, [], [], Regis
       const tid = getActiveTimerId();
       if (tid) clearInterval(tid);
       set({ registerSecs: 60 });
-
-      const newTid = setInterval(() => {
+      setActiveTimerId(setInterval(() => {
         const current = get().registerSecs;
         if (current <= 1) {
           clearTimers();
           set({ registerSecs: 0, registerCode: "", registerAttempts: 0, registerError: "expired" });
         } else set({ registerSecs: current - 1 });
-      }, 1000);
-
-      setActiveTimerId(newTid);
+      }, 1000));
     },
 
     handleRegisterKeyboard: (key) => {
       const { registerMode, registerCode, registerRawPhone, isVerifyingCode } = get();
       if (isVerifyingCode) return;
-
       const isCode = registerMode === "code";
       let cur = isCode ? registerCode : registerRawPhone;
 
       if (/backspace|delete/i.test(key)) cur = cur.slice(0, -1);
-      else if ("0123456789".includes(key) && cur.length < (isCode ? 4 : 15)) cur += key;
+      else if ("0123456789".includes(key) && cur.replace(/\D/g, "").length < (isCode ? 4 : 10)) cur += key;
       else return;
 
       if (isCode) {
         set({ registerCode: cur });
-        if (cur.length === 4) {
-          setTimeout(triggerAutoVerify, 50);
-        }
+        if (cur.length === 4) setTimeout(triggerAutoVerify, 50);
       } else {
-        const digits = cur.replace(/\D/g, "");
+        const digits = cur.replace(/\D/g, "").slice(0, 10);
         set({ registerRawPhone: digits, registerPhone: `+7${digits}` });
       }
     },
 
     verifyRegisterSms: async (onSuccess) => {
-      const { registerRawPhone, registerCode, registerAttempts } = get();
+      const { registerCode, registerAttempts } = get();
       if (registerCode.length !== 4) return;
 
-      const cleanDigits = registerRawPhone.replace(/\D/g, "");
-      const fullPhone = `7${cleanDigits.slice(-10)}`;
+      const fullPhone = getCleanFullPhone(get().registerRawPhone);
 
-      if (isMock) {
-        savePhoneToStorage(fullPhone);
-        clearTimers();
-        onSuccess("mock_verified_reg_session");
-        return;
-      }
-
+      if (isMock) return (savePhoneToStorage(fullPhone), clearTimers(), onSuccess("mock_verified_reg_session"));
       set({ isVerifyingCode: true, registerError: "" });
+
       try {
-        const res = await useApiStore.getState().verifySms(fullPhone, registerCode);
-        if (typeof window !== "undefined") {
-          localStorage.setItem("active_reg_session_id", res.sessionId);
+        const res = await api.verifySms(fullPhone, registerCode);
+
+        if (res && res.sessionId) {
+          if (typeof window !== "undefined") {
+            localStorage.setItem("active_reg_session_id", res.sessionId);
+          }
+          savePhoneToStorage(fullPhone);
+          clearTimers();
+          set({ isVerifyingCode: false });
+          onSuccess(res.sessionId);
+        } else {
+          throw new Error("Неверный формат ответа СМС");
         }
-        savePhoneToStorage(fullPhone);
-        clearTimers();
-        set({ isVerifyingCode: false });
-        onSuccess(res.sessionId);
-      } catch {
+      } catch (err) {
+        console.error("🚨 [FRONTEND ERR VERIFY SMS]:", err);
         const next = registerAttempts + 1;
         clearTimers();
         set({
@@ -189,9 +182,7 @@ export const createRegisterSlice: StateCreator<Step2CombinedState, [], [], Regis
           registerAttempts: next >= 3 ? 0 : next,
           registerError: next >= 3 ? "too_many_attempts" : "wrong_code"
         });
-        if (next >= 3) {
-          await get().sendRegisterPhone();
-        }
+        if (next >= 3) await get().sendRegisterPhone();
       }
     }
   };

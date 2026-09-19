@@ -33,14 +33,16 @@ export const BottomMenu = ({ styles, className }: BottomMenuProps) => {
   const activeFruitIcon = fruitCount && activeFruitIds[currentFruitId] ? getFruitUrlByStoreId(activeFruitIds[currentFruitId]) : eatIcon;
 
   const handleActionClick = (type: CareActionType, icon: string, e: React.PointerEvent<HTMLDivElement>) => {
-    if (activeClickRef.current || !canExecuteAction(type)) return;
-
-    activeClickRef.current = true;
-    setTimeout(() => { activeClickRef.current = false; }, 300);
+    if (activeClickRef.current) return;
 
     if (type === "sleep") {
+      activeClickRef.current = true;
+      setTimeout(() => { activeClickRef.current = false; }, 1000);
       triggerSleepAction();
     } else {
+      if (!canExecuteAction(type)) return;
+      activeClickRef.current = true;
+      setTimeout(() => { activeClickRef.current = false; }, 300);
       handleCareActionDown(type, icon, activeFruitIcon, scale, s, e);
     }
   };

@@ -35,7 +35,8 @@ export const createProfileSlice: StateCreator<MainGameStateCombined, [], [], Pro
         auth.coins = exactNextCoins;
       }
       set({ coins: exactNextCoins });
-    } catch {
+    } catch (err) {
+      console.error("🚨 [PROFILE SLICE BUY FRUIT CATCH ERROR]:", err);
       set({ coins: currentCoins });
     } finally {
       get().setUpdatingCoinsGlobal(false);

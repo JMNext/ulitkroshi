@@ -2,9 +2,7 @@ import { createBaseDrag } from "@/MainScene/components/PetCharacter/animations/c
 import { DEFAULT_FOOD_CONFIG, EAT_SOUND_URL, FOOD_CONFIGS } from "@/MainScene/components/PetCharacter/constants/petCharacter.constants";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 
-const cachedEatAudio = typeof window !== "undefined" ? new Audio(EAT_SOUND_URL) : null;
-if (cachedEatAudio) cachedEatAudio.volume = 0.5;
-
+let cachedEatAudio: HTMLAudioElement | null = null;
 let isFeedingProcessing = false;
 
 export const startFeedingDrag = (
@@ -15,6 +13,11 @@ export const startFeedingDrag = (
   scale = 1,
   s = 1
 ) => {
+  if (typeof window !== "undefined" && !cachedEatAudio) {
+    cachedEatAudio = new Audio(EAT_SOUND_URL);
+    cachedEatAudio.volume = 0.5;
+  }
+
   if (isFeedingProcessing) {
     if (onDragEndCallback) onDragEndCallback();
     return;
@@ -48,9 +51,16 @@ export const startFeedingDrag = (
             cachedEatAudio.play().catch(() => {});
           }
 
-          setTimeout(() => {
+          const timeoutId = setTimeout(() => {
             isFeedingProcessing = false;
           }, 4550);
+
+          const handleClean = () => {
+            clearTimeout(timeoutId);
+            isFeedingProcessing = false;
+            window.removeEventListener("beforeunload", handleClean);
+          };
+          window.addEventListener("beforeunload", handleClean);
         }
       },
       onEnd: () => {

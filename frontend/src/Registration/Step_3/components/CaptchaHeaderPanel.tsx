@@ -1,9 +1,30 @@
 import { clsx } from "clsx";
 import { useRegistrationStep3Store } from "../store/useRegistrationStep3Store";
-import { FRUIT_URLS } from "./fruitAssets";
+
+import fruit01 from "@/assets/fruits/fruits_01.png";
+import fruit02 from "@/assets/fruits/fruits_02.png";
+import fruit03 from "@/assets/fruits/fruits_03.png";
+import fruit04 from "@/assets/fruits/fruits_04.png";
+import fruit05 from "@/assets/fruits/fruits_05.png";
+import fruit06 from "@/assets/fruits/fruits_06.png";
+import fruit07 from "@/assets/fruits/fruits_07.png";
+import fruit08 from "@/assets/fruits/fruits_08.png";
+import fruit09 from "@/assets/fruits/fruits_09.png";
+import fruit10 from "@/assets/fruits/fruits_10.png";
+import fruit11 from "@/assets/fruits/fruits_11.png";
+import fruit12 from "@/assets/fruits/fruits_12.png";
+import fruit13 from "@/assets/fruits/fruits_13.png";
+import fruit14 from "@/assets/fruits/fruits_14.png";
+import fruit15 from "@/assets/fruits/fruits_15.png";
+import fruit16 from "@/assets/fruits/fruits_16.png";
+
+const FRUIT_URLS: string[] = [
+  fruit01, fruit02, fruit03, fruit04, fruit05, fruit06, fruit07, fruit08,
+  fruit09, fruit10, fruit11, fruit12, fruit13, fruit14, fruit15, fruit16
+];
 
 const MESSAGES = {
-  systemError: "Ошибка проверки номера телефона.",
+  systemError: "Ошибка сервера при сохранении пароля.",
   wrongFruit: "Ошибка ввода, попробуй еще раз.",
   totalError: "Что-то не так, давай\nеще раз!",
   loginPrompt: "Введи свой фруктовый пароль!",
@@ -15,6 +36,7 @@ const MESSAGES = {
 
 const STATIC_MESSAGES: Record<string, string> = {
   system_error: MESSAGES.systemError,
+  server_error: MESSAGES.systemError,
   wrong_fruit: MESSAGES.wrongFruit,
   error: MESSAGES.totalError,
   confirm: MESSAGES.modeConfirm,
@@ -29,16 +51,16 @@ export const CaptchaHeaderPanel = () => {
     loginSel,
     loginAttempts,
     loginError,
-    registerMode,
+    step3Mode,
     registerSel,
     registerAttempts,
-    registerError
+    step3Error
   } = useRegistrationStep3Store();
 
-  const currentMode = isLogin ? loginMode : registerMode;
+  const currentMode = isLogin ? loginMode : step3Mode;
   const currentSelected = isLogin ? loginSel : registerSel;
   const currentAttempts = isLogin ? loginAttempts : registerAttempts;
-  const currentError = isLogin ? loginError : registerError;
+  const currentError = isLogin ? loginError : step3Error;
 
   const targetText =
     STATIC_MESSAGES[currentError ?? ""] ||
@@ -60,7 +82,7 @@ export const CaptchaHeaderPanel = () => {
         {[0, 1, 2, 3].map((i) => {
           const fruitId = currentSelected[i];
           const hasFruit = fruitId !== undefined;
-          const resolvedUrl = hasFruit ? FRUIT_URLS[fruitId] : "";
+          const resolvedUrl = hasFruit && fruitId >= 1 && fruitId <= 16 ? FRUIT_URLS[fruitId - 1] : "";
 
           return (
             <div
@@ -77,7 +99,6 @@ export const CaptchaHeaderPanel = () => {
                   height="40"
                   className="pointer-events-none block h-10 w-10 object-contain"
                   alt=""
-                  loading="lazy"
                 />
               )}
             </div>

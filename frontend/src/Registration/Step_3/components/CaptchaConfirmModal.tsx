@@ -8,13 +8,15 @@ const MESSAGES = {
 export const CaptchaConfirmModal = () => {
   const saveFirstStep = useRegistrationStep3Store((state) => state.saveFirstStep);
 
-  const handleConfirmClick = () => {
+  const handleConfirmClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     (document.activeElement as HTMLElement)?.blur?.();
     saveFirstStep();
   };
 
   return (
-    <div className="animate-fade-in pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+    <div className="animate-fade-in pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[999]">
       <div className="pointer-events-auto box-border flex w-[340px] max-w-full flex-col items-center justify-center gap-5 rounded-[28px] border-2 border-[#81c714] bg-white px-5 py-6 text-center shadow-2xl landscape:gap-4 landscape:py-5">
         <h3 className="m-0 w-full text-xl leading-snug font-black text-slate-700 normal-case select-none landscape:text-base">
           {MESSAGES.title}

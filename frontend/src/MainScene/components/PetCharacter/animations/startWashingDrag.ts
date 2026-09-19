@@ -2,7 +2,7 @@ import { createBaseDrag } from "@/MainScene/components/PetCharacter/animations/c
 import { WASH_SOUND_URL } from "@/MainScene/components/PetCharacter/constants/petCharacter.constants";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 
-const cachedWashAudio = typeof window !== "undefined" ? new Audio(WASH_SOUND_URL) : null;
+let cachedWashAudio: HTMLAudioElement | null = null;
 
 export const startWashingDrag = (
   initialEvent: React.PointerEvent<HTMLDivElement> | PointerEvent,
@@ -11,6 +11,10 @@ export const startWashingDrag = (
   scale: number = 1,
   s: number = 1
 ) => {
+  if (typeof window !== "undefined" && !cachedWashAudio) {
+    cachedWashAudio = new Audio(WASH_SOUND_URL);
+  }
+
   createBaseDrag(
     initialEvent,
     {
@@ -54,7 +58,7 @@ export const startWashingDrag = (
           document.body.appendChild(container);
 
           let bubbleCount = 0;
-          const totalBubbles = 3200 / 25;
+          const totalBubbles = 40;
           const staticRect = pet?.getBoundingClientRect();
           const cx = staticRect ? staticRect.left + staticRect.width / 2 : window.innerWidth / 2;
           const cy = staticRect ? staticRect.top + staticRect.height / 2 : window.innerHeight / 2;
@@ -69,24 +73,28 @@ export const startWashingDrag = (
             }
 
             const b = document.createElement("div");
-            const size = (Math.floor(Math.random() * 31) + 25) * currentScale;
+            const size = (Math.floor(Math.random() * 21) + 15) * currentScale;
 
             Object.assign(b.style, {
               position: "absolute",
               width: `${size}px`,
               height: `${size}px`,
               borderRadius: "50%",
-              backgroundColor: "rgba(255, 255, 255, 0.85)",
-              border: "1px solid rgba(255, 255, 255, 0.4)",
-              boxShadow: "inset -3px -3px 8px rgba(0,0,0,0.05), inset 3px 3px 8px rgba(255,255,255,0.6)",
-              left: `${cx + (Math.random() * 386.4 - 193.2) * currentScale}px`,
-              top: `${cy + (Math.random() * 221 - 55) * currentScale}px`,
-              animation: "bubbleLife 1s ease-in-out forwards"
+              backgroundColor: "rgba(255, 255, 255, 0.9)",
+              border: "1px solid rgba(255, 255, 255, 0.5)",
+              left: `${cx + (Math.random() * 300 - 150) * currentScale}px`,
+              top: `${cy + (Math.random() * 160 - 40) * currentScale}px`,
+              animation: "bubbleLife 0.8s ease-in-out forwards"
             });
 
             container.appendChild(b);
-            b.addEventListener("animationend", () => b.remove());
-          }, 25);
+
+            const cleanupBubble = () => {
+              b.removeEventListener("animationend", cleanupBubble);
+              b.remove();
+            };
+            b.addEventListener("animationend", cleanupBubble);
+          }, 60);
         }, 400);
       },
       onEnd: onDragEndCallback

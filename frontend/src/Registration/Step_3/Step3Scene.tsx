@@ -22,57 +22,71 @@ export class Step3Scene extends Phaser.Scene {
 
   public init(data?: { sessionId?: string }): void {
     this.sessionId = data?.sessionId || "";
-    document.querySelectorAll("#phaser-native-step1-bubble, #phaser-native-success-bubble").forEach(el => el.remove());
+    const container = document.getElementById("game-container");
+    if (container) {
+      container.querySelectorAll("#phaser-native-step1-bubble, #phaser-native-success-bubble").forEach(el => el.remove());
+    }
+
+    const savedIsLogin = typeof window !== "undefined" && localStorage.getItem("is_login_flow") === "true";
+
+    const store = useRegistrationStep3Store.getState();
+    store.setIsLogin(savedIsLogin);
+
+    if (savedIsLogin) {
+      useRegistrationStep3Store.setState({
+        loginSel: [],
+        loginMode: "select",
+        loginError: ""
+      });
+    } else {
+      useRegistrationStep3Store.setState({
+        step3Mode: "select",
+        registerSel: [],
+        registerCorr: []
+      });
+    }
   }
 
   public preload(): void {
-    this.load.image("step3_bg_fon_goriz", fonGorizUrl);
-    this.load.image("step3_bg_fon_vert", fonVertUrl);
+    if (!this.textures.exists("step3_bg_fon_goriz")) this.load.image("step3_bg_fon_goriz", fonGorizUrl);
+    if (!this.textures.exists("step3_bg_fon_vert")) this.load.image("step3_bg_fon_vert", fonVertUrl);
   }
 
   public create(): void {
     if (this.game.canvas) this.game.canvas.className = "absolute inset-0 w-full h-full z-1";
 
-    const width = Number(this.scale.width);
-    const height = Number(this.scale.height);
-
-    const initialOrientation = height > width ? "vert" : "goriz";
-    this.backgroundIm = this.add.image(width / 2, height / 2, `step3_bg_fon_${initialOrientation}`).setOrigin(0.5).setDepth(-2);
-    this.currentOrientation = initialOrientation;
+    const w = Number(this.scale.width), h = Number(this.scale.height);
+    this.currentOrientation = h > w ? "vert" : "goriz";
+    this.backgroundIm = this.add.image(w / 2, h / 2, `step3_bg_fon_${this.currentOrientation}`).setOrigin(0.5).setDepth(-2);
 
     this.mountReactUI();
-
-    if (width && height) this.executeResizeLogic(width, height);
+    if (w && h) this.executeResizeLogic(w, h);
 
     this.scale.on("resize", this.triggerResize, this);
+    this.sys.events.on("wake", this.handleWake, this).on("sleep", this.handleSleep, this)
+      .once("shutdown", this.cleanUp, this).once("destroy", this.cleanUp, this);
 
-    this.sys.events
-      .on("wake", this.handleWake, this)
-      .on("sleep", this.handleSleep, this)
-      .once("shutdown", this.cleanUp, this);
-
-    registerSceneEvent(this, "step3_scene_start", this.handleExternalStart);
-    registerSceneEvent(this, "step3_scene_stop", this.handleExternalStop);
+    registerSceneEvent(this, "step3_scene_start", this.handleExternalStart.bind(this));
+    registerSceneEvent(this, "step3_scene_stop", this.handleExternalStop.bind(this));
 
     this.triggerResize();
   }
 
   private mountReactUI(): void {
     if (this.uiContainer) return;
-
     this.uiContainer = document.createElement("div");
-    this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden";
+    this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden opacity-0 transition-opacity duration-200";
     (document.getElementById("game-container") || document.body).appendChild(this.uiContainer);
 
     this.reactRoot = createRoot(this.uiContainer);
     this.reactRoot.render(<Step3UiManager phaserScene={this} sessionId={this.sessionId} />);
+    requestAnimationFrame(() => this.uiContainer && (this.uiContainer.style.opacity = "1"));
   }
 
   public triggerResize(): void {
-    if (!this.sys.isActive() || !this.scale) return;
-    const width = Number(this.scale.width);
-    const height = Number(this.scale.height);
-    if (width && height) this.executeResizeLogic(width, height);
+    if (this.sys.isActive() && this.scale?.width && this.scale?.height) {
+      this.executeResizeLogic(Number(this.scale.width), Number(this.scale.height));
+    }
   }
 
   private handleExternalStart(data?: { sessionId: string }): void {
@@ -81,33 +95,34 @@ export class Step3Scene extends Phaser.Scene {
 
   private handleExternalStop(): void {
     if (this.sys.isActive()) {
-      this.scene.stop();
+      if (this.uiContainer) this.uiContainer.style.opacity = "0";
+      this.tweens.add({
+        targets: this.backgroundIm,
+        alpha: 0,
+        duration: 200,
+        onComplete: () => this.scene.stop()
+      });
     }
   }
 
   private executeResizeLogic(width: number, height: number): void {
-    const w = Number(width);
-    const h = Number(height);
-    const isVert = h > w;
-    const nextOrientation = isVert ? "vert" : "goriz";
+    const w = Number(width), h = Number(height), isVert = h > w;
+    const nextOrient = isVert ? "vert" : "goriz";
 
-    if (this.currentOrientation !== nextOrientation) {
-      this.currentOrientation = nextOrientation;
-      this.backgroundIm.setTexture(`step3_bg_fon_${nextOrientation}`);
+    if (this.currentOrientation !== nextOrient) {
+      this.currentOrientation = nextOrient;
+      const texture = `step3_bg_fon_${nextOrient}`;
+      if (this.textures.exists(texture)) {
+        this.tweens.killTweensOf(this.backgroundIm);
+        this.backgroundIm.setAlpha(1).setTexture(texture);
+      }
     }
     this.backgroundIm.setPosition(w / 2, h / 2).setDisplaySize(w, h);
 
-    const scaleX = w / CONFIG.BASE_W;
-    const scaleY = h / CONFIG.BASE_H;
-    const aspect = w / h;
-
+    const scaleX = w / CONFIG.BASE_W, scaleY = h / CONFIG.BASE_H, aspect = w / h;
     let computedScale = Math.min(scaleX, scaleY);
     if (isVert) {
-      if (aspect >= 0.7) {
-        computedScale = scaleY * 0.95;
-      } else {
-        computedScale = aspect > 0.6 ? Math.min(scaleY * 0.95, scaleX * 0.95) : aspect < 0.48 ? scaleX * 0.92 : scaleX * 0.96;
-      }
+      computedScale = aspect >= 0.7 ? scaleY * 0.95 : aspect > 0.6 ? Math.min(scaleY * 0.95, scaleX * 0.95) : aspect < 0.48 ? scaleX * 0.92 : scaleX * 0.96;
     }
     computedScale = Math.max(0.42, Math.min(1.3, computedScale));
 
@@ -124,20 +139,24 @@ export class Step3Scene extends Phaser.Scene {
   }
 
   private handleSleep(): void {
-    try {
-      this.reactRoot?.unmount();
-    } catch (_) {}
-    this.uiContainer?.remove();
-    this.reactRoot = null;
-    this.uiContainer = null;
+    if (this.uiContainer) this.uiContainer.style.opacity = "0";
+    this.tweens.add({
+      targets: this.backgroundIm,
+      alpha: 0,
+      duration: 200,
+      onComplete: () => {
+        try { this.reactRoot?.unmount(); } catch (_) {}
+        this.uiContainer?.remove();
+        this.reactRoot = this.uiContainer = null;
+      }
+    });
   }
 
   private cleanUp(): void {
     this.scale.off("resize", this.triggerResize, this);
     this.sys.events.off("wake", this.handleWake, this).off("sleep", this.handleSleep, this);
-    try {
-      this.reactRoot?.unmount();
-    } catch (_) {}
+    this.tweens.killTweensOf(this.backgroundIm);
+    try { this.reactRoot?.unmount(); } catch (_) {}
     this.uiContainer?.remove();
     this.reactRoot = this.uiContainer = null;
   }

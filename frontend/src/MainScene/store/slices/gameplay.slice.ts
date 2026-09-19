@@ -81,7 +81,8 @@ export const createGameplaySlice: StateCreator<MainGameStateCombined, [], [], Ga
         if (auth.user) {
           auth.coins = exactNextCoins;
         }
-      } catch {
+      } catch (err) {
+        console.error("🚨 [GAMEPLAY SLICE REWARD CATCH ERROR]:", err);
         set({ coins: currentCoins });
       } finally {
         setTimeout(() => {

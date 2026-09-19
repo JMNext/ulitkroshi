@@ -6,6 +6,7 @@ import { HeaderBlock } from "./components/HeaderBlock";
 import { PinPad } from "./components/PinPad";
 import { UserNotFoundModal } from "./components/UserNotFoundModal";
 import { SmsSentModal } from "./components/SmsSentModal";
+import { PhoneExistsModal } from "./components/PhoneExistsModal";
 import { SubmitButton } from "./components/SubmitButton";
 import { Step2Scene } from "./Step2Scene";
 
@@ -48,6 +49,7 @@ export function Step2UiManager({ phaserScene }: Step2UiManagerProps) {
           <PinPad />
           {currentMode === "sent" && isLogin && <UserNotFoundModal />}
           {currentMode === "sent" && !isLogin && <SmsSentModal />}
+          {currentMode === "exists" && !isLogin && <PhoneExistsModal />}
         </div>
       </div>
     </PhaserGameContext.Provider>

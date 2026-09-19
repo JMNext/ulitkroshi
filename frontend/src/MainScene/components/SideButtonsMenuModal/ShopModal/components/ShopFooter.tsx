@@ -45,7 +45,7 @@ export const ShopFooter = ({ isCartView }: ShopFooterProps) => {
         {showCartDetails && (
           <button
             type="button"
-            onClick={checkout}
+            onClick={() => checkout(false)}
             disabled={totalItemsInCart === 0}
             className="animate-fade-in flex h-9 cursor-pointer touch-manipulation items-center justify-center rounded-xl border-none bg-[#7cb342] px-5 text-[12px] font-black tracking-wider text-white uppercase shadow-[0_4px_0_#2e5c08] [text-shadow:0_2px_0_rgba(0,0,0,0.2)] active:translate-y-[4px] active:shadow-none disabled:pointer-events-none disabled:opacity-50 sm:h-12 sm:px-10 sm:text-[14px]"
           >

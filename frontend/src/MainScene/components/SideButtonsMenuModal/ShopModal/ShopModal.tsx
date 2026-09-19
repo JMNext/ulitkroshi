@@ -8,11 +8,12 @@ import { ShopCartList } from "./components/ShopCartList";
 import { ShopCatalogView } from "./components/ShopCatalogView";
 import { ShopFooter } from "./components/ShopFooter";
 import { ShopHeader } from "./components/ShopHeader";
+import { ShopConflictModal } from "./components/ShopConflictModal";
 import { useShopStore } from "./store/useShopStore";
 
 export const ShopModal = NiceModal.create(() => {
   const modal = useModal();
-  const { selectedItem, purchaseStatus, cart, resetStore, setPurchaseStatus, setSelectedItem } = useShopStore();
+  const { selectedItem, purchaseStatus, cart, inventoryConflict, resetStore, setPurchaseStatus, setSelectedItem, setInventoryConflict } = useShopStore();
 
   const [isCartView, setIsCartView] = useState(false);
 
@@ -76,6 +77,21 @@ export const ShopModal = NiceModal.create(() => {
             <ShopFooter isCartView={isCartView} />
 
             {selectedItem && <ProductCard onClose={() => setSelectedItem(null)} />}
+
+            {inventoryConflict && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 rounded-[30px]">
+                <div className="w-[320px] rounded-[32px] border-[5px] border-solid border-orange-500 bg-[#fffef5] p-5 shadow-2xl animate-fade-in">
+                  <ShopConflictModal
+                    isOpen={true}
+                    conflictType="inventory"
+                    conflictingItemName={inventoryConflict.conflictingName}
+                    newItemName={inventoryConflict.newName}
+                    onConfirm={inventoryConflict.onConfirm}
+                    onCancel={() => setInventoryConflict(null)}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </Dialog.Content>
       </Dialog.Portal>

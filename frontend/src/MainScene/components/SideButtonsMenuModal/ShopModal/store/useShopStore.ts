@@ -18,8 +18,10 @@ export interface CartState {
   selectedItem: BoostItem | null;
   cart: { [key: number]: number };
   purchaseStatus: { success: boolean; text: string } | null;
+  inventoryConflict: { conflictingName: string; newName: string; onConfirm: () => void } | null;
   setSelectedItem: (item: BoostItem | null) => void;
   setPurchaseStatus: (status: { success: boolean; text: string } | null) => void;
+  setInventoryConflict: (conflict: { conflictingName: string; newName: string; onConfirm: () => void } | null) => void;
   addToCart: (id: number, qty: number) => boolean;
   updateCartQuantity: (id: number, qty: number) => boolean;
   removeFromCart: (id: number) => void;
@@ -28,7 +30,7 @@ export interface CartState {
 }
 
 export interface CheckoutState {
-  checkout: () => Promise<void>;
+  checkout: (forceInventoryOverride?: boolean) => Promise<void>;
 }
 
 export interface ShopStateCombined extends CartState, CheckoutState {
@@ -38,7 +40,8 @@ export interface ShopStateCombined extends CartState, CheckoutState {
 const initialValues = {
   selectedItem: null,
   cart: {},
-  purchaseStatus: null
+  purchaseStatus: null,
+  inventoryConflict: null
 };
 
 export const useShopStore = create<ShopStateCombined>()((set, get, ...a) => ({

@@ -26,13 +26,13 @@ export interface LoginState {
 export interface RegisterState {
   registerPhone: string;
   registerCode: string;
-  registerMode: "phone" | "sent" | "code";
+  registerMode: "phone" | "sent" | "code" | "exists";
   registerSecs: number;
   registerRawPhone: string;
   registerAttempts: number;
   registerError: "system_error" | "expired" | "too_many_attempts" | "wrong_code" | "";
   isVerifyingCode: boolean;
-  setRegisterMode: (mode: "phone" | "sent" | "code") => void;
+  setRegisterMode: (mode: "phone" | "sent" | "code" | "exists") => void;
   sendRegisterPhone: () => Promise<void>;
   confirmRegisterSent: () => void;
   startRegisterTimer: () => void;
@@ -59,17 +59,11 @@ let mvpPollingId: ReturnType<typeof setTimeout> | null = null;
 let savedSessionId: string | null = null;
 
 export const getActiveTimerId = () => activeTimerId;
-export const setActiveTimerId = (id: ReturnType<typeof setInterval> | null) => {
-  activeTimerId = id;
-};
+export const setActiveTimerId = (id: ReturnType<typeof setInterval> | null) => { activeTimerId = id; };
 export const getMvpPollingId = () => mvpPollingId;
-export const setMvpPollingId = (id: ReturnType<typeof setTimeout> | null) => {
-  mvpPollingId = id;
-};
+export const setMvpPollingId = (id: ReturnType<typeof setTimeout> | null) => { mvpPollingId = id; };
 export const getSavedSessionId = () => savedSessionId;
-export const setSavedSessionId = (id: string | null) => {
-  savedSessionId = id;
-};
+export const setSavedSessionId = (id: string | null) => { savedSessionId = id; };
 
 export const clearTimers = () => {
   if (activeTimerId) clearInterval(activeTimerId);
@@ -89,7 +83,8 @@ export const useRegistrationStep2Store = create<Step2CombinedState>()((set, get,
 
   setPhaserScene: (phaserScene) => set({ phaserScene }),
   setIsLogin: (isLogin) =>
-    set({
+    set((state) => ({
+      ...state,
       isLogin,
       loginPhone: "",
       loginRawPhone: "",
@@ -99,7 +94,7 @@ export const useRegistrationStep2Store = create<Step2CombinedState>()((set, get,
       registerCode: "",
       registerError: "",
       registerMode: "phone"
-    }),
+    })),
   clearErrors: () => set({ loginError: "", registerError: "" }),
   setLayout: (layoutContext, computedScale) => set({ layoutContext, computedScale }),
 
