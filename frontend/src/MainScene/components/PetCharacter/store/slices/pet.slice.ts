@@ -1,6 +1,6 @@
 import { PET_LOCK_BUBBLES } from "@/MainScene/components/PetCharacter/constants/petCharacter.constants";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
-import { api } from "@/api/api";
+import { gameApi } from "@/api/game.api";
 import { useApiStore } from "@/api/store/useApiStore";
 import { StateCreator } from "zustand";
 import { PetLogicState, PetStateCombined } from "../usePetStore";
@@ -23,7 +23,7 @@ export const createPetLogicSlice: StateCreator<PetStateCombined, [], [], PetLogi
 
     if (action === "eat") {
       try {
-        const updatedUser = await api.feedPet();
+        const updatedUser = await gameApi.feedPet();
         set({ hp: updatedUser.petHealth });
         const currentUser = useApiStore.getState().user;
         if (currentUser) {
@@ -77,13 +77,22 @@ export const createPetLogicSlice: StateCreator<PetStateCombined, [], [], PetLogi
     set({ unlockedPetIndexes: [...idxs, index] });
   },
 
-  handleGameLoss: () => {
-    const nh = Math.max(1, get().hp - 25);
-    const next = nh <= 25 && !SLEEP_ANIMS.includes(get().currentAnim) ? "sad_state" : get().currentAnim;
-    set({ hp: nh, currentAnim: next });
-    const currentUser = useApiStore.getState().user;
-    if (currentUser) {
-      useApiStore.setState({ user: { ...currentUser, petHealth: nh } });
+  handleGameLoss: async () => {
+    try {
+      const res = await gameApi.damagePet();
+
+      const serverHealth = res?.petHealth !== undefined ? Number(res.petHealth) : Math.max(1, get().hp - 25);
+      const nextAnim = serverHealth <= 25 && !SLEEP_ANIMS.includes(get().currentAnim) ? "sad_state" : get().currentAnim;
+
+      set({ hp: serverHealth, currentAnim: nextAnim });
+
+      const currentUser = useApiStore.getState().user;
+      if (currentUser) {
+        useApiStore.setState({ user: { ...currentUser, petHealth: serverHealth } });
+      }
+    } catch {
+      const localHp = Math.max(1, get().hp - 25);
+      set({ hp: localHp });
     }
   }
 });

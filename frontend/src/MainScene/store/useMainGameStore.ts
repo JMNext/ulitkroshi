@@ -90,9 +90,13 @@ export const useMainGameStore = create<MainGameStateCombined>()((set, get, ...a)
 useApiStore.subscribe((state) => {
   if (state.user && !isUpdatingCoinsGlobal) {
     const localName = typeof window !== "undefined" ? localStorage.getItem("local_saved_username") : null;
+    const fallbackName = state.user.id ? `Player_${state.user.id}` : "Player_12345";
+
+    const finalName = localName && localName.trim() ? localName.trim() : (state.user.name || fallbackName);
+
     useMainGameStore.setState({
       coins: state.coins || 0,
-      username: localName && localName.trim() ? localName.trim() : state.user.name || "Игрок",
+      username: finalName,
       userId: state.user.id ? Number(state.user.id) : null
     });
   }

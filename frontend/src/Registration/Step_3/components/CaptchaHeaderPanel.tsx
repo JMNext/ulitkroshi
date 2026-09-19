@@ -70,7 +70,9 @@ export const CaptchaHeaderPanel = () => {
         ? MESSAGES.attemptsLeft(3 - currentAttempts)
         : isLogin
           ? MESSAGES.loginPrompt
-          : STATIC_MESSAGES[currentMode ?? ""] || MESSAGES.modeSelect);
+          : currentMode === "select"
+            ? MESSAGES.modeSelect
+            : STATIC_MESSAGES[currentMode ?? ""] || MESSAGES.modeSelect);
 
   return (
     <div className="relative flex h-[190px] w-[424px] max-w-full shrink-0 flex-col items-center justify-between rounded-[32px] border border-slate-200/50 bg-white p-4 text-slate-700 shadow-md select-none">

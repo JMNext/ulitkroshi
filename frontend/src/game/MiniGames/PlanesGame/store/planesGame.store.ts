@@ -3,19 +3,22 @@ import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
-interface SnakeGameState {
-  score: number; hp: number; isGameOver: boolean; isWin: boolean; isWash: boolean; isCrashed: boolean;
+interface PlanesGameState {
+  score: number;
+  hp: number;
+  isGameOver: boolean;
+  isWin: boolean;
+  isCrashed: boolean;
   initGame: () => void;
   addScore: (renderCallback: () => void) => void;
   applyPenalty: (renderCallback: () => void, forceGameOver?: boolean) => void;
   resetStore: () => void;
 }
 
-const initialValues = { score: 0, hp: 100, isGameOver: false, isWin: false, isWash: false, isCrashed: false };
-
+const initialValues = { score: 0, hp: 100, isGameOver: false, isWin: false, isCrashed: false };
 let crashTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
-export const useSnakeGameStore = create<SnakeGameState>()(
+export const usePlanesGameStore = create<PlanesGameState>()(
   subscribeWithSelector((set, get) => ({
     ...initialValues,
 
@@ -37,6 +40,10 @@ export const useSnakeGameStore = create<SnakeGameState>()(
     },
 
     applyPenalty: (renderCallback, forceGameOver = false) => {
+      if (get().isCrashed && !forceGameOver) {
+        renderCallback();
+        return;
+      }
       if (crashTimeoutId) clearTimeout(crashTimeoutId);
 
       const currentScore = get().score;
@@ -51,7 +58,7 @@ export const useSnakeGameStore = create<SnakeGameState>()(
       }
 
       set({
-        hp: nextHp,
+        hp: isOver ? 0 : nextHp,
         score: nextScore,
         isCrashed: !isOver,
         isGameOver: isOver,
@@ -60,11 +67,8 @@ export const useSnakeGameStore = create<SnakeGameState>()(
 
       renderCallback();
 
-      // Магия авторазворота: если игра не окончена, плавно сбрасываем аварийный режим через 200мс
       if (!isOver) {
-        crashTimeoutId = setTimeout(() => {
-          set({ isCrashed: false });
-        }, 200);
+        crashTimeoutId = setTimeout(() => set({ isCrashed: false }), 400);
       }
     },
 

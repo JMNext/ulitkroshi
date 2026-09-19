@@ -1,8 +1,8 @@
 import { EventBus } from "@/eventbus/EventBus";
 import Phaser from "phaser";
 import { create } from "zustand";
-import { createLoginSlice } from "./slices/login.slice";
-import { createRegisterSlice } from "./slices/register.slice";
+import { createPhoneLoginSlice } from "./slices/phoneLogin.slice";
+import { createPhoneRegisterSlice } from "./slices/phoneRegister.slice";
 
 export interface LayoutContext {
   screenMode: "fold" | "mobile" | "tablet" | "desktop";
@@ -78,8 +78,8 @@ export const useRegistrationStep2Store = create<Step2CombinedState>()((set, get,
   computedScale: 1,
   phaserScene: null,
 
-  ...createLoginSlice(set, get, ...a),
-  ...createRegisterSlice(set, get, ...a),
+  ...createPhoneLoginSlice(set, get, ...a),
+  ...createPhoneRegisterSlice(set, get, ...a),
 
   setPhaserScene: (phaserScene) => set({ phaserScene }),
   setIsLogin: (isLogin) =>

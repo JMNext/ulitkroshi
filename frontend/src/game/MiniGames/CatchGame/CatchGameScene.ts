@@ -98,11 +98,31 @@ export class CatchGameScene extends Scene {
   public addScore(): void {
     useCatchGameStore.getState().addScore(() => this.overlayManager.render());
   }
+
   public loseHp(): void {
     useCatchGameStore.getState().applyMissPenalty(() => this.overlayManager.render());
+    this.applyFlashEffect();
   }
+
   public hitBomb(): void {
     useCatchGameStore.getState().applyBombPenalty(() => this.overlayManager.render());
+    this.applyFlashEffect();
+  }
+
+  private applyFlashEffect(): void {
+    if (this.petEntity && (this.petEntity as any).sprite) {
+      const target = (this.petEntity as any).sprite;
+      this.tweens.add({
+        targets: target,
+        alpha: 0.2,
+        duration: 100,
+        yoyo: true,
+        repeat: 4,
+        onComplete: () => {
+          target.alpha = 1;
+        }
+      });
+    }
   }
 
   public exitGame = (): void => {

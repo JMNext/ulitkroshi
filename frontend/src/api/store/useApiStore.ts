@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { AuthResponse, UserProfile } from "../types/types";
-import { isMock } from "../api";
 import { createAuthSlice } from "./slices/auth.slice";
 import { createWalletSlice } from "./slices/wallet.slice";
+import { isMock } from "@/api/client";
 
 export interface AuthSliceState {
   user: UserProfile | null;
@@ -30,28 +30,39 @@ export interface WalletSliceState {
 
 export interface ApiStateCombined extends AuthSliceState, WalletSliceState {}
 
-export const useApiStore = create<ApiStateCombined>()((set, get, ...a) => ({
-  ...createAuthSlice(set, get, ...a),
-  ...createWalletSlice(set, get, ...a)
-}));
+export const useApiStore = create<ApiStateCombined>()((set, get, ...a) => {
+  const baseStore = {
+    ...createAuthSlice(set, get, ...a),
+    ...createWalletSlice(set, get, ...a)
+  };
+
+  return {
+    ...baseStore,
+    set: (state: any) => {
+      if (state.user && typeof window !== "undefined") {
+        const localName = localStorage.getItem("local_saved_username");
+        if (localName && localName.trim()) {
+          state.user.name = localName.trim();
+        }
+      }
+      set(state);
+    }
+  };
+});
+
+useApiStore.subscribe((state) => {
+  if (state.user && typeof window !== "undefined") {
+    const localName = localStorage.getItem("local_saved_username");
+    if (localName && localName.trim() && state.user.name !== localName.trim()) {
+      state.user.name = localName.trim();
+    }
+  }
+});
 
 if (typeof window !== "undefined") {
   if (isMock) {
     useApiStore.setState({ coins: 5000 });
   } else {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      useApiStore
-        .getState()
-        .refreshToken()
-        .then((sc) => {
-          if (sc) useApiStore.getState().fetchCoins();
-        })
-        .catch(() => {
-          useApiStore.setState({ coins: 0 });
-        });
-    } else {
-      useApiStore.setState({ coins: 0 });
-    }
+    useApiStore.setState({ coins: 0 });
   }
 }

@@ -1,4 +1,4 @@
-import { isMock } from "@/api/api";
+import { isMock } from "@/api/client";
 import { registerSceneEvent } from "@/eventbus/registerSceneEvent";
 import Phaser from "phaser";
 import React from "react";

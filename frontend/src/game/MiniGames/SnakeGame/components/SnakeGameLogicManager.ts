@@ -100,11 +100,8 @@ export class SnakeGameLogicManager {
       useSnakeGameStore.getState().applyPenalty(() => (this.scene as unknown as CustomSnakeScene).overlayManager.render(), true);
       return;
     }
+
     this.snake.pop();
-    if (this.snake[0].x < 0) this.snake[0].x = 0;
-    if (this.snake[0].x >= 12) this.snake[0].x = 11;
-    if (this.snake[0].y < 0) this.snake[0].y = 0;
-    if (this.snake[0].y >= 12) this.snake[0].y = 11;
 
     const OPP_DIR: Record<string, string> = {
       UP: "DOWN",
@@ -112,7 +109,33 @@ export class SnakeGameLogicManager {
       LEFT: "RIGHT",
       RIGHT: "LEFT"
     };
-    this.nextDir = OPP_DIR[this.dir] || this.dir;
+
+    const reverseDir = OPP_DIR[this.dir] || this.dir;
+    this.nextDir = this.dir = reverseDir;
+
+    const OFFSETS: Record<string, { x: number; y: number }> = {
+      UP: { x: 0, y: -1 },
+      DOWN: { x: 0, y: 1 },
+      LEFT: { x: -1, y: 0 },
+      RIGHT: { x: 1, y: 0 }
+    };
+
+    const offset = OFFSETS[reverseDir];
+    if (offset && this.snake.length > 0) {
+      this.snake[0].x += offset.x;
+      this.snake[0].y += offset.y;
+    }
+
+    if (this.snake[0].x < 0) this.snake[0].x = 0;
+    if (this.snake[0].x >= 12) this.snake[0].x = 11;
+    if (this.snake[0].y < 0) this.snake[0].y = 0;
+    if (this.snake[0].y >= 12) this.snake[0].y = 11;
+
+    for (let i = 1; i < this.snake.length; i++) {
+      this.snake[i].x = this.snake[0].x;
+      this.snake[i].y = this.snake[0].y;
+    }
+
     useSnakeGameStore.getState().applyPenalty(() => (this.scene as unknown as CustomSnakeScene).overlayManager.render(), false);
   };
 
@@ -129,6 +152,7 @@ export class SnakeGameLogicManager {
   private resetSnake = (): void => {
     this.dir = this.nextDir = "RIGHT";
     this.snake = [
+      { x: 4, y: 5 },
       { x: 3, y: 5 },
       { x: 2, y: 5 },
       { x: 1, y: 5 }

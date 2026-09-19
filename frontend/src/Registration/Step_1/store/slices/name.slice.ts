@@ -5,7 +5,7 @@ import { NameState, Step1StateCombined } from "../useRegistrationStep1Store";
 
 const formatName = (s: string): string => {
   const trimmed = s.trim();
-  return trimmed ? trimmed.charAt(0).toUpperCase() + trimmed.slice(1) : "Булька";
+  return trimmed ? trimmed.charAt(0).toUpperCase() + trimmed.slice(1) : "";
 };
 
 const cleanTextRegex = (text: string) => text.replace(/[^a-zA-Zа-яА-ЯёЁ0-9\s-]/g, "");

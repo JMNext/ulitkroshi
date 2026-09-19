@@ -3,7 +3,9 @@ import React from "react";
 export const GAMES = [
   { type: "memory", text: "НАЙДИ ПАРУ", scene: "MemoryGameScene" },
   { type: "catch", text: "СБОР УРОЖАЯ", scene: "CatchGameScene" },
-  { type: "snake", text: "ЗМЕЙКА", scene: "SnakeGameScene" }
+  { type: "snake", text: "ЗМЕЙКА", scene: "SnakeGameScene" },
+  { type: "racing", text: "ГОНОЧКИ", scene: "RacingGameScene" },
+  { type: "planes", text: "ВЕРТОЛЁТИКИ", scene: "PlanesGameScene" }
 ];
 
 export const MODES = [
@@ -15,7 +17,9 @@ export const MODES = [
 export const GAME_COLORS: Record<string, string> = {
   MemoryGameScene: "bg-[#4caf50] text-white",
   CatchGameScene: "bg-[#2196f3] text-white",
-  SnakeGameScene: "bg-[#9c27b0] text-white"
+  SnakeGameScene: "bg-[#9c27b0] text-white",
+  RacingGameScene: "bg-[#ff9800] text-white",
+  PlanesGameScene: "bg-[#0284c7] text-white"
 };
 
 export const GAME_SVGS: Record<string, React.ReactNode> = {
@@ -36,8 +40,21 @@ export const GAME_SVGS: Record<string, React.ReactNode> = {
       <path d="M4 16 L9 7 L14 16 L19 7" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  RacingGameScene: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M4 4 H11 V13 H4 Z M11 4 H18 V13 H11 Z" fill="white" fillRule="evenodd" clipRule="evenodd" />
+      <path d="M4 4 V20" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M4 8 H18 M4 11 H18 M7 4 V13 M14 4 V13" stroke="currentColor" strokeWidth="1" strokeOpacity="0.3" />
+    </svg>
+  ),
+  PlanesGameScene: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
+      <path d="M7 12 H17 M12 7 V17" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  ),
   LockIcon: (
-    <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="h-4 w-4">
+    <svg fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="h-4 w-4">
       <path
         strokeLinecap="round"
         strokeLinejoin="round"

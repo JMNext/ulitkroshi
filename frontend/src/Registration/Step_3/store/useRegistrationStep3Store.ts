@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { createLoginSlice } from "./slices/login.slice";
-import { createRegisterSlice } from "./slices/register.slice";
+import { createFruitLoginSlice } from "./slices/fruitLogin.slice";
+import { createFruitRegisterSlice } from "./slices/fruitRegister.slice";
 
 export type CaptchaMode = "select" | "confirm" | "verify" | "error";
 
@@ -70,8 +70,8 @@ export const useRegistrationStep3Store = create<Step3CombinedState>()((set, get,
   layoutContext: null,
   computedScale: 1,
 
-  ...createLoginSlice(set, get, ...a),
-  ...createRegisterSlice(set, get, ...a),
+  ...createFruitLoginSlice(set, get, ...a),
+  ...createFruitRegisterSlice(set, get, ...a),
 
   setLayout: (layoutContext, computedScale) => set({ layoutContext, computedScale }),
   setIsLogin: (isLogin) => set((state) => ({ ...state, isLogin, loginMode: "select", step3Mode: "select" })),

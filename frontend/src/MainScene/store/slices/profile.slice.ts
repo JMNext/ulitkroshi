@@ -8,7 +8,9 @@ export const getInitialUsername = (): string => {
     const localName = localStorage.getItem("local_saved_username");
     if (localName && localName.trim()) return localName.trim();
   }
-  return useApiStore.getState().user?.name || "Игрок";
+  const user = useApiStore.getState().user;
+  if (user?.name) return user.name.trim();
+  return user?.id ? `Player_${user.id}` : "Player_12345";
 };
 
 export const createProfileSlice: StateCreator<MainGameStateCombined, [], [], ProfileState> = (set, get) => ({
@@ -47,12 +49,18 @@ export const createProfileSlice: StateCreator<MainGameStateCombined, [], [], Pro
   },
 
   setUsername: async (name) => {
-    const cleanName = name.replace(/\s+/g, " ").trim();
+    const cleanName = name.trim();
     if (!cleanName) return;
-    localStorage.setItem("local_saved_username", cleanName);
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("local_saved_username", cleanName);
+    }
     set({ username: cleanName });
-    const auth = useApiStore.getState();
-    if (auth.user) useApiStore.setState({ user: { ...auth.user, name: cleanName } });
+
+    const apiUser = useApiStore.getState().user;
+    if (apiUser) {
+      useApiStore.setState({ user: { ...apiUser, name: cleanName } });
+    }
   },
 
   setAvatarId: (id) => set({ avatarId: id }),

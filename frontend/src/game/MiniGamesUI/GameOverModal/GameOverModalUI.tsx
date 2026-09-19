@@ -10,14 +10,12 @@ interface GameOverModalUIProps {
   isWin?: boolean;
   score?: number;
   difficulty?: "easy" | "medium" | "hard" | "memory";
+  gameType?: "racing" | "helicopters";
 }
 
-export const GameOverModalUI = ({ onRestart, onBack, score, difficulty }: GameOverModalUIProps) => {
+export const GameOverModalUI = ({ onRestart, onBack, score, difficulty, gameType }: GameOverModalUIProps) => {
   const [scale, setScale] = useState(1);
   const { gameOverResult } = useMainGameStore();
-
-  const finalScore = score !== undefined ? Number(score) : 0;
-  const isMemory = difficulty === "memory";
 
   useEffect(() => {
     const handleResize = () => {
@@ -50,7 +48,17 @@ export const GameOverModalUI = ({ onRestart, onBack, score, difficulty }: GameOv
   };
 
   if (!gameOverResult) return null;
+
   const { isWin: resultIsWin, rewardText } = gameOverResult;
+  const isMemory = difficulty === "memory";
+
+  const finalScore = score !== undefined ? Number(score) : 0;
+
+  const getScoreLabel = () => {
+    if (gameType === "helicopters") return "Сбито вертолётов:";
+    if (gameType === "racing") return "Фруктов собрано:";
+    return GAMEOVER_TEXTS.scoreLabel;
+  };
 
   return (
     <div
@@ -68,7 +76,7 @@ export const GameOverModalUI = ({ onRestart, onBack, score, difficulty }: GameOv
         <div className="flex flex-col items-center justify-center gap-1">
           {!isMemory && finalScore !== 999 && (
             <p className="m-0 text-[20px] font-extrabold tracking-wide text-slate-700 uppercase">
-              {GAMEOVER_TEXTS.scoreLabel} <span className="text-[24px] font-black text-[#1e1b4b]">{finalScore}</span>
+              {getScoreLabel()} <span className="text-[24px] font-black text-[#1e1b4b]">{finalScore}</span>
             </p>
           )}
           <div className="mt-0.5 flex h-8 items-center justify-center gap-0.5">

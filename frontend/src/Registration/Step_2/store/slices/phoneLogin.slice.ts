@@ -1,5 +1,6 @@
 import { useRegistrationStep3Store } from "@/Registration/Step_3/store/useRegistrationStep3Store";
-import { api, isMock } from "@/api/api";
+import { isMock } from "@/api/client";
+import { authApi } from "@/api/auth.api";
 import { EventBus } from "@/eventbus/EventBus";
 import { StateCreator } from "zustand";
 import { CustomWindow, LoginState, Step2CombinedState } from "../useRegistrationStep2Store";
@@ -13,7 +14,7 @@ const savePhoneToStorage = (p: string) => {
 
 let isSubmittingPhone = false;
 
-export const createLoginSlice: StateCreator<Step2CombinedState, [], [], LoginState> = (set, get) => ({
+export const createPhoneLoginSlice: StateCreator<Step2CombinedState, [], [], LoginState> = (set, get) => ({
   loginPhone: "",
   loginRawPhone: "",
   loginError: "",
@@ -34,7 +35,7 @@ export const createLoginSlice: StateCreator<Step2CombinedState, [], [], LoginSta
     const fullPhone = `7${cleanDigits}`;
 
     try {
-      const res = await api.checkLoginPhone(fullPhone);
+      const res = await authApi.checkLoginPhone(fullPhone);
 
       if (res?.isLogin || isMock) {
         savePhoneToStorage(fullPhone);

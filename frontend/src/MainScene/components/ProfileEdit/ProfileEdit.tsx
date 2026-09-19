@@ -1,3 +1,4 @@
+import { authApi } from "@/api/auth.api";
 import editBtnIcon from "@/assets/interface-icons/button_edit.svg";
 import avatarDefaultIcon from "@/assets/interface-icons/icon-avatar.svg";
 import { CloseButton } from "@/CloseButton/CloseButton";
@@ -9,14 +10,15 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { clsx } from "clsx";
 import { useEffect, useRef, useState } from "react";
 
+interface CustomWindow extends Window {
+  phaserGame: any;
+}
+
 export const ProfileEdit = NiceModal.create(() => {
   const modal = useModal();
   const { username, avatarId, userId, setUsername, startScanner, resetStore } = useMainGameStore();
   const [isEditing, setIsEditing] = useState(false);
-  const [inputValue, setInputValue] = useState(username);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => setInputValue(username), [username]);
 
   useEffect(() => {
     if (isEditing) {
@@ -24,19 +26,19 @@ export const ProfileEdit = NiceModal.create(() => {
     }
   }, [isEditing]);
 
-  const handleStartEdit = () => {
-    setIsEditing(true);
-    setInputValue(username);
-  };
-
-  const handleSave = () => {
-    if (inputValue.trim()) setUsername(inputValue.trim());
-    setIsEditing(false);
-  };
-
   const handleLogout = async () => {
     modal.hide();
+    await authApi.logout();
     await resetStore();
+
+    if (typeof window !== "undefined") {
+      const customWindow = window as unknown as CustomWindow;
+      if (customWindow.phaserGame) {
+        const game = customWindow.phaserGame;
+        game.scene.stop("MainScene");
+        game.scene.start("LoginScene");
+      }
+    }
   };
 
   const currentAvatar = AVAILABLE_AVATARS.find((a) => a.id === avatarId) || {
@@ -56,7 +58,7 @@ export const ProfileEdit = NiceModal.create(() => {
             <Dialog.Title className="sr-only">Профиль</Dialog.Title>
 
             {userId && (
-              <div className="mt-4 text-center text-[14px] font-black text-slate-400/80 uppercase tracking-wider select-none">
+              <div className="mt-4 text-center text-[14px] font-black tracking-wider text-slate-400/80 uppercase select-none">
                 ID: {userId}
               </div>
             )}
@@ -77,14 +79,14 @@ export const ProfileEdit = NiceModal.create(() => {
               {!isEditing ? (
                 <div className="flex w-full items-center justify-center gap-2">
                   <span
-                    onClick={handleStartEdit}
+                    onClick={() => setIsEditing(true)}
                     className="max-w-[180px] cursor-pointer overflow-hidden text-[21px] text-ellipsis whitespace-nowrap text-[#1a3d1c]"
                   >
                     {username}
                   </span>
                   <button
                     type="button"
-                    onClick={handleStartEdit}
+                    onClick={() => setIsEditing(true)}
                     className="flex h-8 w-8 items-center justify-center border-0 bg-transparent p-0 active:scale-90"
                   >
                     <img src={editBtnIcon} className="h-6 w-6 object-contain" alt="" />
@@ -96,10 +98,10 @@ export const ProfileEdit = NiceModal.create(() => {
                     ref={inputRef}
                     type="text"
                     maxLength={20}
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                    onBlur={handleSave}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && setIsEditing(false)}
+                    onBlur={() => setIsEditing(false)}
                     className="box-border h-[34px] w-full max-w-[180px] rounded-[12px] border-2 border-[#e2e8f0] bg-[#f8fafc] text-center text-[17px] font-black text-[#1a3d1c] outline-none focus:border-[#81c714]"
                   />
                 </div>

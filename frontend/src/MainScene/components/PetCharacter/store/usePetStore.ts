@@ -1,4 +1,3 @@
-import { useApiStore } from "@/api/store/useApiStore";
 import { create } from "zustand";
 import { createInventorySlice, getInitInventory } from "./slices/inventory.slice";
 import { createPetLogicSlice } from "./slices/pet.slice";
@@ -40,7 +39,7 @@ export interface PetStateCombined extends InventoryState, PetLogicState {
 let _videos: Record<string, HTMLVideoElement | null> = {};
 
 export const usePetStore = create<PetStateCombined>()((set, get, ...a) => ({
-  petName: useApiStore.getState().user?.petName || "Улитка",
+  petName: "",
   petTargetX: 960,
   petTargetY: 518,
 
@@ -55,7 +54,25 @@ export const usePetStore = create<PetStateCombined>()((set, get, ...a) => ({
       _videos[key] = el;
     }
   },
-  updateField: (field, value) => set((state) => ({ ...state, [field]: value })),
+
+  updateField: (field, value) => set((state) => {
+    let nextAnim = state.currentAnim;
+
+    if (field === "hp") {
+      const nextHp = Number(value ?? 100);
+      if (nextHp <= 25 && ["prostoi1", "prostoi2"].includes(state.currentAnim)) {
+        nextAnim = "sad_state";
+      } else if (nextHp > 25 && state.currentAnim === "sad_state") {
+        nextAnim = "prostoi1";
+      }
+    }
+
+    return {
+      ...state,
+      [field]: value,
+      currentAnim: nextAnim
+    };
+  }),
 
   playVideo: (key) => {
     const v = _videos[key];
@@ -89,5 +106,3 @@ export const usePetStore = create<PetStateCombined>()((set, get, ...a) => ({
     localStorage.setItem("mock_unlocked_pets", JSON.stringify([0]));
   }
 }));
-
-useApiStore.subscribe((s) => s.user && usePetStore.setState({ petName: s.user.petName || "Улитка" }));

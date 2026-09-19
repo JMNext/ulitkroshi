@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { QueryResult, QueryResultRow } from "pg";
+import { QueryResultRow } from "pg";
 
 export interface DbUser extends QueryResultRow {
   id: number;

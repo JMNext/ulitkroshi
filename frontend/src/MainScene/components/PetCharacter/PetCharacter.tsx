@@ -16,7 +16,7 @@ export const PetCharacter = ({ styles, alertText, onAnimationEnd }: PetCharacter
   const { hp, petName, currentAnim, registerVideoElement, completeCareAction, getVideoElements } = usePetStore();
 
   const isActionActive = ACTION_ANIMATIONS.includes(currentAnim);
-  const isLow = hp < 10;
+  const isLow = hp <= 25;
   const safeHp = Math.min(Math.max(hp, 0), 100);
 
   useEffect(() => {

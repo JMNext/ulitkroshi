@@ -1,9 +1,9 @@
 import { StateCreator } from "zustand";
-import { api } from "@/api/api";
+import { authApi } from "@/api/auth.api";
 import { useRegistrationStep2Store } from "@/Registration/Step_2/store/useRegistrationStep2Store";
 import { Step3CombinedState, RegisterState, setShakeTimeoutId, setClearFruitsTimeoutId } from "../useRegistrationStep3Store";
 
-export const createRegisterSlice: StateCreator<Step3CombinedState, [], [], RegisterState> = (set, get) => ({
+export const createFruitRegisterSlice: StateCreator<Step3CombinedState, [], [], RegisterState> = (set, get) => ({
   registerSel: [],
   registerCorr: [],
   step3Mode: "select",
@@ -37,7 +37,7 @@ export const createRegisterSlice: StateCreator<Step3CombinedState, [], [], Regis
         set({ isLoginSubmitting: true } as any);
         const codeStr = nextLoginSel.join("");
         try {
-          const response = await api.verifyFruit(sessionId, codeStr);
+          const response = await authApi.verifyFruit(sessionId, codeStr);
           if (response && response.accessToken) {
             set({ isLoginSubmitting: false, loginSel: [] } as any);
             onComplete();
@@ -111,7 +111,7 @@ export const createRegisterSlice: StateCreator<Step3CombinedState, [], [], Regis
           const cleanDigits = rawPhoneDigits.replace(/\D/g, "");
           const fullPhone = cleanDigits.startsWith("7") ? cleanDigits : `7${cleanDigits}`;
 
-          const response = await api.verifyFruit(sessionId, numericStringCode, fullPhone);
+          await authApi.verifyFruit(sessionId, numericStringCode, fullPhone);
 
           set({ isRegisterSubmitting: false, registerSel: [], registerCorr: [] });
           onComplete();

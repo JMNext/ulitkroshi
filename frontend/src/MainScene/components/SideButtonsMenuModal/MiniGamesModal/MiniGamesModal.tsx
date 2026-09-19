@@ -44,7 +44,7 @@ export const MiniGamesModal = NiceModal.create(() => {
     }
   };
 
-  const handleSelectMode = (difficulty: "easy" | "medium" | "hard") => {
+   const handleSelectMode = (difficulty: "easy" | "medium" | "hard") => {
     EventBus.emit("main_scene_sleep");
 
     if (selectedScene === "CatchGameScene") {
@@ -53,6 +53,10 @@ export const MiniGamesModal = NiceModal.create(() => {
       EventBus.emit("minigame_memory_start");
     } else if (selectedScene === "SnakeGameScene") {
       EventBus.emit("minigame_snake_start", { difficulty });
+    } else if (selectedScene === "RacingGameScene") {
+      EventBus.emit("minigame_racing_start", { difficulty });
+    } else if (selectedScene === "PlanesGameScene") { 
+      EventBus.emit("minigame_planes_start", { difficulty });
     }
 
     const customWindow = window as unknown as CustomWindow;
@@ -63,6 +67,7 @@ export const MiniGamesModal = NiceModal.create(() => {
     }
     handleClose();
   };
+
 
   const handleGameClick = (scene: string) => {
     if (isBlocked) {

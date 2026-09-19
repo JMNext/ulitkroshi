@@ -1,6 +1,7 @@
 import { useRegistrationStep1Store } from "@/Registration/Step_1/store/useRegistrationStep1Store";
 import { useRegistrationStep3Store } from "@/Registration/Step_3/store/useRegistrationStep3Store";
-import { api, gatewayApi, isMock } from "@/api/api";
+import { isMock, authApiInstance } from "@/api/client";
+import { authApi } from "@/api/auth.api";
 import { EventBus } from "@/eventbus/EventBus";
 import { StateCreator } from "zustand";
 import { CustomWindow, RegisterState, Step2CombinedState, clearTimers, getActiveTimerId, setActiveTimerId, getSavedSessionId, setSavedSessionId, setMvpPollingId } from "../useRegistrationStep2Store";
@@ -17,7 +18,7 @@ const savePhoneToStorage = (p: string) => {
   }
 };
 
-export const createRegisterSlice: StateCreator<Step2CombinedState, [], [], RegisterState> = (set, get) => {
+export const createPhoneRegisterSlice: StateCreator<Step2CombinedState, [], [], RegisterState> = (set, get) => {
   const triggerAutoVerify = () => {
     get().verifyRegisterSms((id) => {
       const cleanPhone = getCleanFullPhone(get().registerRawPhone);
@@ -40,7 +41,7 @@ export const createRegisterSlice: StateCreator<Step2CombinedState, [], [], Regis
     try {
       const sid = getSavedSessionId();
       if (!sid) return;
-      const res = (await gatewayApi.get<{ code: string | null }>(`/auth/login/get-mvp-code?sessionId=${sid}`)).data;
+      const res = (await authApiInstance.get<{ code: string | null }>(`/auth/login/get-mvp-code?sessionId=${sid}`)).data;
       if (get().registerMode !== "code") return;
       if (!res?.code) {
         setMvpPollingId(setTimeout(pollMvpCode, 1000));
@@ -87,7 +88,7 @@ export const createRegisterSlice: StateCreator<Step2CombinedState, [], [], Regis
       set({ registerError: "" });
 
       try {
-        const checkRes = await api.checkLoginPhone(fullPhone);
+        const checkRes = await authApi.checkLoginPhone(fullPhone);
 
         if (checkRes && checkRes.isLogin) {
           set({ registerMode: "exists", registerError: "" });
@@ -98,7 +99,8 @@ export const createRegisterSlice: StateCreator<Step2CombinedState, [], [], Regis
           localStorage.setItem("is_login_flow", checkRes.isLogin.toString());
         }
 
-        const res = await api.loginPhone(fullPhone, useRegistrationStep1Store.getState().name || "Булька");
+        const chosenName = useRegistrationStep1Store.getState().name || "";
+        const res = await authApi.loginPhone(fullPhone, chosenName);
 
         if (res?.sessionId || isMock) {
           setSavedSessionId(isMock ? "mock_reg_session_id" : res.sessionId);
@@ -159,7 +161,7 @@ export const createRegisterSlice: StateCreator<Step2CombinedState, [], [], Regis
       set({ isVerifyingCode: true, registerError: "" });
 
       try {
-        const res = await api.verifySms(fullPhone, registerCode);
+        const res = await authApi.verifySms(fullPhone, registerCode);
 
         if (res && res.sessionId) {
           if (typeof window !== "undefined") {

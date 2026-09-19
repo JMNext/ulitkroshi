@@ -30,7 +30,7 @@ export async function initDatabase() {
       roles TEXT[] DEFAULT ARRAY['user']::TEXT[],
       coins INT DEFAULT 0,
       unlocked_pets INT[] DEFAULT ARRAY[]::INTEGER[],
-      pet_name VARCHAR(50) DEFAULT 'Булька',
+      pet_name VARCHAR(50),
       pet_health INT DEFAULT 100,
       last_minigame_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP - INTERVAL '1 minute',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

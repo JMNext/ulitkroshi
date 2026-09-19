@@ -26,29 +26,8 @@ export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) 
     step3Mode,
     registerAttempts,
     layoutContext,
-    computedScale,
-    setIsLogin
+    computedScale
   } = useRegistrationStep3Store();
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedIsLoginFlow = localStorage.getItem("is_login_flow") === "true";
-      if (isLogin !== savedIsLoginFlow) {
-        setIsLogin(savedIsLoginFlow);
-      }
-    }
-  }, [isLogin, setIsLogin]);
-
-  const currentMode = isLogin ? loginMode : step3Mode;
-  const currentAttempts = isLogin ? loginAttempts : registerAttempts;
-
-  useEffect(() => {
-    if (phaserScene.sys.isActive()) {
-      phaserScene.triggerResize();
-    }
-  }, [phaserScene]);
-
-  if (!layoutContext) return null;
 
   const activeSessionId = sessionId || localStorage.getItem("active_reg_session_id") || "direct_login_session";
 
@@ -77,6 +56,17 @@ export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) 
       }
     });
   };
+
+  const currentMode = isLogin ? loginMode : step3Mode;
+  const currentAttempts = isLogin ? loginAttempts : registerAttempts;
+
+  useEffect(() => {
+    if (phaserScene.sys.isActive()) {
+      phaserScene.triggerResize();
+    }
+  }, [phaserScene]);
+
+  if (!layoutContext) return null;
 
   return (
     <div className="pointer-events-none absolute inset-0 flex h-full w-full items-center justify-center overflow-hidden select-none">

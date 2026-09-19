@@ -27,12 +27,10 @@ export class Step3Scene extends Phaser.Scene {
       container.querySelectorAll("#phaser-native-step1-bubble, #phaser-native-success-bubble").forEach(el => el.remove());
     }
 
-    const savedIsLogin = typeof window !== "undefined" && localStorage.getItem("is_login_flow") === "true";
-
     const store = useRegistrationStep3Store.getState();
-    store.setIsLogin(savedIsLogin);
+    const currentIsLogin = store.isLogin;
 
-    if (savedIsLogin) {
+    if (currentIsLogin) {
       useRegistrationStep3Store.setState({
         loginSel: [],
         loginMode: "select",
@@ -42,7 +40,8 @@ export class Step3Scene extends Phaser.Scene {
       useRegistrationStep3Store.setState({
         step3Mode: "select",
         registerSel: [],
-        registerCorr: []
+        registerCorr: [],
+        step3Error: ""
       });
     }
   }

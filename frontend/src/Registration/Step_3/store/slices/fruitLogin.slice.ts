@@ -1,8 +1,8 @@
-import { api } from "@/api/api";
+import { authApi } from "@/api/auth.api";
 import { StateCreator } from "zustand";
 import { LoginState, Step3CombinedState, setShakeTimeoutId, setClearFruitsTimeoutId } from "../useRegistrationStep3Store";
 
-export const createLoginSlice: StateCreator<Step3CombinedState, [], [], LoginState> = (set, get) => ({
+export const createFruitLoginSlice: StateCreator<Step3CombinedState, [], [], LoginState> = (set, get) => ({
   loginSel: [],
   loginMode: "select",
   loginShake: false,
@@ -39,7 +39,7 @@ export const createLoginSlice: StateCreator<Step3CombinedState, [], [], LoginSta
         const realSessionId = localStorage.getItem("active_reg_session_id") || sessionId;
         const numericStringCode = next.join("");
 
-        await api.verifyFruit(realSessionId, numericStringCode, savedPhone);
+        await authApi.verifyFruit(realSessionId, numericStringCode, savedPhone);
         set({ isLoginSubmitting: false, loginSel: [] });
         onComplete();
       } catch (error) {

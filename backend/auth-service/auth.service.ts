@@ -1,16 +1,54 @@
 import jwt from "jsonwebtoken";
-import { JWT_SECRET } from "../auth.middleware";
-import { dbPool } from "../db/db";
-import { SessionData, DbUser, AuthPayload, MappedUser } from "../types/express";
-import { getFirstRow, mapUserFields } from "../types/utils";
+import { JWT_SECRET } from "../shared/auth.middleware";
+import { dbPool } from "../shared/db";
+import { DbUser, AuthPayload, MappedUser } from "../shared/types";
+import { getFirstRow, mapUserFields } from "../shared/utils";
 
+// Наш кастомный тип сессии с меткой времени создания
+interface TimedSession {
+  phone: string;
+  code: string;
+  chosenPetName?: string;
+  createdAt: number;
+}
 
-export const phoneSessions = new Map<string, SessionData>();
-export const verifiedPhoneSessions = new Map<string, SessionData>();
+// Встроенные карты памяти для сессий
+const rawPhoneSessions = new Map<string, TimedSession>();
+const rawVerifiedPhoneSessions = new Map<string, TimedSession>();
+
+// Обертка для сохранения совместимости интерфейсов (чтобы другие файлы не сломались)
+export const phoneSessions = {
+  get: (key: string) => rawPhoneSessions.get(key),
+  set: (key: string, val: Omit<TimedSession, "createdAt">) =>
+    rawPhoneSessions.set(key, { ...val, createdAt: Date.now() }),
+  del: (key: string) => rawPhoneSessions.delete(key),
+  keys: () => Array.from(rawPhoneSessions.keys())
+};
+
+export const verifiedPhoneSessions = {
+  get: (key: string) => rawVerifiedPhoneSessions.get(key),
+  set: (key: string, val: Omit<TimedSession, "createdAt">) =>
+    rawVerifiedPhoneSessions.set(key, { ...val, createdAt: Date.now() }),
+  del: (key: string) => rawVerifiedPhoneSessions.delete(key),
+  keys: () => Array.from(rawVerifiedPhoneSessions.keys())
+};
+
+// Автоматический сборщик мусора: раз в минуту удаляет сессии старше 5 минут
+setInterval(() => {
+  const now = Date.now();
+  const TTL = 5 * 60 * 1000; // 5 минут
+
+  for (const [key, session] of rawPhoneSessions.entries()) {
+    if (now - session.createdAt > TTL) rawPhoneSessions.delete(key);
+  }
+  for (const [key, session] of rawVerifiedPhoneSessions.entries()) {
+    if (now - session.createdAt > TTL) rawVerifiedPhoneSessions.delete(key);
+  }
+}, 60000);
 
 const generateTokens = (userId: number, username: string) => {
   const safeId = Number(userId || 0);
-  const safeName = String(username || "Игрок");
+  const safeName = String(username || `Player_${safeId}`);
   return {
     accessToken: jwt.sign({ id: safeId, name: safeName }, JWT_SECRET, { expiresIn: "15m" }),
     refreshToken: jwt.sign({ id: safeId }, JWT_SECRET, { expiresIn: "7d" })
@@ -28,13 +66,18 @@ export const BackendAuthService = {
 
   verifySmsCode(phone: string, code: string): string | null {
     const cleanPhone = String(phone).replace(/[^0-9]/g, "").trim();
-    for (const [smsSessionId, data] of phoneSessions.entries()) {
+
+    const keys = phoneSessions.keys();
+    for (const smsSessionId of keys) {
+      const data = phoneSessions.get(smsSessionId);
+      if (!data) continue;
+
       const cleanDataPhone = String(data.phone).replace(/[^0-9]/g, "").trim();
       if (cleanDataPhone === cleanPhone && String(data.code).trim() === String(code).trim()) {
         const fruitSessionId = "fruit_" + Math.random().toString(36).substring(2, 15);
 
         verifiedPhoneSessions.set(fruitSessionId, { phone: cleanPhone, code, chosenPetName: data.chosenPetName });
-        phoneSessions.delete(smsSessionId);
+        phoneSessions.del(smsSessionId);
         return fruitSessionId;
       }
     }
@@ -48,8 +91,10 @@ export const BackendAuthService = {
       const user = getFirstRow(result);
       if (user?.phone) {
         const userPhone = user.phone;
-        for (const [id, data] of phoneSessions.entries()) {
-          if (data.phone === userPhone) phoneSessions.delete(id);
+        const keys = phoneSessions.keys();
+        for (const id of keys) {
+          const data = phoneSessions.get(id);
+          if (data && data.phone === userPhone) phoneSessions.del(id);
         }
       }
     } catch {}
@@ -64,7 +109,8 @@ export const BackendAuthService = {
     const dbPass = String(user.password || "").replace(/[-_\s]/g, "").trim();
     if (inputPass !== dbPass) return null;
 
-    return { ...generateTokens(Number(user.id), user.name || "Игрок"), user: mapUserFields(user) };
+    const fallbackName = `Player_${user.id}`;
+    return { ...generateTokens(Number(user.id), user.name || fallbackName), user: mapUserFields(user) };
   },
 
   async getMe(token: string): Promise<MappedUser | null> {
@@ -84,7 +130,8 @@ export const BackendAuthService = {
       const result = await dbPool.query<DbUser>("SELECT * FROM users WHERE id = \$1", [decoded.id]);
       const user = getFirstRow(result);
       if (!user) return null;
-      return { ...generateTokens(Number(user.id), user.name || "Игрок"), user: mapUserFields(user) };
+      const fallbackName = `Player_${user.id}`;
+      return { ...generateTokens(Number(user.id), user.name || fallbackName), user: mapUserFields(user) };
     } catch {
       return null;
     }
@@ -94,7 +141,8 @@ export const BackendAuthService = {
     const newUser = await dbPool.query<DbUser>("INSERT INTO users (name, phone, coins) VALUES (\$1, \$2, 0) RETURNING *", [name, phone]);
     const user = getFirstRow(newUser);
     if (!user) return null;
-    return { ...generateTokens(Number(user.id), user.name || "Игрок"), user: mapUserFields(user) };
+    const fallbackName = `Player_${user.id}`;
+    return { ...generateTokens(Number(user.id), user.name || fallbackName), user: mapUserFields(user) };
   },
 
   async processFruitLogin(clientFruitsCode: string, incomingPhone: string): Promise<AuthPayload | null> {
@@ -110,7 +158,8 @@ export const BackendAuthService = {
       const dbPass = String(user.password || "").replace(/[-_\s]/g, "").trim();
       if (normalizedClientCode !== dbPass) return null;
 
-      return { ...generateTokens(Number(user.id), user.name || "Игрок"), user: mapUserFields(user) };
+      const fallbackName = `Player_${user.id}`;
+      return { ...generateTokens(Number(user.id), user.name || fallbackName), user: mapUserFields(user) };
     } catch {
       return null;
     }
@@ -120,7 +169,7 @@ export const BackendAuthService = {
     if (!incomingPhone || !clientFruitsCode) return null;
     const cleanPhone = String(incomingPhone).replace(/[^0-9]/g, "").trim();
     const normalizedClientCode = String(clientFruitsCode).trim();
-    const finalPetName = String(petName || "Апа").trim();
+    const finalPetName = String(petName || "Улитка").trim();
 
     try {
       const randomHash = Math.floor(1000 + Math.random() * 9000).toString();
@@ -133,7 +182,8 @@ export const BackendAuthService = {
       const user = getFirstRow(insertResult);
       if (!user) return null;
 
-      return { ...generateTokens(Number(user.id), user.name || "Игрок"), user: mapUserFields(user) };
+      const fallbackName = `Player_${user.id}`;
+      return { ...generateTokens(Number(user.id), user.name || fallbackName), user: mapUserFields(user) };
     } catch {
       return null;
     }

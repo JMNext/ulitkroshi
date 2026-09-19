@@ -1,5 +1,6 @@
 import { StateCreator } from "zustand";
-import { api, isMock } from "../../api";
+import { isMock } from "../../client";
+import { gameApi } from "../../game.api";
 import { ApiStateCombined, WalletSliceState } from "../useApiStore";
 
 const getLocalCoins = (): number => (typeof window === "undefined" ? 0 : Number(localStorage.getItem("local_user_coins") || "0"));
@@ -15,7 +16,7 @@ export const createWalletSlice: StateCreator<ApiStateCombined, [], [], WalletSli
 
   fetchCoins: async () => {
     try {
-      const res = await api.getCoins();
+      const res = await gameApi.getCoins();
       const cc = res?.coins ?? getLocalCoins();
       saveLocalCoins(cc);
       set({ coins: cc });
@@ -66,7 +67,7 @@ export const createWalletSlice: StateCreator<ApiStateCombined, [], [], WalletSli
     }
 
     try {
-      const res = await api.updateCoins(actionType, amountToSendToServer);
+      const res = await gameApi.updateCoins(actionType, amountToSendToServer);
       const serverCoins = res && typeof res.coins === "number" ? res.coins : nextCoins;
       saveLocalCoins(serverCoins);
       set({ coins: serverCoins });

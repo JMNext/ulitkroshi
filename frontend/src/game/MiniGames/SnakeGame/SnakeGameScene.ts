@@ -98,11 +98,25 @@ export class SnakeGameScene extends Scene {
   }
 
   public addScore = (): void => {
-    useSnakeGameStore.getState().addScore(() => {});
+    useSnakeGameStore.getState().addScore(() => this.overlayManager.render());
   };
 
   public triggerCrash = (): void => {
-    useSnakeGameStore.getState().applyPenalty(() => {});
+    useSnakeGameStore.getState().applyPenalty(() => this.overlayManager.render());
+
+    if (this.logicManager?.renderer?.mainGridContainer) {
+      const target = this.logicManager.renderer.mainGridContainer;
+      this.tweens.add({
+        targets: target,
+        alpha: 0.2,
+        duration: 100,
+        yoyo: true,
+        repeat: 4,
+        onComplete: () => {
+          target.alpha = 1;
+        }
+      });
+    }
   };
 
   private handleResize = (): void => {

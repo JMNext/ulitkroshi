@@ -2,11 +2,24 @@ import { CloseButton } from "@/CloseButton/CloseButton";
 import NiceModal, { useModal } from "@ebay/nice-modal-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { clsx } from "clsx";
-import React from "react";
+import React, { useEffect } from "react";
 import { HELP_SECTIONS } from "./constants/helpModal.constants";
 
 export const HelpModal = NiceModal.create(() => {
   const modal = useModal();
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && localStorage.getItem("guide_viewed") === "true") {
+      modal.hide();
+    }
+  }, [modal.visible]);
+
+  const handleAccept = () => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("guide_viewed", "true");
+    }
+    modal.hide();
+  };
 
   return (
     <Dialog.Root open={modal.visible} onOpenChange={(open) => !open && modal.hide()}>
@@ -56,17 +69,16 @@ export const HelpModal = NiceModal.create(() => {
               ))}
             </div>
 
-            <Dialog.Close asChild>
-              <button
-                type="button"
-                className={clsx(
-                  "pointer-events-auto m-0 mx-auto mt-4 flex h-[46px] w-full max-w-[400px] shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-[24px] border-0 bg-[#ff9800] p-0 text-[15px] font-black tracking-wide text-white uppercase shadow-sm transition-transform outline-none select-none active:scale-[0.98]",
-                  "max-[550px]:landscape:mt-2 max-[550px]:landscape:h-[34px] max-[550px]:landscape:text-[13px]"
-                )}
-              >
-                Понятно
-              </button>
-            </Dialog.Close>
+            <button
+              type="button"
+              onClick={handleAccept}
+              className={clsx(
+                "pointer-events-auto m-0 mx-auto mt-4 flex h-[46px] w-full max-w-[400px] shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-[24px] border-0 bg-[#ff9800] p-0 text-[15px] font-black tracking-wide text-white uppercase shadow-sm transition-transform outline-none select-none active:scale-[0.98]",
+                "max-[550px]:landscape:mt-2 max-[550px]:landscape:h-[34px] max-[550px]:landscape:text-[13px]"
+              )}
+            >
+              Понятно
+            </button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

@@ -21,6 +21,9 @@ export type EventPayloads = {
   minigame_memory_start: undefined;
   minigame_catch_start: { difficulty: "easy" | "medium" | "hard" };
   minigame_snake_start: { difficulty: "easy" | "medium" | "hard" };
+  minigame_racing_start: { difficulty: "easy" | "medium" | "hard" };
+  minigame_planes_start: { difficulty: "easy" | "medium" | "hard" };
+  minigame_seabattle_start: undefined;
   minigame_stop_to_main: undefined;
 };
 

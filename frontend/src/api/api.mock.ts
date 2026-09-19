@@ -8,11 +8,12 @@ let mockUserNameMemory = "";
 let mockPetHealthMemory = 100;
 
 const createMockUser = (name = "", phone = ""): UserProfile => {
-  const finalUserName = name || mockUserNameMemory || "Игрок";
+  const mockId = 12345;
+  const finalUserName = name || mockUserNameMemory || `Player_${mockId}`;
   const finalPetName = mockPetNameMemory || "Булька";
 
   return {
-    id: 12345,
+    id: mockId,
     name: finalUserName,
     phone: phone || mockPhoneMemory || "79991112233",
     roles: ["user"],
@@ -76,7 +77,13 @@ export const mockApi = {
   async register(data: { name: string; phone: string }): Promise<AuthResponse> {
     mockCoinsMemory = 5000;
     mockUserNameMemory = data.name;
-    if (!mockPetNameMemory) mockPetNameMemory = data.name;
+    mockPhoneMemory = data.phone;
+    mockPetNameMemory = data.name;
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("saved_user_phone", data.phone);
+    }
+
     return generateMockAuth("mock_reg", data.name, data.phone);
   },
 
@@ -95,17 +102,11 @@ export const mockApi = {
     if (phone) mockPhoneMemory = phone;
     mockCoinsMemory = 5000;
 
-    const isLoginFlow = typeof window !== "undefined" && localStorage.getItem("is_login_flow") === "true";
-
-    if (!isLoginFlow) {
-      return {
-        accessToken: "",
-        refreshToken: "",
-        user: createMockUser("", phone)
-      };
+    if (typeof window !== "undefined" && phone) {
+      localStorage.setItem("saved_user_phone", phone);
     }
 
-    return generateMockAuth("mock_fruit");
+    return generateMockAuth("mock_fruit", mockUserNameMemory, phone);
   },
 
   async getCoins(): Promise<{ coins: number }> {
