@@ -170,7 +170,9 @@ export const createBaseDrag = (ie: React.PointerEvent<HTMLDivElement> | PointerE
     const dy = e.clientY - targetY;
 
     if (dx * dx + dy * dy <= radiusSq) {
-      usePetStore.getState().triggerCareAction(config.action);
+      if (config.action !== "eat") {
+        usePetStore.getState().triggerCareAction(config.action);
+      }
       config.onSuccess();
     }
     config.onEnd?.();

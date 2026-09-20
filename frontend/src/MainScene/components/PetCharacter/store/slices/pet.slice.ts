@@ -20,17 +20,6 @@ export const createPetLogicSlice: StateCreator<PetStateCombined, [], [], PetLogi
 
   triggerCareAction: async (action) => {
     set({ currentAnim: action, washState: "hidden" });
-
-    if (action === "eat") {
-      try {
-        const updatedUser = await gameApi.feedPet();
-        set({ hp: updatedUser.petHealth });
-        const currentUser = useApiStore.getState().user;
-        if (currentUser) {
-          useApiStore.setState({ user: { ...currentUser, petHealth: updatedUser.petHealth } });
-        }
-      } catch {}
-    }
   },
 
   completeCareAction: () => {
@@ -80,7 +69,6 @@ export const createPetLogicSlice: StateCreator<PetStateCombined, [], [], PetLogi
   handleGameLoss: async () => {
     try {
       const res = await gameApi.damagePet();
-
       const serverHealth = res?.petHealth !== undefined ? Number(res.petHealth) : Math.max(1, get().hp - 25);
       const nextAnim = serverHealth <= 25 && !SLEEP_ANIMS.includes(get().currentAnim) ? "sad_state" : get().currentAnim;
 

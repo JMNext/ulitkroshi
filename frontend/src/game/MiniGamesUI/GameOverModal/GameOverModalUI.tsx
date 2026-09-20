@@ -55,7 +55,7 @@ export const GameOverModalUI = ({ onRestart, onBack, score, difficulty, gameType
   const finalScore = score !== undefined ? Number(score) : 0;
 
   const getScoreLabel = () => {
-    if (gameType === "helicopters") return "Сбито вертолётов:";
+    if (gameType === "helicopters") return "Сбито противников:";
     if (gameType === "racing") return "Фруктов собрано:";
     return GAMEOVER_TEXTS.scoreLabel;
   };

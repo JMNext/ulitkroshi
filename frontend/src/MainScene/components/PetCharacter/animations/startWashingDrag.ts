@@ -2,7 +2,15 @@ import { createBaseDrag } from "@/MainScene/components/PetCharacter/animations/c
 import { WASH_SOUND_URL } from "@/MainScene/components/PetCharacter/constants/petCharacter.constants";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 
-let cachedWashAudio: HTMLAudioElement | null = null;
+if (typeof document !== "undefined" && !document.getElementById("react-wash-keyframes")) {
+  const style = document.createElement("style");
+  style.id = "react-wash-keyframes";
+  style.innerHTML = `
+    @keyframes spongeAbsorb { 0% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; } }
+    @keyframes bubbleLife { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 15% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.95; } 80% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; } 100% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; } }
+  `;
+  document.head.appendChild(style);
+}
 
 export const startWashingDrag = (
   initialEvent: React.PointerEvent<HTMLDivElement> | PointerEvent,
@@ -11,16 +19,15 @@ export const startWashingDrag = (
   scale: number = 1,
   s: number = 1
 ) => {
-  if (typeof window !== "undefined" && !cachedWashAudio) {
-    cachedWashAudio = new Audio(WASH_SOUND_URL);
-  }
-
   createBaseDrag(
     initialEvent,
     {
       url: washKey,
       action: "wash",
       onSuccess: () => {
+        const store = usePetStore.getState();
+        store.triggerCareAction("wash");
+
         const pet = document.getElementById("phaser-native-html-pet");
         const petRect = pet?.getBoundingClientRect();
         const currentScale = petRect ? petRect.width / 644 : 1;
@@ -42,10 +49,7 @@ export const startWashingDrag = (
 
         setTimeout(() => {
           sponge.remove();
-          if (cachedWashAudio) {
-            cachedWashAudio.currentTime = 0;
-            cachedWashAudio.play().catch(() => {});
-          }
+          new Audio(WASH_SOUND_URL).play().catch(() => {});
 
           const container = document.createElement("div");
           Object.assign(container.style, {
@@ -58,10 +62,7 @@ export const startWashingDrag = (
           document.body.appendChild(container);
 
           let bubbleCount = 0;
-          const totalBubbles = 40;
-          const staticRect = pet?.getBoundingClientRect();
-          const cx = staticRect ? staticRect.left + staticRect.width / 2 : window.innerWidth / 2;
-          const cy = staticRect ? staticRect.top + staticRect.height / 2 : window.innerHeight / 2;
+          const totalBubbles = 128;
 
           const interval = setInterval(() => {
             bubbleCount++;
@@ -72,33 +73,34 @@ export const startWashingDrag = (
               return;
             }
 
+            const rect = pet?.getBoundingClientRect();
+            const cx = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
+            const cy = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
+
             const b = document.createElement("div");
-            const size = (Math.floor(Math.random() * 21) + 15) * currentScale;
+            const size = (Math.floor(Math.random() * 31) + 25) * currentScale;
 
             Object.assign(b.style, {
               position: "absolute",
               width: `${size}px`,
               height: `${size}px`,
               borderRadius: "50%",
-              backgroundColor: "rgba(255, 255, 255, 0.9)",
-              border: "1px solid rgba(255, 255, 255, 0.5)",
-              left: `${cx + (Math.random() * 300 - 150) * currentScale}px`,
-              top: `${cy + (Math.random() * 160 - 40) * currentScale}px`,
-              animation: "bubbleLife 0.8s ease-in-out forwards"
+              backgroundColor: "rgba(255, 255, 255, 0.85)",
+              border: "1px solid rgba(255, 255, 255, 0.4)",
+              boxShadow: "inset -3px -3px 8px rgba(0,0,0,0.05), inset 3px 3px 8px rgba(255,255,255,0.6)",
+              left: `${cx + (Math.random() * 386.4 - 193.2) * currentScale}px`,
+              top: `${cy + (Math.random() * 221 - 55) * currentScale}px`,
+              animation: "bubbleLife 1s ease-in-out forwards"
             });
 
             container.appendChild(b);
-
-            const cleanupBubble = () => {
-              b.removeEventListener("animationend", cleanupBubble);
-              b.remove();
-            };
-            b.addEventListener("animationend", cleanupBubble);
-          }, 60);
+            b.addEventListener("animationend", () => b.remove());
+          }, 25);
         }, 400);
       },
+      document: undefined,
       onEnd: onDragEndCallback
-    },
+    } as any,
     scale,
     s
   );

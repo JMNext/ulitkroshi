@@ -11,6 +11,7 @@ interface RacingGameState {
   isGameOver: boolean;
   isWin: boolean;
   isCrashed: boolean;
+  isFinishing: boolean;
   initGame: () => void;
   addScore: (renderCallback: () => void) => void;
   addBotScore: (botId: 1 | 2, renderCallback: () => void) => void;
@@ -18,8 +19,8 @@ interface RacingGameState {
   resetStore: () => void;
 }
 
-const initialValues = { score: 0, bot1Score: 0, bot2Score: 0, hp: 100, isGameOver: false, isWin: false, isCrashed: false };
-let crashTimeoutId: ReturnType<typeof setTimeout> | null = null;
+const initialValues = { score: 0, bot1Score: 0, bot2Score: 0, hp: 100, isGameOver: false, isWin: false, isCrashed: false, isFinishing: false };
+let crashTimeoutId: number | null = null;
 
 export const useRacingGameStore = create<RacingGameState>()(
   subscribeWithSelector((set, get) => ({
@@ -31,13 +32,12 @@ export const useRacingGameStore = create<RacingGameState>()(
     },
 
     addScore: (renderCallback) => {
-      if (get().isGameOver) return;
+      if (get().isGameOver || get().isFinishing) return;
       const nextScore = get().score + 1;
-      const isWin = nextScore >= 20;
+      const reachTarget = nextScore >= 20;
 
-      if (isWin) {
-        useMainGameStore.getState().setGameOver(nextScore, undefined, true);
-        set({ score: nextScore, isGameOver: true, isWin: true });
+      if (reachTarget) {
+        set({ score: nextScore, isFinishing: true });
       } else {
         set({ score: nextScore });
       }
@@ -45,7 +45,7 @@ export const useRacingGameStore = create<RacingGameState>()(
     },
 
     addBotScore: (botId, renderCallback) => {
-      if (get().isGameOver) return;
+      if (get().isGameOver || get().isFinishing) return;
 
       const b1 = botId === 1 ? get().bot1Score + 1 : get().bot1Score;
       const b2 = botId === 2 ? get().bot2Score + 1 : get().bot2Score;
@@ -76,7 +76,7 @@ export const useRacingGameStore = create<RacingGameState>()(
       if (isOver) {
         useMainGameStore.getState().setGameOver(nextScore, undefined, false);
         if (!get().isWin) usePetStore.getState().handleGameLoss();
-        set({ hp: 0, score: nextScore, isGameOver: true, isWin: false });
+        set({ hp: 0, score: nextScore, isGameOver: true, isWin: false, isFinishing: false });
       } else {
         set({ hp: nextHp, score: nextScore, isCrashed: true });
       }
@@ -84,7 +84,7 @@ export const useRacingGameStore = create<RacingGameState>()(
       renderCallback();
 
       if (!isOver) {
-        crashTimeoutId = setTimeout(() => set({ isCrashed: false }), 300);
+        crashTimeoutId = window.setTimeout(() => set({ isCrashed: false }), 300);
       }
     },
 

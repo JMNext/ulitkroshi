@@ -4,8 +4,8 @@ export const GAMES = [
   { type: "memory", text: "НАЙДИ ПАРУ", scene: "MemoryGameScene" },
   { type: "catch", text: "СБОР УРОЖАЯ", scene: "CatchGameScene" },
   { type: "snake", text: "ЗМЕЙКА", scene: "SnakeGameScene" },
-  { type: "racing", text: "ГОНОЧКИ", scene: "RacingGameScene" },
-  { type: "planes", text: "ВЕРТОЛЁТИКИ", scene: "PlanesGameScene" }
+  { type: "racing", text: "ФРУКТОВЫЕ ГОНОЧКИ", scene: "RacingGameScene" },
+  { type: "planes", text: "ФРУКТОВЫЙ БОЙ", scene: "PlanesGameScene" }
 ];
 
 export const MODES = [
@@ -15,10 +15,10 @@ export const MODES = [
 ];
 
 export const GAME_COLORS: Record<string, string> = {
-  MemoryGameScene: "bg-[#4caf50] text-white",
-  CatchGameScene: "bg-[#2196f3] text-white",
-  SnakeGameScene: "bg-[#9c27b0] text-white",
-  RacingGameScene: "bg-[#ff9800] text-white",
+  MemoryGameScene: "bg-[#fbc02d] text-[#0f172a]",
+  CatchGameScene: "bg-[#7b1fa2] text-white",
+  SnakeGameScene: "bg-[#8bc34a] text-white",
+  RacingGameScene: "bg-[#e65100] text-white",
   PlanesGameScene: "bg-[#0284c7] text-white"
 };
 
@@ -26,7 +26,7 @@ export const GAME_SVGS: Record<string, React.ReactNode> = {
   MemoryGameScene: (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
       <rect x="2" y="4" width="12" height="16" rx="2" fill="white" />
-      <rect x="10" y="7" width="12" height="16" rx="2" fill="white" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="10" y="7" width="12" height="16" rx="2" fill="white" stroke="rgba(15, 23, 42, 0.25)" strokeWidth="1.5" />
     </svg>
   ),
   CatchGameScene: (

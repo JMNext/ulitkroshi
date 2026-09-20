@@ -9,14 +9,15 @@ interface PlanesGameState {
   isGameOver: boolean;
   isWin: boolean;
   isCrashed: boolean;
+  isFinishing: boolean;
   initGame: () => void;
   addScore: (renderCallback: () => void) => void;
   applyPenalty: (renderCallback: () => void, forceGameOver?: boolean) => void;
   resetStore: () => void;
 }
 
-const initialValues = { score: 0, hp: 100, isGameOver: false, isWin: false, isCrashed: false };
-let crashTimeoutId: ReturnType<typeof setTimeout> | null = null;
+const initialValues = { score: 0, hp: 100, isGameOver: false, isWin: false, isCrashed: false, isFinishing: false };
+let crashTimeoutId: number | null = null;
 
 export const usePlanesGameStore = create<PlanesGameState>()(
   subscribeWithSelector((set, get) => ({
@@ -28,14 +29,15 @@ export const usePlanesGameStore = create<PlanesGameState>()(
     },
 
     addScore: (renderCallback) => {
+      if (get().isGameOver || get().isFinishing) return;
       const nextScore = get().score + 1;
-      const isWin = nextScore >= 20;
+      const reachTarget = nextScore >= 20;
 
-      if (isWin) {
-        useMainGameStore.getState().setGameOver(nextScore, undefined, true);
+      if (reachTarget) {
+        set({ score: nextScore, isFinishing: true });
+      } else {
+        set({ score: nextScore });
       }
-
-      set({ score: nextScore, isGameOver: isWin, isWin });
       renderCallback();
     },
 
@@ -53,22 +55,17 @@ export const usePlanesGameStore = create<PlanesGameState>()(
       const isWin = get().score >= 20;
 
       if (isOver) {
-        useMainGameStore.getState().setGameOver(nextScore, undefined, isWin);
+        useMainGameStore.getState().setGameOver(nextScore, undefined, false);
         if (!isWin) usePetStore.getState().handleGameLoss();
+        set({ hp: 0, score: nextScore, isGameOver: true, isWin: false, isFinishing: false });
+      } else {
+        set({ hp: nextHp, score: nextScore, isCrashed: true });
       }
-
-      set({
-        hp: isOver ? 0 : nextHp,
-        score: nextScore,
-        isCrashed: !isOver,
-        isGameOver: isOver,
-        isWin: isOver ? isWin : false
-      });
 
       renderCallback();
 
       if (!isOver) {
-        crashTimeoutId = setTimeout(() => set({ isCrashed: false }), 400);
+        crashTimeoutId = window.setTimeout(() => set({ isCrashed: false }), 400);
       }
     },
 

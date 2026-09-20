@@ -55,7 +55,7 @@ export const LOOPING_ANIMATIONS = ["sleep_circle", "sad_state", "prostoi1", "pro
 
 export const FOOD_CONFIGS: Record<string, FoodConfig> = {
   fruit_01: { hpRestoreValue: 25, restoresHp: true },
-  fruit_02: { hpRestoreValue: 100, restoresHp: true },
+  fruit_02: { hpRestoreValue: 50, restoresHp: true },
   fruit_03: { hpRestoreValue: 0, restoresHp: false },
   fruit_04: { hpRestoreValue: 0, restoresHp: false }
 };
@@ -71,5 +71,6 @@ export const PET_LOCK_BUBBLES = {
     "Я ХОЧУ КУШАТЬ, А НЕ ИГРАТЬ",
     "ИГРЫ НА ПУСТОЙ ЖЕЛУДОК НЕ РАБОТАЮТ",
     "СНАЧАЛА ЕДА, ПОТОМ РАЗВЛЕЧЕНИЯ"
-  ]
+  ],
+  fullHpStorePhrase: "Я не хочу это есть! Покорми меня обычной едой."
 };

@@ -1,9 +1,12 @@
 import { createBaseDrag } from "@/MainScene/components/PetCharacter/animations/createBaseDrag";
-import { DEFAULT_FOOD_CONFIG, EAT_SOUND_URL, FOOD_CONFIGS } from "@/MainScene/components/PetCharacter/constants/petCharacter.constants";
+import { EAT_SOUND_URL, PET_LOCK_BUBBLES } from "@/MainScene/components/PetCharacter/constants/petCharacter.constants";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
+import { DYNAMIC_BOOSTS } from "@/MainScene/components/SideButtonsMenuModal/ShopModal/constants/shop.constants";
+import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
 
 let cachedEatAudio: HTMLAudioElement | null = null;
 let isFeedingProcessing = false;
+let alertTimeoutId: number | null = null;
 
 export const startFeedingDrag = (
   initialEvent: React.PointerEvent<HTMLDivElement> | PointerEvent,
@@ -23,6 +26,25 @@ export const startFeedingDrag = (
     return;
   }
 
+  const store = usePetStore.getState();
+  let hpRestoreValue = 25;
+  let restoresHp = true;
+
+  if (fruitId) {
+    const activeFruitStoreId = store.inventory?.activeIds?.[fruitId];
+    if (activeFruitStoreId) {
+      const shopItem = DYNAMIC_BOOSTS.find((b) => b.id === Number(activeFruitStoreId));
+      if (shopItem) {
+        restoresHp = shopItem.type.startsWith("health");
+        const match = shopItem.type.match(/\d+/);
+        hpRestoreValue = match ? Number(match) : 25;
+      }
+    } else {
+      if (fruitId === "fruit_02") hpRestoreValue = 50;
+      if (fruitId === "fruit_03" || fruitId === "fruit_04") restoresHp = false;
+    }
+  }
+
   createBaseDrag(
     initialEvent,
     {
@@ -31,20 +53,62 @@ export const startFeedingDrag = (
       onSuccess: () => {
         if (isFeedingProcessing) return;
 
-        const store = usePetStore.getState();
-        const config = FOOD_CONFIGS[fruitId || foodKey] || DEFAULT_FOOD_CONFIG;
+        const currentStore = usePetStore.getState();
+        const mainGameStore = useMainGameStore.getState();
+        const alertMsg = PET_LOCK_BUBBLES.fullHpStorePhrase;
+
+        if (fruitId && currentStore.hp >= 100 && restoresHp) {
+          if (typeof mainGameStore.setAlertText === "function") {
+            if (alertTimeoutId) clearTimeout(alertTimeoutId);
+
+            mainGameStore.setAlertText(alertMsg);
+
+            alertTimeoutId = window.setTimeout(() => {
+              mainGameStore.setAlertText(null);
+            }, 3000);
+          } else {
+            window.dispatchEvent(
+              new CustomEvent("ui_show_bubble", {
+                detail: { text: alertMsg, type: "error" }
+              })
+            );
+          }
+
+          isFeedingProcessing = false;
+          if (onDragEndCallback) onDragEndCallback();
+          return;
+        }
+
         const result = fruitId
-          ? store.useFruitId(fruitId, config.hpRestoreValue, config.restoresHp, false)
-          : store.useFruitId("standard_food", 1, true, true);
+          ? currentStore.useFruitId(fruitId, hpRestoreValue, restoresHp, false)
+          : currentStore.useFruitId("standard_food", 1, true, true);
 
         if (result === "FULL_HP") {
-          window.dispatchEvent(
-            new CustomEvent("ui_show_bubble", {
-              detail: { text: "Спасибо, я сейчас не голоден!", type: "error" }
-            })
-          );
+          if (typeof mainGameStore.setAlertText === "function") {
+            if (alertTimeoutId) clearTimeout(alertTimeoutId);
+
+            mainGameStore.setAlertText(alertMsg);
+
+            alertTimeoutId = window.setTimeout(() => {
+              mainGameStore.setAlertText(null);
+            }, 3000);
+          } else {
+            window.dispatchEvent(
+              new CustomEvent("ui_show_bubble", {
+                detail: { text: alertMsg, type: "error" }
+              })
+            );
+          }
+
+          isFeedingProcessing = false;
+          if (onDragEndCallback) onDragEndCallback();
         } else if (result === "SUCCESS") {
           isFeedingProcessing = true;
+
+          currentStore.triggerCareAction("eat");
+          if (typeof currentStore.playVideo === "function") {
+            currentStore.playVideo("eat");
+          }
 
           if (cachedEatAudio) {
             cachedEatAudio.currentTime = 0;

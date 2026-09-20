@@ -13,7 +13,7 @@ interface CustomScene extends Phaser.Scene {
   difficulty: "easy" | "medium" | "hard";
   addScore: () => void;
   triggerCrash: () => void;
-  gridRenderer: any; // ДОБАВЛЕНО ТУТ ДЛЯ ИСПРАВЛЕНИЯ ОШИБКИ ТИПОВ
+  gridRenderer: any;
   overlayManager: { render: () => void };
 }
 
@@ -48,7 +48,10 @@ export class RacingGameLogicManager {
     this.gameState = "COUNTDOWN";
     this.countdownValue = 3;
     this.playerX = 0;
-    this.playerY = 180;
+
+    const halfH = this.scene.scale.height / 2;
+    this.playerY = halfH - 88;
+
     this.bot1ScoreTimer = 0;
     this.bot2ScoreTimer = 0;
 
@@ -104,16 +107,21 @@ export class RacingGameLogicManager {
     if (this.gameState !== "RACING" || useRacingGameStore.getState().isGameOver) return;
 
     const step = this.playerSpeed * deltaSec;
+    const halfH = this.scene.scale.height / 2;
 
     if (cursors.left.isDown) this.playerX -= step;
     if (cursors.right.isDown) this.playerX += step;
     if (cursors.up.isDown) this.playerY -= step;
     if (cursors.down.isDown) this.playerY += step;
 
-    if (this.playerX < -195) this.playerX = -195;
-    if (this.playerX > 195) this.playerX = 195;
-    if (this.playerY < -230) this.playerY = -230;
-    if (this.playerY > 230) this.playerY = 230;
+    const roadW = this.renderer ? this.renderer.getRoadWidth() : 480;
+    const maxLimitX = roadW / 2 - 28;
+
+    if (this.playerX < -maxLimitX) this.playerX = -maxLimitX;
+    if (this.playerX > maxLimitX) this.playerX = maxLimitX;
+
+    if (this.playerY < -halfH + 88) this.playerY = -halfH + 88;
+    if (this.playerY > halfH - 88) this.playerY = halfH - 88;
 
     this.renderer.drawCar();
   }
@@ -121,16 +129,21 @@ export class RacingGameLogicManager {
   public handleTouchInput(pointer: Phaser.Input.Pointer): void {
     if (this.gameState !== "RACING" || !pointer.isDown || useRacingGameStore.getState().isGameOver) return;
 
+    const halfH = this.scene.scale.height / 2;
     const localX = (pointer.x - this.scene.scale.width / 2) / this.renderer.mainGridContainer.scaleX;
-    const localY = (pointer.y - (this.scene.scale.height / 2 - 20)) / this.renderer.mainGridContainer.scaleY;
+    const localY = (pointer.y - halfH) / this.renderer.mainGridContainer.scaleY;
 
     this.playerX += (localX - this.playerX) * 0.18;
     this.playerY += (localY - this.playerY) * 0.18;
 
-    if (this.playerX < -195) this.playerX = -195;
-    if (this.playerX > 195) this.playerX = 195;
-    if (this.playerY < -230) this.playerY = -230;
-    if (this.playerY > 230) this.playerY = 230;
+    const roadW = this.renderer ? this.renderer.getRoadWidth() : 480;
+    const maxLimitX = roadW / 2 - 28;
+
+    if (this.playerX < -maxLimitX) this.playerX = -maxLimitX;
+    if (this.playerX > maxLimitX) this.playerX = maxLimitX;
+
+    if (this.playerY < -halfH + 88) this.playerY = -halfH + 88;
+    if (this.playerY > halfH - 88) this.playerY = halfH - 88;
 
     this.renderer.drawCar();
   }
@@ -139,6 +152,7 @@ export class RacingGameLogicManager {
     const deltaSec = delta / 1000;
     const store = useRacingGameStore.getState();
     const sceneCtx = this.scene as unknown as CustomScene;
+    const halfH = this.scene.scale.height / 2;
 
     if (this.gameState === "ENDED") return;
 
@@ -162,7 +176,7 @@ export class RacingGameLogicManager {
     if (this.gameState === "RACING" || this.gameState === "FINISHING") {
       this.renderer.updateRoadAnims(this.roadSpeed * deltaSec);
 
-      if (store.isGameOver && this.gameState === "RACING") {
+      if (store.isFinishing && this.gameState === "RACING") {
         this.gameState = "FINISHING";
         this.clearTimers();
 
@@ -193,11 +207,17 @@ export class RacingGameLogicManager {
           continue;
         }
 
-        if (ent.y > 300) {
+        if (ent.y > halfH + 40) {
           ent.sprite.destroy();
           list.splice(i, 1);
         }
       }
+    }
+
+    if (this.renderer && this.renderer.finishLineSprite && this.renderer.finishY >= this.playerY - 15 && this.gameState === "FINISHING") {
+      this.gameState = "ENDED";
+      useRacingGameStore.setState({ isGameOver: true, isWin: true, isFinishing: false });
+      sceneCtx.addScore();
     }
   }
 

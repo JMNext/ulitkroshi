@@ -9,8 +9,6 @@ import { Step2Scene } from "@/Registration/Step_2/Step2Scene";
 import { Step3Scene } from "@/Registration/Step_3/Step3Scene";
 import { Step4Scene } from "@/Registration/Step_4/Step4Scene";
 import { ScannerScene } from "@/ScannerScene/ScannerScene";
-import { authApi } from "@/api/auth.api";
-import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 import Phaser from "phaser";
 import "./global.css";
 import { RacingGameScene } from "@/game/MiniGames/RacingGame/RacingGameScene";
@@ -19,52 +17,6 @@ import { PlanesGameScene } from "@/game/MiniGames/PlanesGame/PlanesGameScene";
 declare global {
   interface Window {
     phaserGame: Phaser.Game | null;
-  }
-}
-
-class BootScene extends Phaser.Scene {
-  constructor() {
-    super({ key: "BootScene" });
-  }
-
-  public async create(): Promise<void> {
-    if (typeof window !== "undefined") {
-      const hasToken = !!localStorage.getItem("accessToken");
-      if (hasToken) {
-        try {
-          const user = await authApi.restore();
-          if (user) {
-            const localName = localStorage.getItem("local_saved_username");
-            if (localName && localName.trim()) {
-              user.name = localName.trim();
-            }
-
-            const petStore = usePetStore.getState() as any;
-            const computedHp = Number(user.petHealth ?? 100);
-            const initialAnim = computedHp <= 25 ? "sad_state" : "prostoi1";
-
-            if (petStore && petStore.updateField) {
-              petStore.updateField("petName", user.petName);
-              petStore.updateField("hp", computedHp);
-            } else {
-              usePetStore.setState({
-                petName: user.petName,
-                hp: computedHp,
-                currentAnim: initialAnim
-              });
-            }
-
-            this.scene.start("MainScene");
-            return;
-          }
-        } catch (e) {
-          if (typeof authApi.resetMockMemory === "function") {
-            authApi.resetMockMemory();
-          }
-        }
-      }
-    }
-    this.scene.start("LoginScene");
   }
 }
 
@@ -97,7 +49,6 @@ window.phaserGame = new Phaser.Game({
   },
   render: { antialias: true, roundPixels: true, pixelArt: false },
   scene: [
-    BootScene,
     LoginScene,
     Step1Scene,
     Step2Scene,
