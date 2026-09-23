@@ -4,8 +4,7 @@ export const GAMES = [
   { type: "memory", text: "НАЙДИ ПАРУ", scene: "MemoryGameScene" },
   { type: "catch", text: "СБОР УРОЖАЯ", scene: "CatchGameScene" },
   { type: "snake", text: "ЗМЕЙКА", scene: "SnakeGameScene" },
-  { type: "racing", text: "ФРУКТОВЫЕ ГОНОЧКИ", scene: "RacingGameScene" },
-  { type: "planes", text: "ФРУКТОВЫЙ БОЙ", scene: "PlanesGameScene" }
+  { type: "racing", text: "ФРУКТОВЫЕ ГОНКИ", scene: "RacingGameScene" }
 ];
 
 export const MODES = [
@@ -18,8 +17,7 @@ export const GAME_COLORS: Record<string, string> = {
   MemoryGameScene: "bg-[#fbc02d] text-[#0f172a]",
   CatchGameScene: "bg-[#7b1fa2] text-white",
   SnakeGameScene: "bg-[#8bc34a] text-white",
-  RacingGameScene: "bg-[#e65100] text-white",
-  PlanesGameScene: "bg-[#0284c7] text-white"
+  RacingGameScene: "bg-[#e65100] text-white"
 };
 
 export const GAME_SVGS: Record<string, React.ReactNode> = {
@@ -45,12 +43,6 @@ export const GAME_SVGS: Record<string, React.ReactNode> = {
       <path d="M4 4 H11 V13 H4 Z M11 4 H18 V13 H11 Z" fill="white" fillRule="evenodd" clipRule="evenodd" />
       <path d="M4 4 V20" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
       <path d="M4 8 H18 M4 11 H18 M7 4 V13 M14 4 V13" stroke="currentColor" strokeWidth="1" strokeOpacity="0.3" />
-    </svg>
-  ),
-  PlanesGameScene: (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
-      <path d="M7 12 H17 M12 7 V17" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
     </svg>
   ),
   LockIcon: (

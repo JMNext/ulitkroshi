@@ -1,108 +1,62 @@
 import { StateCreator } from "zustand";
-import { isMock } from "../../client";
 import { authApi } from "../../auth.api";
+import { isMock } from "../../client";
 import { ApiStateCombined, AuthSliceState } from "../useApiStore";
 
 export const createAuthSlice: StateCreator<ApiStateCombined, [], [], AuthSliceState> = (set, get) => {
-  const handleAuth = (res: any) => {
-    if (!res || !res.accessToken || !res.user) {
-      throw new Error("Невалидный ответ авторизации от сервера");
-    }
+  const saveAuth = (res: any) => {
+    if (!res?.accessToken || !res?.user) throw new Error("Невалидный ответ");
     localStorage.setItem("accessToken", res.accessToken);
     localStorage.setItem("refreshToken", res.refreshToken);
 
-    const serverCoins = isMock ? 5000 : (typeof res.user.coins === "number" ? res.user.coins : 0);
+    const coins = isMock ? 5000 : typeof res.user.coins === "number" ? res.user.coins : 0;
+    localStorage.setItem("local_user_coins", String(coins));
 
-    if (typeof window !== "undefined") {
-      localStorage.setItem("local_user_coins", String(serverCoins));
-      const localName = localStorage.getItem("local_saved_username");
-      if (localName && localName.trim()) {
-        res.user.name = localName.trim();
-      }
-    }
-    set({ user: res.user, token: res.accessToken, coins: serverCoins, isAuthenticated: true, isLoading: false });
+    const name = localStorage.getItem("local_saved_username")?.trim();
+    if (name) res.user.name = name;
+
+    set({ user: res.user, token: res.accessToken, coins, isAuthenticated: true, isLoading: false });
     return res;
   };
 
+  const fail = (err: any) => { set({ isLoading: false, error: err instanceof Error ? err.message : "Ошибка" }); throw err; };
+
   return {
-    user: null,
-    token: null,
-    isAuthenticated: false,
-    isLoading: false,
-    error: null,
+    user: null, token: null, isAuthenticated: false, isLoading: false, error: null,
 
     clearError: () => set({ error: null }),
 
     checkName: async (name: string) => {
       set({ isLoading: true, error: null });
       try {
-        const currentUser = get().user;
-        const cleanName = name.trim();
-        if (typeof window !== "undefined" && cleanName) {
-          localStorage.setItem("local_saved_username", cleanName);
-        }
-        if (currentUser) {
-          set({ user: { ...currentUser, name: cleanName } });
-        }
+        const clean = name.trim();
+        if (clean) localStorage.setItem("local_saved_username", clean);
+        if (get().user) set({ user: { ...get().user!, name: clean } });
         set({ isLoading: false });
         return { available: true };
-      } catch (err) {
-        set({ isLoading: false, error: err instanceof Error ? err.message : "Ошибка" });
-        throw err;
-      }
+      } catch (err) { return fail(err); }
     },
 
     loginPhone: async (phone: string, chosenPetName?: string) => {
       set({ isLoading: true, error: null });
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("local_user_coins");
-      }
-      try {
-        const res = await authApi.loginPhone(phone, chosenPetName);
-        set({ isLoading: false, coins: 0 });
-        return res;
-      } catch (err) {
-        set({ isLoading: false, error: err instanceof Error ? err.message : "Ошибка" });
-        throw err;
-      }
+      localStorage.removeItem("local_user_coins");
+      try { const res = await authApi.loginPhone(phone, chosenPetName); set({ isLoading: false, coins: 0 }); return res; }
+      catch (err) { return fail(err); }
     },
 
     verifySms: async (phone: string, code: string) => {
       set({ isLoading: true, error: null });
-      try {
-        const res = await authApi.verifySms(phone, code);
-        set({ isLoading: false });
-        return res;
-      } catch (err) {
-        set({ isLoading: false, error: err instanceof Error ? err.message : "Ошибка" });
-        throw err;
-      }
+      try { const res = await authApi.verifySms(phone, code); set({ isLoading: false }); return res; }
+      catch (err) { return fail(err); }
     },
 
     refreshToken: async () => {
       const rt = localStorage.getItem("refreshToken");
-      if (!rt) {
-        set({ isAuthenticated: false, isLoading: false, user: null, token: null });
-        return false;
-      }
+      if (!rt) { set({ isAuthenticated: false, isLoading: false, user: null, token: null }); return false; }
       set({ isLoading: true, error: null });
-      try {
-        const res = await authApi.refresh(rt);
-        localStorage.setItem("accessToken", res.accessToken);
-        localStorage.setItem("refreshToken", res.refreshToken);
-        const serverCoins = isMock ? 5000 : (typeof res.user.coins === "number" ? res.user.coins : 0);
-        if (typeof window !== "undefined") {
-          localStorage.setItem("local_user_coins", String(serverCoins));
-          const localName = localStorage.getItem("local_saved_username");
-          if (localName && localName.trim()) {
-            res.user.name = localName.trim();
-          }
-        }
-        set({ user: res.user, token: res.accessToken, coins: serverCoins, isAuthenticated: true, isLoading: false });
-        return true;
-      } catch {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+      try { return !!saveAuth(await authApi.refresh(rt)); }
+      catch {
+        localStorage.removeItem("accessToken"); localStorage.removeItem("refreshToken");
         set({ isLoading: false, isAuthenticated: false, user: null, token: null, coins: 0 });
         return false;
       }
@@ -110,15 +64,8 @@ export const createAuthSlice: StateCreator<ApiStateCombined, [], [], AuthSliceSt
 
     logout: async () => {
       set({ isLoading: true });
-      try {
-        await authApi.logout();
-      } catch {}
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("mock_accessToken");
-      localStorage.removeItem("login_phone_buffer");
-      localStorage.removeItem("local_user_coins");
-      localStorage.removeItem("local_saved_username");
+      try { await authApi.logout(); } catch {}
+      ["accessToken", "refreshToken", "mock_accessToken", "login_phone_buffer", "local_user_coins", "local_saved_username"].forEach(k => localStorage.removeItem(k));
       if (typeof authApi.resetMockMemory === "function") authApi.resetMockMemory();
       set({ user: null, token: null, coins: 0, isAuthenticated: false, isLoading: false, error: null });
       window.location.reload();

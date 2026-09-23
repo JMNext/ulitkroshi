@@ -1,134 +1,61 @@
-import { UserProfile, AuthResponse } from "@/api/types/types";
+import { AuthResponse, UserProfile } from "@/api/types/types";
 
-let mockCoinsMemory = 5000;
-let mockUnlockedPetsMemory: number[] = [];
-let mockPhoneMemory = "";
-let mockPetNameMemory = "";
-let mockUserNameMemory = "";
-let mockPetHealthMemory = 100;
+const initMem = () => ({ coins: 5000, pets: [] as number[], phone: "", petName: "", user: "", hp: 100, disc: "" });
+let mem = initMem();
 
-const createMockUser = (name = "", phone = ""): UserProfile => {
-  const mockId = 12345;
-  const finalUserName = name || mockUserNameMemory || `Player_${mockId}`;
-  const finalPetName = mockPetNameMemory || "Булька";
-
+const getUser = (name = "", phone = ""): UserProfile => {
+  if (!mem.disc) mem.disc = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
   return {
-    id: mockId,
-    name: finalUserName,
-    phone: phone || mockPhoneMemory || "79991112233",
-    roles: ["user"],
-    coins: mockCoinsMemory,
-    unlockedPets: mockUnlockedPetsMemory,
-    petName: finalPetName,
-    petHealth: mockPetHealthMemory
-  };
+    id: 12345, name: name || mem.user || `Player_12345`, discriminator: mem.disc,
+    phone: phone || mem.phone || "79991112233", roles: ["user"], coins: mem.coins,
+    unlockedPets: mem.pets, petName: mem.petName || "Булька", petHealth: mem.hp
+  } as any;
 };
 
-const generateMockAuth = (prefix: string, name?: string, phone?: string): AuthResponse => ({
-  accessToken: `${prefix}_acc_${Date.now()}`,
-  refreshToken: `${prefix}_ref_${Date.now()}`,
-  user: createMockUser(name, phone)
+const genAuth = (prefix: string, name?: string, phone?: string): AuthResponse => ({
+  accessToken: `${prefix}_acc_${Date.now()}`, refreshToken: `${prefix}_ref_${Date.now()}`, user: getUser(name, phone)
 });
 
 export const mockApi = {
   resetMockMemory() {
-    mockCoinsMemory = 5000;
-    mockUnlockedPetsMemory = [];
-    mockPhoneMemory = "";
-    mockPetNameMemory = "";
-    mockUserNameMemory = "";
-    mockPetHealthMemory = 100;
-
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("saved_user_phone");
-      localStorage.removeItem("login_phone_buffer");
-      localStorage.removeItem("active_reg_session_id");
-      localStorage.removeItem("is_login_flow");
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("local_user_coins");
-    }
+    mem = initMem();
+    if (typeof window !== "undefined") ["saved_user_phone", "login_phone_buffer", "active_reg_session_id", "is_login_flow", "accessToken", "refreshToken", "local_user_coins"].forEach(k => localStorage.removeItem(k));
   },
 
-  async checkLoginPhone(phone: string): Promise<{ success: boolean; isLogin: boolean }> {
-    mockPhoneMemory = phone;
-    const isRegistered = typeof window !== "undefined" && localStorage.getItem("saved_user_phone") === phone;
-    return { success: true, isLogin: isRegistered };
+  async checkLoginPhone(phone: string) { mem.phone = phone; return { success: true, isLogin: typeof window !== "undefined" && localStorage.getItem("saved_user_phone") === phone }; },
+  async login(phone: string, password: string) { mem.phone = phone; return genAuth("mock"); },
+  async logout() { this.resetMockMemory(); },
+  async restore() { return getUser(); },
+  async refresh(refreshToken: string) { return genAuth("mock"); },
+
+  async register(data: { name: string; phone: string }) {
+    mem.coins = 5000; mem.user = mem.phone = mem.petName = data.name;
+    mem.disc = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
+    if (typeof window !== "undefined") localStorage.setItem("saved_user_phone", data.phone);
+    return genAuth("mock_reg", data.name, data.phone);
   },
 
-  async login(phone: string, password: string): Promise<AuthResponse> {
-    mockPhoneMemory = phone;
-    return generateMockAuth("mock");
+  async loginPhone(phone: string, chosenPetName?: string) {
+    mem.phone = phone; if (chosenPetName) mem.petName = chosenPetName;
+    return { success: true, sessionId: "mock_sess_" + Date.now(), isLogin: typeof window !== "undefined" && localStorage.getItem("saved_user_phone") === phone };
   },
 
-  async logout(): Promise<void> {
-    this.resetMockMemory();
-    return Promise.resolve();
+  async verifySms(phone: string, code: string) { return { sessionId: "mock_sess_verified_" + Date.now() }; },
+
+  async verifyFruit(sessionId: string, fruits: string, phone?: string) {
+    if (phone) { mem.phone = phone; if (typeof window !== "undefined") localStorage.setItem("saved_user_phone", phone); }
+    mem.coins = 5000; return genAuth("mock_fruit", mem.user, phone);
   },
 
-  async restore(): Promise<UserProfile> {
-    return createMockUser();
+  async getCoins() { return { coins: mem.coins }; },
+
+  async updateCoins(action: "buy_medicine" | "mini_game_reward" | "buy_shop_items", total?: number) {
+    if (action === "buy_medicine") mem.coins = Math.max(0, mem.coins - 30);
+    else if (action === "mini_game_reward") mem.coins += Number(total || 0);
+    else if (action === "buy_shop_items" && total) mem.coins = Math.max(0, mem.coins - total);
+    return { coins: mem.coins };
   },
 
-  async refresh(refreshToken: string): Promise<AuthResponse> {
-    return generateMockAuth("mock");
-  },
-
-  async register(data: { name: string; phone: string }): Promise<AuthResponse> {
-    mockCoinsMemory = 5000;
-    mockUserNameMemory = data.name;
-    mockPhoneMemory = data.phone;
-    mockPetNameMemory = data.name;
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem("saved_user_phone", data.phone);
-    }
-
-    return generateMockAuth("mock_reg", data.name, data.phone);
-  },
-
-  async loginPhone(phone: string, chosenPetName?: string): Promise<{ success: boolean; sessionId: string; isLogin: boolean }> {
-    mockPhoneMemory = phone;
-    if (chosenPetName) mockPetNameMemory = chosenPetName;
-    const isRegistered = typeof window !== "undefined" && localStorage.getItem("saved_user_phone") === phone;
-    return { success: true, sessionId: "mock_sess_" + Date.now(), isLogin: isRegistered };
-  },
-
-  async verifySms(phone: string, code: string): Promise<{ sessionId: string }> {
-    return { sessionId: "mock_sess_verified_" + Date.now() };
-  },
-
-  async verifyFruit(sessionId: string, fruits: string, phone?: string): Promise<AuthResponse> {
-    if (phone) mockPhoneMemory = phone;
-    mockCoinsMemory = 5000;
-
-    if (typeof window !== "undefined" && phone) {
-      localStorage.setItem("saved_user_phone", phone);
-    }
-
-    return generateMockAuth("mock_fruit", mockUserNameMemory, phone);
-  },
-
-  async getCoins(): Promise<{ coins: number }> {
-    return { coins: mockCoinsMemory };
-  },
-
-  async updateCoins(
-    actionType: "buy_medicine" | "mini_game_reward" | "buy_shop_items",
-    total?: number
-  ): Promise<{ coins: number }> {
-    if (actionType === "buy_medicine") mockCoinsMemory = Math.max(0, mockCoinsMemory - 30);
-    if (actionType === "mini_game_reward") mockCoinsMemory += Number(total || 0);
-    if (actionType === "buy_shop_items" && total) mockCoinsMemory = Math.max(0, mockCoinsMemory - total);
-    return { coins: mockCoinsMemory };
-  },
-
-  async feedPet(): Promise<UserProfile> {
-    mockPetHealthMemory = Math.min(100, mockPetHealthMemory + 20);
-    return createMockUser();
-  },
-
-  async getPetStatus(): Promise<UserProfile> {
-    return createMockUser();
-  }
+  async feedPet() { mem.hp = Math.min(100, mem.hp + 20); return getUser(); },
+  async getPetStatus() { return getUser(); }
 };

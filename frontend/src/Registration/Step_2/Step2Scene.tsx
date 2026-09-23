@@ -1,13 +1,11 @@
-import { useRegistrationStep2Store } from "@/Registration/Step_2/store/useRegistrationStep2Store";
 import { registerSceneEvent } from "@/eventbus/registerSceneEvent";
 import Phaser from "phaser";
-import React from "react";
 import { createRoot, Root } from "react-dom/client";
 import fonGorizUrl from "../../assets/background/fon_goriz.png";
 import fonVertUrl from "../../assets/background/fon_vert.png";
 import { Step2UiManager } from "./Step2UiManager";
 
-const CONFIG = { BASE_W: 460, BASE_VERT_H: 960, BASE_HORIZ_H: 840, PADDING: 0.9 };
+const CONF = { BASE_W: 460, BASE_VERT_H: 960, BASE_HORIZ_H: 840, PAD: 0.9 };
 
 export class Step2Scene extends Phaser.Scene {
   public backgroundIm!: Phaser.GameObjects.Image;
@@ -15,22 +13,12 @@ export class Step2Scene extends Phaser.Scene {
   private currentOrientation: "vert" | "goriz" | null = null;
   private reactRoot: Root | null = null;
 
-  constructor() {
-    super({ key: "Step2Scene" });
-  }
-
-  private syncStore(): void {
-    const store = useRegistrationStep2Store.getState();
-    store.setPhaserScene(this);
-    store.clearErrors();
-    store.checkSavedDevicePhone(() => this.triggerResize());
-  }
+  constructor() { super({ key: "Step2Scene" }); }
 
   public init(): void {
-    const container = document.getElementById("game-container");
-    if (container) {
-      container.querySelectorAll("#phaser-native-step1-bubble, #phaser-native-success-bubble").forEach(el => el.remove());
-    }
+    document.getElementById("game-container")
+      ?.querySelectorAll("#phaser-native-step1-bubble, #phaser-native-success-bubble")
+      .forEach((el) => el.remove());
   }
 
   public preload(): void {
@@ -47,16 +35,20 @@ export class Step2Scene extends Phaser.Scene {
 
     this.mountReactUI();
     if (w && h) this.executeResizeLogic(w, h);
-    this.syncStore();
 
     this.scale.on("resize", this.triggerResize, this);
-    this.sys.events.on("wake", this.handleWake, this).on("sleep", this.handleSleep, this)
-      .once("shutdown", this.cleanUp, this).once("destroy", this.cleanUp, this);
+    this.sys.events.on("wake", this.handleWake, this).on("sleep", this.handleSleep, this).once("shutdown", this.cleanUp, this).once("destroy", this.cleanUp, this);
 
-    registerSceneEvent(this, "step2_scene_start", this.handleExternalStart.bind(this));
-    registerSceneEvent(this, "step2_scene_stop", this.handleExternalStop.bind(this));
+    registerSceneEvent(this, "step2_scene_start", () => this.scene.start());
+    registerSceneEvent(this, "step2_scene_stop", () => {
+      if (this.sys.isActive()) {
+        if (this.uiContainer) this.uiContainer.style.opacity = "0";
+        this.tweens.add({ targets: this.backgroundIm, alpha: 0, duration: 200, onComplete: () => this.scene.stop() });
+      }
+    });
 
     this.triggerResize();
+    this.events.emit("phaser_scene_ready");
   }
 
   private mountReactUI(): void {
@@ -71,91 +63,60 @@ export class Step2Scene extends Phaser.Scene {
   }
 
   public triggerResize(): void {
-    if (this.sys.isActive() && this.scale?.width && this.scale?.height) {
-      this.executeResizeLogic(Number(this.scale.width), Number(this.scale.height));
-    }
-  }
-
-  private handleExternalStart(): void {
-    this.scene.start();
-  }
-
-  private handleExternalStop(): void {
-    if (this.sys.isActive()) {
-      if (this.uiContainer) this.uiContainer.style.opacity = "0";
-      this.tweens.add({
-        targets: this.backgroundIm,
-        alpha: 0,
-        duration: 200,
-        onComplete: () => this.scene.stop()
-      });
-    }
+    if (this.sys.isActive() && this.scale?.width) this.executeResizeLogic(Number(this.scale.width), Number(this.scale.height));
   }
 
   private executeResizeLogic(width: number, height: number): void {
-    const w = Number(width), h = Number(height), isVert = h > w;
-    const nextOrient = isVert ? "vert" : "goriz";
+    const w = Number(width), h = Number(height), isVert = h > w, next = isVert ? "vert" : "goriz";
 
-    if (this.currentOrientation !== nextOrient) {
-      this.currentOrientation = nextOrient;
-      const texture = `step2_bg_fon_${nextOrient}`;
-      if (this.textures.exists(texture)) {
-        this.tweens.killTweensOf(this.backgroundIm);
-        this.backgroundIm.setAlpha(1).setTexture(texture);
-      }
+    if (this.currentOrientation !== next) {
+      this.currentOrientation = next;
+      const t = `step2_bg_fon_${next}`;
+      if (this.textures.exists(t)) { this.tweens.killTweensOf(this.backgroundIm); this.backgroundIm.setAlpha(1).setTexture(t); }
     }
     this.backgroundIm.setPosition(w / 2, h / 2).setDisplaySize(w, h);
 
     const aspect = w / h;
-    let computedScale = 1;
+    let sc = 1;
 
     if (isVert) {
-      const scaleX = w / CONFIG.BASE_W;
-      computedScale = aspect >= 0.7 ? scaleX * 0.75 : aspect > 0.6 ? scaleX : aspect < 0.48 ? scaleX * 0.92 : scaleX * 0.96;
-      if (h < 700) computedScale *= 0.93;
-      computedScale = Math.max(0.42, Math.min(1.3, computedScale));
+      const sX = w / CONF.BASE_W;
+      sc = aspect >= 0.7 ? sX * 0.75 : aspect > 0.6 ? sX : aspect < 0.48 ? sX * 0.92 : sX * 0.96;
+      if (h < 700) sc *= 0.93;
+      sc = Math.max(0.42, Math.min(1.3, sc));
     } else {
-      const scaleX = (w * CONFIG.PADDING) / CONFIG.BASE_W;
-      const scaleY = (h * CONFIG.PADDING) / CONFIG.BASE_HORIZ_H;
-      computedScale = Math.min(scaleX, scaleY);
-      if (aspect < 1.45) computedScale = Math.min(scaleX * 0.92, scaleY * 0.95);
-      computedScale = Math.max(0.3, Math.min(1.25, computedScale));
+      const sX = (w * CONF.PAD) / CONF.BASE_W, sY = (h * CONF.PAD) / CONF.BASE_HORIZ_H;
+      sc = Math.min(sX, sY);
+      if (aspect < 1.45) sc = Math.min(sX * 0.92, sY * 0.95);
+      sc = Math.max(0.3, Math.min(1.25, sc));
     }
 
-    const viewW = w / computedScale;
-    const screenMode = isVert ? (viewW < 750 ? "fold" : "mobile") : aspect < 1.6 ? "tablet" : "desktop";
+    const viewW = w / sc;
+    const mode: "fold" | "mobile" | "tablet" | "desktop" = isVert ? (viewW < 750 ? "fold" : "mobile") : (aspect < 1.6 ? "tablet" : "desktop");
 
-    useRegistrationStep2Store.getState().setLayout({ screenMode, viewW, scale: computedScale, isVert }, computedScale);
-    this.events.emit("phaser_scene_resize", { width: w, height: h, isVert });
+    this.events.emit("phaser_scene_resize", { width: w, height: h, isVert, scale: sc, viewW, screenMode: mode });
   }
 
-  private handleWake(): void {
-    this.mountReactUI();
-    this.syncStore();
-  }
+  private handleWake(): void { this.mountReactUI(); this.events.emit("phaser_scene_ready"); }
 
   private handleSleep(): void {
-    useRegistrationStep2Store.getState().resetStore();
+    this.events.emit("phaser_scene_sleep");
     if (this.uiContainer) this.uiContainer.style.opacity = "0";
     this.tweens.add({
-      targets: this.backgroundIm,
-      alpha: 0,
-      duration: 200,
+      targets: this.backgroundIm, alpha: 0, duration: 200,
       onComplete: () => {
         try { this.reactRoot?.unmount(); } catch (_) {}
-        this.uiContainer?.remove();
-        this.reactRoot = this.uiContainer = null;
+        this.uiContainer?.remove(); this.reactRoot = this.uiContainer = null;
       }
     });
   }
 
   private cleanUp(): void {
-    useRegistrationStep2Store.getState().resetStore();
+    this.events.emit("phaser_scene_cleanup");
     this.scale.off("resize", this.triggerResize, this);
     this.sys.events.off("wake", this.handleWake, this).off("sleep", this.handleSleep, this);
     this.tweens.killTweensOf(this.backgroundIm);
     try { this.reactRoot?.unmount(); } catch (_) {}
-    this.uiContainer?.remove();
-    this.reactRoot = this.uiContainer = null;
+    this.uiContainer?.remove(); this.reactRoot = this.uiContainer = null;
   }
 }

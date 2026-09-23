@@ -2,143 +2,67 @@ import { useEffect, useRef } from "react";
 import { useRegistrationStep1Store } from "../store/useRegistrationStep1Store";
 import micBtnImg from "/src/assets/registration/microphone_button.png";
 
-interface SpeechRecognitionEvent {
-  resultIndex: number;
-  results: {
-    [index: number]: {
-      [index: number]: {
-        transcript: string;
-      };
-    };
-  };
-}
-
-interface SpeechRecognitionErrorEvent {
-  error: string;
-}
-
-interface ISpeechRecognition {
-  continuous: boolean;
-  lang: string;
-  interimResults: boolean;
-  maxAlternatives: number;
-  onstart: (() => void) | null;
-  onend: (() => void) | null;
-  onerror: ((ev: SpeechRecognitionErrorEvent) => void) | null;
-  onresult: ((ev: SpeechRecognitionEvent) => void) | null;
-  start: () => void;
-  abort: () => void;
-}
-
-interface SpeechRecognitionConstructor {
-  new (): ISpeechRecognition;
-}
-
 declare global {
   interface Window {
     __globalBgAudio?: HTMLAudioElement;
-    SpeechRecognition?: SpeechRecognitionConstructor;
-    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    SpeechRecognition?: any;
+    webkitSpeechRecognition?: any;
   }
 }
 
-const toggleGlobalAudio = (play: boolean) => {
+const toggleAudio = (play: boolean) => {
   const audio = window.__globalBgAudio;
-  if (!audio) return;
-  if (play) {
-    audio.play().catch(() => {});
-  } else {
-    audio.pause();
-  }
+  if (audio) play ? audio.play().catch(() => {}) : audio.pause();
 };
 
 export const SpeechMicButton = () => {
-  const recognitionRef = useRef<ISpeechRecognition | null>(null);
-  const isListeningRef = useRef<boolean>(false);
+  const recRef = useRef<any>(null);
+  const isListRef = useRef(false);
   const { setSpeechResult, setSpeechError, setInput } = useRegistrationStep1Store();
 
   useEffect(() => {
-    const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognitionClass) return;
+    const Class = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Class) return;
 
-    const rec = new SpeechRecognitionClass();
-    rec.continuous = false;
-    rec.lang = "ru-RU";
-    rec.interimResults = false;
-    rec.maxAlternatives = 1;
+    const rec = new Class();
+    rec.continuous = false; rec.lang = "ru-RU"; rec.interimResults = false; rec.maxAlternatives = 1;
 
-    rec.onstart = () => {
-      isListeningRef.current = true;
-      toggleGlobalAudio(false);
+    rec.onstart = () => { isListRef.current = true; toggleAudio(false); };
+    rec.onend = () => { isListRef.current = false; };
+    rec.onerror = (e: any) => {
+      isListRef.current = false; toggleAudio(true);
+      if (e.error !== "aborted" && ["no-speech", "audio-capture", "not-allowed"].includes(e.error)) setSpeechError();
     };
-
-    rec.onend = () => {
-      isListeningRef.current = false;
-    };
-
-    rec.onerror = (e: SpeechRecognitionErrorEvent) => {
-      isListeningRef.current = false;
-      toggleGlobalAudio(true);
-      if (e.error !== "aborted" && ["no-speech", "audio-capture", "not-allowed"].includes(e.error)) {
-        setSpeechError();
-      }
-    };
-
-    rec.onresult = (e: SpeechRecognitionEvent) => {
-      isListeningRef.current = false;
-      toggleGlobalAudio(true);
+    rec.onresult = (e: any) => {
+      isListRef.current = false; toggleAudio(true);
       const text = e.results?.[0]?.[0]?.transcript;
-      if (text) {
-        setSpeechResult(text.replace(/[^a-zA-Zа-яА-ЯёЁ0-9\s-]/g, ""));
-      }
+      if (text) setSpeechResult(text.replace(/[^a-zA-Zа-яА-ЯёЁ0-9\s-]/g, ""));
     };
 
-    recognitionRef.current = rec;
-
+    recRef.current = rec;
     return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.onstart = null;
-        recognitionRef.current.onend = null;
-        recognitionRef.current.onresult = null;
-        recognitionRef.current.onerror = null;
-        recognitionRef.current.abort();
-      }
+      if (recRef.current) { recRef.current.onstart = recRef.current.onend = recRef.current.onresult = recRef.current.onerror = null; recRef.current.abort(); }
     };
   }, [setSpeechError, setSpeechResult]);
 
   const handleMicClick = () => {
-    setInput("");
-    (document.activeElement as HTMLElement)?.blur?.();
+    setInput(""); (document.activeElement as HTMLElement)?.blur?.();
 
-    if (!recognitionRef.current) {
-      toggleGlobalAudio(false);
-      setTimeout(() => {
-        if (Math.random() > 0.3) {
-          setSpeechResult(`Крош${Math.floor(100 + Math.random() * 900)}`);
-        } else {
-          setSpeechError();
-        }
-        toggleGlobalAudio(true);
+    if (!recRef.current) {
+      toggleAudio(false);
+      return setTimeout(() => {
+        Math.random() > 0.3 ? setSpeechResult(`Крош${Math.floor(100 + Math.random() * 900)}`) : setSpeechError();
+        toggleAudio(true);
       }, 1000);
-      return;
     }
 
-    if (isListeningRef.current) {
-      recognitionRef.current.abort();
-      isListeningRef.current = false;
-      toggleGlobalAudio(true);
-    } else {
-      recognitionRef.current.start();
-    }
+    if (isListRef.current) { recRef.current.abort(); isListRef.current = false; toggleAudio(true); }
+    else recRef.current.start();
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleMicClick}
-      className="pointer-events-auto m-0 box-border flex h-[100px] w-[100px] cursor-pointer touch-manipulation items-center justify-center border-0 bg-transparent p-0 transition-all duration-75 outline-none active:scale-95"
-    >
-      <img src={micBtnImg} className="pointer-events-none block h-full w-full object-contain" alt="Микрофон" />
+    <button type="button" onClick={handleMicClick} className="pointer-events-auto m-0 box-border flex h-[100px] w-[100px] cursor-pointer touch-manipulation items-center justify-center border-0 bg-transparent p-0 transition-all duration-75 outline-none active:scale-95">
+      <img src={micBtnImg} className="pointer-events-none block h-full w-full object-contain" alt="" />
     </button>
   );
 };

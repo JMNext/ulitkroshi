@@ -1,127 +1,70 @@
-import { CloseButton } from "@/CloseButton/CloseButton";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
-import NiceModal, { useModal } from "@ebay/nice-modal-react";
-import * as Dialog from "@radix-ui/react-dialog";
-import { clsx } from "clsx";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ScannerBottomControls } from "./components/ScannerBottomControls";
 import { ScannerTopTip } from "./components/ScannerTopTip";
 import { ScannerViewArea } from "./components/ScannerViewArea";
+import { ScannerScene } from "./ScannerScene";
 import { useScannerStore } from "./store/useScannerStore";
 
-interface PetScannerUIProps {
-  shouldAutoStartCamera?: boolean;
-  onCloseCallback?: () => void;
-}
-
-export const PetScannerUI = NiceModal.create(({ shouldAutoStartCamera, onCloseCallback }: PetScannerUIProps) => {
-  const modal = useModal();
+export const PetScannerUI = ({ phaserScene, shouldAutoStartCamera = true }: { phaserScene: ScannerScene; shouldAutoStartCamera?: boolean }) => {
   const [mode, setMode] = useState<"qr" | "code">("qr");
   const [digitalCode, setDigitalCode] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const isInitializingRef = useRef(false);
+  const isInitRef = useRef(false);
+  const [scale, setScale] = useState(1);
 
-  const addPetByCode = useMainGameStore((s) => s.addPetByCode);
-  const setAlertText = useMainGameStore((s) => s.setAlertText);
+  const addPet = useMainGameStore((s) => s.addPetByCode);
+  const setAlert = useMainGameStore((s) => s.setAlertText);
   const { cameraError, qrScanner, initScanner, safelyStopScanner } = useScannerStore();
 
-  const handleClose = async () => {
-    isInitializingRef.current = false;
-    await safelyStopScanner();
-    setAlertText("");
-    modal.hide();
-    onCloseCallback?.();
-  };
-
-  const handleSuccess = async (code: string) => {
-    if (addPetByCode(code)) await handleClose();
-  };
+  const handleClose = async () => { isInitRef.current = false; await safelyStopScanner(); setAlert(""); phaserScene.events.emit("scanner_close"); };
+  const handleSuccess = async (code: string) => { if (addPet(code)) await handleClose(); };
 
   useEffect(() => {
-    let isCurrent = true;
+    const resize = () => {
+      if (!phaserScene?.scale) return;
+      const w = Number(phaserScene.scale.width), h = Number(phaserScene.scale.height), isVert = h > w;
+      const el = document.querySelector(".phaser-ui-root-container");
+      const ps = el ? parseFloat(getComputedStyle(el).getPropertyValue("--game-scale")) || 1 : 1;
+      setScale(isVert ? (w >= 768 ? Math.max(ps * 1.25, (w * 0.52) / 340) : (w * 0.82) / 340) : (w >= 1024 && h >= 768 ? Math.min(1.0, Math.max(ps * 1.3, (w * 0.48) / 340)) : Math.max(0.5, Math.min(ps, (h * 0.85) / 640))));
+    };
+    phaserScene.scale.on("resize", resize); resize();
+    return () => { phaserScene.scale.off("resize", resize); };
+  }, [phaserScene]);
 
-    if (mode !== "qr" || !shouldAutoStartCamera) {
-      isInitializingRef.current = false;
-      safelyStopScanner();
-      if (mode === "code") {
-        setTimeout(() => isCurrent && inputRef.current?.focus(), 50);
-      }
-      return;
-    }
-
-    const isAlreadyScanning = !!useScannerStore.getState().qrScanner?.isScanning;
-    if (isInitializingRef.current || isAlreadyScanning) return;
+  useEffect(() => {
+    let cur = true;
+    if (mode !== "qr" || !shouldAutoStartCamera) { isInitRef.current = false; safelyStopScanner(); if (mode === "code") setTimeout(() => cur && inputRef.current?.focus(), 50); return; }
+    if (isInitRef.current || qrScanner?.isScanning) return;
 
     const timer = setTimeout(() => {
-      const container = document.getElementById("add-pet-qr-container");
-      if (!isCurrent || !container) return;
-
-      isInitializingRef.current = true;
-      initScanner("add-pet-qr-container", (text) => {
-        if (isCurrent) handleSuccess(text);
-      });
+      if (cur && document.getElementById("add-pet-qr-container")) { isInitRef.current = true; initScanner("add-pet-qr-container", (text) => cur && handleSuccess(text)); }
     }, 150);
 
-    return () => {
-      isCurrent = false;
-      clearTimeout(timer);
-      if (isInitializingRef.current) {
-        isInitializingRef.current = false;
-        safelyStopScanner();
-      }
-    };
-  }, [mode, shouldAutoStartCamera]);
+    return () => { cur = false; clearTimeout(timer); if (isInitRef.current) { isInitRef.current = false; safelyStopScanner(); } };
+  }, [mode, shouldAutoStartCamera, qrScanner]);
 
-  const isQr = mode === "qr";
-  const trimmedCode = digitalCode.trim();
-  const isScanning = !!qrScanner?.isScanning;
+  const trimmed = digitalCode.trim();
 
   return (
-    <Dialog.Root open={modal.visible} onOpenChange={(open) => !open && handleClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" />
-        <Dialog.Content className="pointer-events-auto fixed inset-0 z-50 box-border flex items-center justify-center outline-none">
-          <div className="absolute inset-0 box-border h-full w-full">
-            <Dialog.Close asChild>
-              <CloseButton className="pointer-events-auto !absolute top-[30px] right-[30px] z-50 !h-[44px] !w-[44px] text-[18px] sm:!h-[54px] sm:!w-[54px] sm:text-[24px] [@media(orientation:landscape)]:[@media(max-height:500px)]:top-[20px] [@media(orientation:landscape)]:[@media(max-height:500px)]:right-[20px]" />
-            </Dialog.Close>
+    <div className="pointer-events-auto fixed inset-0 z-50 box-border flex items-center justify-center bg-transparent select-none">
+      <div className="pointer-events-auto fixed top-0 left-0 z-50 flex origin-top-left flex-col p-[16px_20px] landscape:p-[24px_48px]">
+        <button type="button" onClick={() => { (document.activeElement as HTMLElement)?.blur?.(); handleClose(); }} className="flex cursor-pointer items-center gap-1 border-none bg-transparent p-1 font-sans text-2xl font-black text-white uppercase drop-shadow-[0_3px_5px_rgba(0,0,0,0.8)] transition-transform duration-100 ease-out outline-none hover:scale-105 active:scale-95">
+          <span className="relative top-[-1.5px] text-[26px]">‹</span> Назад
+        </button>
+      </div>
 
-            <Dialog.Title className="sr-only">Сканер питомцев</Dialog.Title>
-
-            <div
-              className={clsx(
-                "absolute box-border flex flex-col items-center bg-transparent",
-                isQr
-                  ? "top-0 bottom-0 h-full w-full max-w-[430px] left-1/2 -translate-x-1/2 justify-between p-4 pt-20 pb-6 [@media(orientation:landscape)]:[@media(max-height:500px)]:left-0 [@media(orientation:landscape)]:[@media(max-height:500px)]:translate-x-0 [@media(orientation:landscape)]:[@media(max-height:500px)]:max-w-full [@media(orientation:landscape)]:[@media(max-height:500px)]:w-full [@media(orientation:landscape)]:[@media(max-height:500px)]:flex-row [@media(orientation:landscape)]:[@media(max-height:500px)]:px-12 [@media(orientation:landscape)]:[@media(max-height:500px)]:justify-between"
-                  : "top-1/2 left-1/2 w-full max-w-[440px] -translate-x-1/2 -translate-y-1/2 justify-center gap-6 p-4 max-sm:gap-4"
-              )}
-            >
-              <div className={clsx("flex flex-col items-center justify-center", isQr ? "mt-[20px] w-full [@media(orientation:landscape)]:[@media(max-height:500px)]:mt-0 [@media(orientation:landscape)]:[@media(max-height:500px)]:w-[220px]" : "w-full")}>
-                {isQr && <ScannerTopTip mode={mode} cameraError={cameraError} isScanning={isScanning} />}
-              </div>
-
-              <div className={clsx("flex flex-col items-center justify-center", isQr ? "min-h-0 w-full min-w-0 flex-1 py-2 [@media(orientation:landscape)]:[@media(max-height:500px)]:w-auto" : "w-full")}>
-                <ScannerViewArea
-                  mode={mode}
-                  digitalCode={digitalCode}
-                  inputRef={inputRef}
-                  setDigitalCode={setDigitalCode}
-                  onKeyDown={(e) => e.key === "Enter" && trimmedCode && handleSuccess(trimmedCode)}
-                />
-              </div>
-
-              <div className={clsx("flex flex-col items-center justify-center", isQr ? "w-full shrink-0 [@media(orientation:landscape)]:[@media(max-height:500px)]:w-[220px]" : "w-full")}>
-                <ScannerBottomControls
-                  mode={mode}
-                  digitalCode={digitalCode}
-                  setMode={setMode}
-                  onSubmit={() => trimmedCode && handleSuccess(trimmedCode)}
-                />
-              </div>
-            </div>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+      <div className="pointer-events-none box-border flex h-auto w-full max-w-[340px] origin-center flex-col items-center justify-center gap-4 pt-12 sm:pt-0" style={{ transform: `scale(${scale})` }}>
+        <div className="pointer-events-auto flex w-full shrink-0 justify-center">
+          {mode === "qr" && <ScannerTopTip mode={mode} cameraError={cameraError} isScanning={!!qrScanner?.isScanning} />}
+        </div>
+        <div className="pointer-events-auto shrink-0">
+          <ScannerViewArea mode={mode} digitalCode={digitalCode} inputRef={inputRef} setDigitalCode={setDigitalCode} onKeyDown={(e) => e.key === "Enter" && trimmed && handleSuccess(trimmed)} />
+        </div>
+        <div className="pointer-events-auto flex w-full shrink-0 justify-center">
+          <ScannerBottomControls mode={mode} digitalCode={digitalCode} setMode={setMode} onSubmit={() => trimmed && handleSuccess(trimmed)} />
+        </div>
+      </div>
+    </div>
   );
-});
+};

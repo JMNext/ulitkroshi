@@ -10,98 +10,45 @@ export interface InventoryState {
 }
 
 export interface PetLogicState {
-  hp: number;
-  miniGamesClickCount: number;
-  activePetIndex: number;
-  unlockedPetIndexes: number[];
-  currentAnim: string;
-  washState: "idle" | "hidden" | "glowing";
-  canExecuteAction: (type: "feed" | "wash" | "play" | "sleep") => boolean;
-  triggerCareAction: (action: "wash" | "play" | "eat" | "sleep_begin" | "sleep_awake") => void;
-  completeCareAction: () => void;
-  triggerSleepAction: () => void;
-  incrementMiniGamesClick: () => string;
-  unlockPet: (index: number) => Promise<void>;
-  handleGameLoss: () => void;
+  hp: number; miniGamesClickCount: number; activePetIndex: number; unlockedPetIndexes: number[]; currentAnim: string; washState: "idle" | "hidden" | "glowing";
+  canExecuteAction: (type: "feed" | "wash" | "play" | "sleep") => boolean; triggerCareAction: (action: "wash" | "play" | "eat" | "sleep_begin" | "sleep_awake") => void;
+  completeCareAction: () => void; triggerSleepAction: () => void; incrementMiniGamesClick: () => string; unlockPet: (index: number) => Promise<void>; handleGameLoss: () => void;
 }
 
 export interface PetStateCombined extends InventoryState, PetLogicState {
-  petName: string;
-  petTargetX: number;
-  petTargetY: number;
-  getVideoElements: () => Record<string, HTMLVideoElement | null>;
-  registerVideoElement: (key: string, el: HTMLVideoElement | null) => void;
-  updateField: <K extends keyof PetStateCombined>(field: K, value: PetStateCombined[K]) => void;
-  playVideo: (key: string) => void;
-  resetStore: () => void;
+  petName: string; petTargetX: number; petTargetY: number;
+  getVideoElements: () => Record<string, HTMLVideoElement | null>; registerVideoElement: (key: string, el: HTMLVideoElement | null) => void;
+  updateField: <K extends keyof PetStateCombined>(field: K, value: PetStateCombined[K]) => void; playVideo: (key: string) => void; resetStore: () => void;
 }
 
 let _videos: Record<string, HTMLVideoElement | null> = {};
 
 export const usePetStore = create<PetStateCombined>()((set, get, ...a) => ({
-  petName: "",
-  petTargetX: 960,
-  petTargetY: 518,
+  petName: "", petTargetX: 960, petTargetY: 518,
 
   ...createInventorySlice(set, get, ...a),
   ...createPetLogicSlice(set, get, ...a),
 
   getVideoElements: () => _videos,
-  registerVideoElement: (key, el) => {
-    if (!el) {
-      delete _videos[key];
-    } else {
-      _videos[key] = el;
-    }
-  },
+  registerVideoElement: (key, el) => { el ? _videos[key] = el : delete _videos[key]; },
 
-  updateField: (field, value) => set((state) => {
-    let nextAnim = state.currentAnim;
-
+  updateField: (field, value) => set((s) => {
+    let anim = s.currentAnim;
     if (field === "hp") {
-      const nextHp = Number(value ?? 100);
-      if (nextHp <= 25 && ["prostoi1", "prostoi2"].includes(state.currentAnim)) {
-        nextAnim = "sad_state";
-      } else if (nextHp > 25 && state.currentAnim === "sad_state") {
-        nextAnim = "prostoi1";
-      }
+      const hp = Number(value ?? 100);
+      if (hp <= 25 && ["prostoi1", "prostoi2"].includes(s.currentAnim)) anim = "sad_state";
+      else if (hp > 25 && s.currentAnim === "sad_state") anim = "prostoi1";
     }
-
-    return {
-      ...state,
-      [field]: value,
-      currentAnim: nextAnim
-    };
+    return { ...s, [field]: value, currentAnim: anim };
   }),
 
   playVideo: (key) => {
     const v = _videos[key];
-    if (v) {
-      v.currentTime = 0;
-      v.play().catch(() => {});
-    }
+    if (v) { v.currentTime = 0; v.play().catch(() => {}); }
   },
 
   resetStore: () => {
-    set({
-      hp: 100,
-      miniGamesClickCount: 0,
-      activePetIndex: 0,
-      unlockedPetIndexes:[0],
-      currentAnim: "prostoi1",
-      washState: "idle",
-      petTargetX: 960,
-      petTargetY: 518,
-      inventory: getInitInventory()
-    });
-    Object.keys(_videos).forEach((k) => {
-      const v = _videos[k];
-      if (v) {
-        v.pause();
-        v.removeAttribute("src");
-        v.load();
-      }
-    });
+    set({ petName: "", hp: 100, miniGamesClickCount: 0, activePetIndex: 0, unlockedPetIndexes:[0], currentAnim: "prostoi1", washState: "idle", petTargetX: 960, petTargetY: 518, inventory: getInitInventory() });
     _videos = {};
     localStorage.setItem("mock_unlocked_pets", JSON.stringify([0]));
   }

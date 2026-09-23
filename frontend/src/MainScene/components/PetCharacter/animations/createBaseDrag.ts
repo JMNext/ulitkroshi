@@ -6,178 +6,82 @@ import { getFruitUrlByStoreId } from "@/MainScene/components/SideButtonsMenuModa
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
 
 export type CareActionType = "wash" | "play" | "feed" | "sleep";
+export interface BaseDragConfig { url: string; action: "wash" | "play" | "eat"; onSuccess: () => void; onEnd?: () => void; }
 
-export interface BaseDragConfig {
-  url: string;
-  action: "wash" | "play" | "eat";
-  onSuccess: () => void;
-  onEnd?: () => void;
-}
+const METHODS = { play: startPlayingDrag, wash: startWashingDrag } as const;
+const dist = (x1: number, y1: number, x2: number, y2: number) => Math.hypot(x1 - x2, y1 - y2);
 
-interface CustomWindow extends Window {
-  isGlobalDragActive?: boolean;
-}
-
-const DRAG_METHODS = {
-  play: startPlayingDrag,
-  wash: startWashingDrag
-} as const;
-
-export const handleCareActionDown = (
-  type: CareActionType,
-  defIcon: string,
-  activeFruitIcon: string,
-  scale: number,
-  s: number,
-  e: React.PointerEvent<HTMLDivElement>
-) => {
-  const petStore = usePetStore.getState();
-  const gameStore = useMainGameStore.getState();
-
-  if (!petStore.canExecuteAction(type)) return;
-
-  if (type === "sleep") {
-    petStore.triggerSleepAction();
-    return;
-  }
+export const handleCareActionDown = (type: CareActionType, def: string, act: string, scale: number, s: number, e: any) => {
+  const pStore = usePetStore.getState(), gStore = useMainGameStore.getState();
+  if (!pStore.canExecuteAction(type)) return;
+  if (type === "sleep") return pStore.triggerSleepAction();
 
   if (type === "feed") {
     e.stopPropagation();
-    const { inventory } = petStore;
-    const fId = inventory.currentId;
-    const fCounts = inventory.counts;
+    const { inventory } = pStore, fId = inventory.currentId, has = fId && (inventory.counts[fId] ?? 0) > 0;
+    const sX = e.nativeEvent.clientX, sY = e.nativeEvent.clientY, icon = has ? act || def : def;
+    let dragged = false;
 
-    const hasFruit = fId && fCounts[fId] > 0;
-    const startX = e.nativeEvent.clientX;
-    const startY = e.nativeEvent.clientY;
-
-    const icon = hasFruit ? activeFruitIcon || defIcon : defIcon;
-    const targetId = hasFruit ? fId : undefined;
-    let isDraggingTriggered = false;
-
-    const handlePointerMove = (me: PointerEvent) => {
-      if (isDraggingTriggered) return;
-      const dx = me.clientX - startX;
-      const dy = me.clientY - startY;
-      if (dx * dx + dy * dy > 100) {
-        isDraggingTriggered = true;
-        cleanup();
-        startFeedingDrag(e.nativeEvent, icon, targetId, undefined, scale, s);
-      }
+    const move = (me: PointerEvent) => {
+      if (!dragged && dist(me.clientX, me.clientY, sX, sY) > 10) { dragged = true; clean(); startFeedingDrag(e.nativeEvent, icon, has ? fId : undefined, undefined, scale, s); }
     };
+    const up = (ue: PointerEvent) => { clean(); if (!dragged && dist(ue.clientX, ue.clientY, sX, sY) <= 10) gStore.setIsFoodOpen((p) => !p); };
+    const clean = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
 
-    const handlePointerUp = (ue: PointerEvent) => {
-      cleanup();
-      if (isDraggingTriggered) return;
-      const dx = ue.clientX - startX;
-      const dy = ue.clientY - startY;
-      if (dx * dx + dy * dy <= 100) gameStore.setIsFoodOpen((p) => !p);
-    };
-
-    const cleanup = () => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
-    };
-
-    window.addEventListener("pointermove", handlePointerMove, { passive: true });
-    window.addEventListener("pointerup", handlePointerUp, { passive: true });
+    window.addEventListener("pointermove", move, { passive: true });
+    window.addEventListener("pointerup", up, { passive: true });
     return;
   }
 
-  const drag = DRAG_METHODS[type as keyof typeof DRAG_METHODS];
-  if (drag) {
-    e.stopPropagation();
-    drag(e.nativeEvent, defIcon, undefined, scale, s);
-  }
+  const drag = METHODS[type as keyof typeof METHODS];
+  if (drag) { e.stopPropagation(); drag(e.nativeEvent, def, undefined, scale, s); }
 };
 
 export const handleFruitActionDown = (id: string, isZero: boolean, scale: number, s = 1, e: PointerEvent) => {
-  const gameStore = useMainGameStore.getState();
-  if (isZero) return gameStore.setModal("shop");
-
-  const petStore = usePetStore.getState();
-  const iconUrl = getFruitUrlByStoreId(petStore.inventory.activeIds[id] ?? 1) || "";
-
-  gameStore.setIsFoodOpen(false);
-  startFeedingDrag(e, iconUrl, id, undefined, scale, s);
+  const gStore = useMainGameStore.getState();
+  if (isZero) return gStore.setModal("shop");
+  gStore.setIsFoodOpen(false);
+  startFeedingDrag(e, getFruitUrlByStoreId(usePetStore.getState().inventory.activeIds[id] ?? 1) || "", id, undefined, scale, s);
 };
 
-export const createBaseDrag = (ie: React.PointerEvent<HTMLDivElement> | PointerEvent, config: BaseDragConfig, scale = 1, s = 1): void => {
-  if (!["prostoi1", "prostoi2", "sad_state"].includes(usePetStore.getState().currentAnim)) {
-    return config.onEnd?.();
-  }
+export const createBaseDrag = (ie: any, config: BaseDragConfig, scale = 1, s = 1): void => {
+  if (!["prostoi1", "prostoi2", "sad_state"].includes(usePetStore.getState().currentAnim)) return config.onEnd?.();
 
-  const targetElement = ie.target as HTMLElement;
-  const nativeEvent = "nativeEvent" in ie ? ie.nativeEvent : ie;
-
-  if (targetElement?.setPointerCapture && nativeEvent.pointerId !== undefined) {
-    try {
-      targetElement.setPointerCapture(nativeEvent.pointerId);
-    } catch (_) {}
-  }
+  const target = ie.target as HTMLElement, ev = "nativeEvent" in ie ? ie.nativeEvent : ie;
+  if (target?.setPointerCapture && ev.pointerId !== undefined) try { target.setPointerCapture(ev.pointerId); } catch {}
 
   const ratio = window.innerWidth / window.innerHeight;
-  const mode = ratio < 1 ? (ratio < 0.42 ? "u" : "v") : "d";
-  const conf = {
-    u: { c: "w-12 h-12", r: 75 },
-    v: { c: "w-14 h-14", r: 110 },
-    d: { c: "w-20 h-20", r: 140 }
-  }[mode];
+  const conf = ratio >= 1 ? { c: "w-20 h-20", r: 140 } : ratio < 0.42 ? { c: "w-12 h-12", r: 75 } : { c: "w-14 h-14", r: 110 };
 
   const rect = document.getElementById("phaser-native-html-pet")?.getBoundingClientRect();
-  const targetX = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
-  const targetY = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
-  const radiusSq = conf.r * conf.r;
+  const tx = rect ? rect.left + rect.width / 2 : window.innerWidth / 2, ty = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
 
   const ghost = document.createElement("div");
   ghost.className = `fixed top-0 left-0 pointer-events-none ${conf.c} z-50 [will-change:transform]`;
 
-  const updateTransform = (x: number, y: number) => {
-    ghost.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) scale(${scale * s})`;
-  };
-  updateTransform(nativeEvent.clientX, nativeEvent.clientY);
+  const sync = (x: number, y: number) => { ghost.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) scale(${scale * s})`; };
+  sync(ev.clientX, ev.clientY);
 
   const img = document.createElement("img");
-  img.src = config.url;
-  img.className = "w-full h-full object-contain block";
-  ghost.appendChild(img);
-  document.body.appendChild(ghost);
+  img.src = config.url; img.className = "w-full h-full object-contain block";
+  ghost.appendChild(img); document.body.appendChild(ghost);
 
-  const customWindow = window as CustomWindow;
-  customWindow.isGlobalDragActive = true;
-
-  const handleDragMove = (e: PointerEvent) => {
-    if (!customWindow.isGlobalDragActive) return;
-    updateTransform(e.clientX, e.clientY);
-  };
-
-  const handleDragUp = (e: PointerEvent) => {
-    if (!customWindow.isGlobalDragActive) return;
-    customWindow.isGlobalDragActive = false;
-
-    window.removeEventListener("pointermove", handleDragMove);
-    window.removeEventListener("pointerup", handleDragUp);
-
-    if (targetElement?.releasePointerCapture && e.pointerId !== undefined) {
-      try {
-        targetElement.releasePointerCapture(e.pointerId);
-      } catch (_) {}
-    }
-
+  let active = true;
+  const move = (e: PointerEvent) => active && sync(e.clientX, e.clientY);
+  const up = (e: PointerEvent) => {
+    if (!active) return;
+    active = false;
+    window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up);
+    if (target?.releasePointerCapture && e.pointerId !== undefined) try { target.releasePointerCapture(e.pointerId); } catch {}
     ghost.remove();
 
-    const dx = e.clientX - targetX;
-    const dy = e.clientY - targetY;
-
-    if (dx * dx + dy * dy <= radiusSq) {
-      if (config.action !== "eat") {
-        usePetStore.getState().triggerCareAction(config.action);
-      }
+    if (dist(e.clientX, e.clientY, tx, ty) <= conf.r) {
+      if (config.action !== "eat") usePetStore.getState().triggerCareAction(config.action);
       config.onSuccess();
     }
     config.onEnd?.();
   };
 
-  window.addEventListener("pointermove", handleDragMove, { passive: true });
-  window.addEventListener("pointerup", handleDragUp, { passive: true });
+  window.addEventListener("pointermove", move, { passive: true });
+  window.addEventListener("pointerup", up, { passive: true });
 };

@@ -1,3 +1,4 @@
+import { processGamePenalty } from "@/game/MiniGamesShared/storeUtils";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
 import { create } from "zustand";
@@ -13,84 +14,62 @@ interface RacingGameState {
   isCrashed: boolean;
   isFinishing: boolean;
   initGame: () => void;
-  addScore: (renderCallback: () => void) => void;
-  addBotScore: (botId: 1 | 2, renderCallback: () => void) => void;
-  applyPenalty: (renderCallback: () => void, forceGameOver?: boolean) => void;
   resetStore: () => void;
+  addScore: (cb: () => void) => void;
+  addBotScore: (id: 1 | 2, cb: () => void) => void;
+  applyPenalty: (cb: () => void, force?: boolean) => void;
 }
 
-const initialValues = { score: 0, bot1Score: 0, bot2Score: 0, hp: 100, isGameOver: false, isWin: false, isCrashed: false, isFinishing: false };
-let crashTimeoutId: number | null = null;
+const initial = { score: 0, bot1Score: 0, bot2Score: 0, hp: 100, isGameOver: false, isWin: false, isCrashed: false, isFinishing: false };
+let crashId: any = null;
 
 export const useRacingGameStore = create<RacingGameState>()(
   subscribeWithSelector((set, get) => ({
-    ...initialValues,
-
+    ...initial,
     initGame: () => {
-      if (crashTimeoutId) clearTimeout(crashTimeoutId);
-      set(initialValues);
+      if (crashId) clearTimeout(crashId);
+      set(initial);
     },
 
-    addScore: (renderCallback) => {
+    addScore: (cb) => {
       if (get().isGameOver || get().isFinishing) return;
-      const nextScore = get().score + 1;
-      const reachTarget = nextScore >= 20;
-
-      if (reachTarget) {
-        set({ score: nextScore, isFinishing: true });
-      } else {
-        set({ score: nextScore });
-      }
-      renderCallback();
+      const next = get().score + 1;
+      set(next >= 20 ? { score: next, isFinishing: true } : { score: next });
+      cb();
     },
 
-    addBotScore: (botId, renderCallback) => {
+    addBotScore: (id, cb) => {
       if (get().isGameOver || get().isFinishing) return;
+      const b1 = id === 1 ? get().bot1Score + 1 : get().bot1Score,
+        b2 = id === 2 ? get().bot2Score + 1 : get().bot2Score;
 
-      const b1 = botId === 1 ? get().bot1Score + 1 : get().bot1Score;
-      const b2 = botId === 2 ? get().bot2Score + 1 : get().bot2Score;
-      const botWon = b1 >= 20 || b2 >= 20;
-
-      if (botWon) {
+      if (b1 >= 20 || b2 >= 20) {
         useMainGameStore.getState().setGameOver(get().score, undefined, false);
         if (!get().isWin) usePetStore.getState().handleGameLoss();
         set({ bot1Score: b1, bot2Score: b2, isGameOver: true, isWin: false });
-      } else {
-        set({ bot1Score: b1, bot2Score: b2 });
-      }
-      renderCallback();
+      } else set({ bot1Score: b1, bot2Score: b2 });
+      cb();
     },
 
-    applyPenalty: (renderCallback, forceGameOver = false) => {
-      if (get().isCrashed && !forceGameOver) {
-        renderCallback();
-        return;
-      }
-      if (crashTimeoutId) clearTimeout(crashTimeoutId);
+    applyPenalty: (cb, force = false) => {
+      if (get().isCrashed && !force) return cb();
+      if (crashId) clearTimeout(crashId);
 
-      const currentScore = get().score;
-      const nextScore = currentScore > 0 ? currentScore - 1 : 0;
-      const nextHp = forceGameOver ? 0 : get().hp - 25;
-      const isOver = nextHp <= 0 || forceGameOver;
+      const nextState = processGamePenalty(get().score, get().hp, force);
 
-      if (isOver) {
-        useMainGameStore.getState().setGameOver(nextScore, undefined, false);
-        if (!get().isWin) usePetStore.getState().handleGameLoss();
-        set({ hp: 0, score: nextScore, isGameOver: true, isWin: false, isFinishing: false });
+      if (nextState.isGameOver) {
+        set({ hp: 0, score: nextState.score, isGameOver: true, isWin: false, isFinishing: false });
       } else {
-        set({ hp: nextHp, score: nextScore, isCrashed: true });
+        set({ hp: nextState.hp, score: nextState.score, isCrashed: true });
       }
 
-      renderCallback();
-
-      if (!isOver) {
-        crashTimeoutId = window.setTimeout(() => set({ isCrashed: false }), 300);
-      }
+      cb();
+      if (!nextState.isGameOver) crashId = setTimeout(() => set({ isCrashed: false }), 300);
     },
 
     resetStore: () => {
-      if (crashTimeoutId) clearTimeout(crashTimeoutId);
-      set(initialValues);
+      if (crashId) clearTimeout(crashId);
+      set(initial);
     }
   }))
 );

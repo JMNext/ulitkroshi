@@ -12,96 +12,47 @@ if (typeof document !== "undefined" && !document.getElementById("react-wash-keyf
   document.head.appendChild(style);
 }
 
-export const startWashingDrag = (
-  initialEvent: React.PointerEvent<HTMLDivElement> | PointerEvent,
-  washKey: string,
-  onDragEndCallback?: () => void,
-  scale: number = 1,
-  s: number = 1
-) => {
-  createBaseDrag(
-    initialEvent,
-    {
-      url: washKey,
-      action: "wash",
-      onSuccess: () => {
-        const store = usePetStore.getState();
-        store.triggerCareAction("wash");
+export const startWashingDrag = (e: any, washKey: string, onEnd?: () => void, scale = 1, s = 1) => {
+  createBaseDrag(e, {
+    url: washKey, action: "wash",
+    onSuccess: () => {
+      usePetStore.getState().triggerCareAction("wash");
+      const pet = document.getElementById("phaser-native-html-pet");
+      const petRect = pet?.getBoundingClientRect();
+      const ps = petRect ? petRect.width / 644 : 1;
+      const size = 80 * ps;
 
-        const pet = document.getElementById("phaser-native-html-pet");
-        const petRect = pet?.getBoundingClientRect();
-        const currentScale = petRect ? petRect.width / 644 : 1;
+      const sponge = document.createElement("img");
+      sponge.src = washKey;
+      sponge.style.cssText = `position:fixed;z-index:99999;pointer-events:none;width:${size}px;height:${size}px;object-fit:contain;left:${e.clientX}px;top:${e.clientY}px;animation:spongeAbsorb 0.4s ease-in forwards;`;
+      document.body.appendChild(sponge);
 
-        const sponge = document.createElement("img");
-        sponge.src = washKey;
-        Object.assign(sponge.style, {
-          position: "fixed",
-          zIndex: "99999",
-          pointerEvents: "none",
-          width: `${80 * currentScale}px`,
-          height: `${80 * currentScale}px`,
-          objectFit: "contain",
-          left: `${initialEvent.clientX}px`,
-          top: `${initialEvent.clientY}px`,
-          animation: "spongeAbsorb 0.4s ease-in forwards"
-        });
-        document.body.appendChild(sponge);
+      setTimeout(() => {
+        sponge.remove();
+        new Audio(WASH_SOUND_URL).play().catch(() => {});
 
-        setTimeout(() => {
-          sponge.remove();
-          new Audio(WASH_SOUND_URL).play().catch(() => {});
+        const container = document.createElement("div");
+        container.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:99998;transition:opacity 0.3s;";
+        document.body.appendChild(container);
 
-          const container = document.createElement("div");
-          Object.assign(container.style, {
-            position: "fixed",
-            inset: "0",
-            pointerEvents: "none",
-            zIndex: "99998",
-            transition: "opacity 0.3s"
-          });
-          document.body.appendChild(container);
+        let count = 0;
+        const interval = setInterval(() => {
+          if (++count > 128) {
+            clearInterval(interval); container.style.opacity = "0";
+            return setTimeout(() => container.remove(), 300);
+          }
+          const rect = pet?.getBoundingClientRect();
+          const cx = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
+          const cy = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
+          const b = document.createElement("div");
+          const bSize = (25 + Math.random() * 31) * ps;
 
-          let bubbleCount = 0;
-          const totalBubbles = 128;
-
-          const interval = setInterval(() => {
-            bubbleCount++;
-            if (bubbleCount > totalBubbles) {
-              clearInterval(interval);
-              container.style.opacity = "0";
-              setTimeout(() => container.remove(), 300);
-              return;
-            }
-
-            const rect = pet?.getBoundingClientRect();
-            const cx = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
-            const cy = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
-
-            const b = document.createElement("div");
-            const size = (Math.floor(Math.random() * 31) + 25) * currentScale;
-
-            Object.assign(b.style, {
-              position: "absolute",
-              width: `${size}px`,
-              height: `${size}px`,
-              borderRadius: "50%",
-              backgroundColor: "rgba(255, 255, 255, 0.85)",
-              border: "1px solid rgba(255, 255, 255, 0.4)",
-              boxShadow: "inset -3px -3px 8px rgba(0,0,0,0.05), inset 3px 3px 8px rgba(255,255,255,0.6)",
-              left: `${cx + (Math.random() * 386.4 - 193.2) * currentScale}px`,
-              top: `${cy + (Math.random() * 221 - 55) * currentScale}px`,
-              animation: "bubbleLife 1s ease-in-out forwards"
-            });
-
-            container.appendChild(b);
-            b.addEventListener("animationend", () => b.remove());
-          }, 25);
-        }, 400);
-      },
-      document: undefined,
-      onEnd: onDragEndCallback
-    } as any,
-    scale,
-    s
-  );
+          b.style.cssText = `position:absolute;width:${bSize}px;height:${bSize}px;border-radius:50%;background-color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.4);box-shadow:inset -3px -3px 8px rgba(0,0,0,0.05), inset 3px 3px 8px rgba(255,255,255,0.6);left:${cx + (Math.random() * 386.4 - 193.2) * ps}px;top:${cy + (Math.random() * 221 - 55) * ps}px;animation:bubbleLife 1s ease-in-out forwards;`;
+          container.appendChild(b);
+          b.addEventListener("animationend", () => b.remove());
+        }, 25);
+      }, 400);
+    },
+    onEnd
+  }, scale, s);
 };

@@ -1,7 +1,7 @@
 import eatSound from "@/assets/resources/sound/eat.mp3";
 import playSound from "@/assets/resources/sound/play.mp3";
-import washSound from "@/assets/resources/sound/wash.mp3";
 import sleepSound from "@/assets/resources/sound/sleep.mp3";
+import washSound from "@/assets/resources/sound/wash.mp3";
 
 import washMov from "@/assets/resources/1stpet-animation/wash-converted.mov";
 import washWebm from "@/assets/resources/1stpet-animation/wash-converted.webm";
@@ -30,8 +30,14 @@ import prostoi2Webm from "@/assets/resources/1stpet-animation/prostoi2.webm";
 import prostoi1Mov from "@/assets/resources/1stpet-animation/prostoi-converted.mov";
 import prostoi1Webm from "@/assets/resources/1stpet-animation/prostoi-converted.webm";
 
-export interface VideoSources { mov: string; webm: string; }
-export interface FoodConfig { hpRestoreValue: number; restoresHp: boolean; }
+export interface VideoSources {
+  mov: string;
+  webm: string;
+}
+export interface FoodConfig {
+  hpRestoreValue: number;
+  restoresHp: boolean;
+}
 
 export const EAT_SOUND_URL = eatSound;
 export const PLAY_SOUND_URL = playSound;

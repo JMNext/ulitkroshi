@@ -1,76 +1,51 @@
-import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
+import { processGamePenalty } from "@/game/MiniGamesShared/storeUtils";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
 interface SnakeGameState {
-  score: number; hp: number; isGameOver: boolean; isWin: boolean; isWash: boolean; isCrashed: boolean;
+  score: number;
+  hp: number;
+  isGameOver: boolean;
+  isWin: boolean;
+  isWash: boolean;
+  isCrashed: boolean;
   initGame: () => void;
-  addScore: (renderCallback: () => void) => void;
-  applyPenalty: (renderCallback: () => void, forceGameOver?: boolean) => void;
   resetStore: () => void;
+  addScore: (cb: () => void) => void;
+  applyPenalty: (cb: () => void, force?: boolean) => void;
 }
 
-const initialValues = { score: 0, hp: 100, isGameOver: false, isWin: false, isWash: false, isCrashed: false };
-
-let crashTimeoutId: ReturnType<typeof setTimeout> | null = null;
+const initial = { score: 0, hp: 100, isGameOver: false, isWin: false, isWash: false, isCrashed: false };
+let crashId: any = null;
 
 export const useSnakeGameStore = create<SnakeGameState>()(
   subscribeWithSelector((set, get) => ({
-    ...initialValues,
-
+    ...initial,
     initGame: () => {
-      if (crashTimeoutId) clearTimeout(crashTimeoutId);
-      set(initialValues);
+      if (crashId) clearTimeout(crashId);
+      set(initial);
     },
 
-    addScore: (renderCallback) => {
-      const nextScore = get().score + 1;
-      const isWin = nextScore >= 20;
-
-      if (isWin) {
-        useMainGameStore.getState().setGameOver(nextScore, undefined, true);
-      }
-
-      set({ score: nextScore, isGameOver: isWin, isWin });
-      renderCallback();
+    addScore: (cb) => {
+      const next = get().score + 1, win = next >= 20;
+      if (win) useMainGameStore.getState().setGameOver(next, undefined, true);
+      set({ score: next, isGameOver: win, isWin: win });
+      cb();
     },
 
-    applyPenalty: (renderCallback, forceGameOver = false) => {
-      if (crashTimeoutId) clearTimeout(crashTimeoutId);
+    applyPenalty: (cb, force = false) => {
+      if (crashId) clearTimeout(crashId);
+      const nextState = processGamePenalty(get().score, get().hp, force);
+      set(nextState);
+      cb();
 
-      const currentScore = get().score;
-      const nextScore = currentScore > 0 ? currentScore - 1 : 0;
-      const nextHp = forceGameOver ? 0 : get().hp - 25;
-      const isOver = nextHp <= 0 || forceGameOver;
-      const isWin = get().score >= 20;
-
-      if (isOver) {
-        useMainGameStore.getState().setGameOver(nextScore, undefined, isWin);
-        if (!isWin) usePetStore.getState().handleGameLoss();
-      }
-
-      set({
-        hp: nextHp,
-        score: nextScore,
-        isCrashed: !isOver,
-        isGameOver: isOver,
-        isWin: isOver ? isWin : false
-      });
-
-      renderCallback();
-
-      // Магия авторазворота: если игра не окончена, плавно сбрасываем аварийный режим через 200мс
-      if (!isOver) {
-        crashTimeoutId = setTimeout(() => {
-          set({ isCrashed: false });
-        }, 200);
-      }
+      if (!nextState.isGameOver) crashId = setTimeout(() => set({ isCrashed: false }), 800);
     },
 
     resetStore: () => {
-      if (crashTimeoutId) clearTimeout(crashTimeoutId);
-      set(initialValues);
+      if (crashId) clearTimeout(crashId);
+      set(initial);
     }
   }))
 );

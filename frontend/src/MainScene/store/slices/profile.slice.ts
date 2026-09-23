@@ -3,18 +3,19 @@ import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetSto
 import { StateCreator } from "zustand";
 import { MainGameStateCombined, ProfileState } from "../useMainGameStore";
 
-export const getInitialUsername = (): string => {
-  if (typeof window !== "undefined") {
-    const localName = localStorage.getItem("local_saved_username");
-    if (localName && localName.trim()) return localName.trim();
+const getInit = (type: "name" | "disc") => {
+  const u = useApiStore.getState().user as any;
+  if (type === "name") {
+    const local = typeof window !== "undefined" ? localStorage.getItem("local_saved_username") : null;
+    return local?.trim() || u?.name?.trim() || "Player";
   }
-  const user = useApiStore.getState().user;
-  if (user?.name) return user.name.trim();
-  return user?.id ? `Player_${user.id}` : "Player_12345";
+  if (u?.discriminator) return String(u.discriminator).trim();
+  return u?.name?.includes("#") ? u.name.split("#").pop() || "0000" : "0000";
 };
 
-export const createProfileSlice: StateCreator<MainGameStateCombined, [], [], ProfileState> = (set, get) => ({
-  username: getInitialUsername(),
+export const createProfileSlice: StateCreator<MainGameStateCombined, [], [], ProfileState & { discriminator: string }> = (set, get) => ({
+  username: getInit("name"),
+  discriminator: getInit("disc"),
   coins: useApiStore.getState().coins || 0,
   avatarId: "default",
   userId: useApiStore.getState().user?.id ? Number(useApiStore.getState().user?.id) : null,
@@ -22,24 +23,18 @@ export const createProfileSlice: StateCreator<MainGameStateCombined, [], [], Pro
   buyFruit: async (slotId, fruitId, qty, cost) => {
     const auth = useApiStore.getState();
     const safeCost = Math.round(cost);
-
     if (get().coins < safeCost) return false;
+
     get().setUpdatingCoinsGlobal(true);
-
-    const currentCoins = get().coins;
-    const exactNextCoins = Math.max(0, currentCoins - safeCost);
-
-    set({ coins: exactNextCoins });
+    const prevCoins = get().coins;
+    const nextCoins = Math.max(0, prevCoins - safeCost);
+    set({ coins: nextCoins });
 
     try {
       await auth.executeAction("buy_shop_items", safeCost);
-      if (auth.user) {
-        auth.coins = exactNextCoins;
-      }
-      set({ coins: exactNextCoins });
-    } catch (err) {
-      console.error("🚨 [PROFILE SLICE BUY FRUIT CATCH ERROR]:", err);
-      set({ coins: currentCoins });
+      if (auth.user) auth.coins = nextCoins;
+    } catch {
+      set({ coins: prevCoins });
     } finally {
       get().setUpdatingCoinsGlobal(false);
     }
@@ -49,27 +44,19 @@ export const createProfileSlice: StateCreator<MainGameStateCombined, [], [], Pro
   },
 
   setUsername: async (name) => {
-    const cleanName = name.trim();
-    if (!cleanName) return;
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem("local_saved_username", cleanName);
-    }
-    set({ username: cleanName });
-
-    const apiUser = useApiStore.getState().user;
-    if (apiUser) {
-      useApiStore.setState({ user: { ...apiUser, name: cleanName } });
-    }
+    const clean = (name || "").split("#")[0]?.trim();
+    if (!clean) return;
+    if (typeof window !== "undefined") localStorage.setItem("local_saved_username", clean);
+    set({ username: clean });
   },
 
   setAvatarId: (id) => set({ avatarId: id }),
 
   addPetByCode: (code) => {
-    const cleanCode = code.trim();
-    if (!cleanCode) return false;
-    const parsed = parseInt(cleanCode.replace(/\D/g, ""), 10);
-    usePetStore.getState().unlockPet(!isNaN(parsed) ? parsed % 20 : (cleanCode.length % 19) + 1);
+    const clean = code.trim();
+    if (!clean) return false;
+    const num = parseInt(clean.replace(/\D/g, ""), 10);
+    usePetStore.getState().unlockPet(!isNaN(num) ? num % 20 : (clean.length % 19) + 1);
     return true;
   }
 });

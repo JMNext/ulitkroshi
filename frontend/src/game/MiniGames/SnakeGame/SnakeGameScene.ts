@@ -1,23 +1,25 @@
-import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
-import { registerSceneEvent } from "@/eventbus/registerSceneEvent";
-import { EventBus } from "@/eventbus/EventBus";
 import { Scene } from "phaser";
+import { BaseMiniGameOverlay } from "@/game/MiniGamesShared/BaseMiniGameOverlay";
+import { GameInputController } from "@/game/MiniGamesShared/GameInputController";
+import { preloadSharedAssets } from "@/game/MiniGamesShared/preloadSharedAssets";
+import { runCountdown } from "@/game/MiniGamesShared/runCountdown";
 import { SnakeGameLogicManager } from "./components/SnakeGameLogicManager";
-import { SnakeGameOverlay } from "./components/SnakeGameOverlay";
-import { SNAKE_ASSETS } from "./constants/snakeGame.constants";
 import { useSnakeGameStore } from "./store/useSnakeGameStore";
+import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
+import { EventBus } from "@/eventbus/EventBus";
+import { registerSceneEvent } from "@/eventbus/registerSceneEvent";
 
 export class SnakeGameScene extends Scene {
   public difficulty = "medium";
   public score = 0;
   public hp = 100;
-  public overlayManager!: SnakeGameOverlay;
+  public gameState: "COUNTDOWN" | "PLAYING" | "ENDED" = "COUNTDOWN";
+  public countdownText!: Phaser.GameObjects.Text;
+  public overlayManager!: BaseMiniGameOverlay;
   public logicManager!: SnakeGameLogicManager;
-  public cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-  private bgImage: Phaser.GameObjects.Image | null = null;
+  public inputController!: GameInputController;
+  public bgImage: Phaser.GameObjects.Image | null = null;
   private unsubscribeStore: (() => void) | null = null;
-  private touchStartX?: number;
-  private touchStartY?: number;
 
   constructor() {
     super("SnakeGameScene");
@@ -27,93 +29,80 @@ export class SnakeGameScene extends Scene {
     this.difficulty = data?.difficulty || "medium";
     this.score = 0;
     this.hp = 100;
-    const speed = this.difficulty === "hard" ? 120 : this.difficulty === "easy" ? 340 : 200;
+    this.gameState = "COUNTDOWN";
+    this.overlayManager = new BaseMiniGameOverlay(this, "snake");
+    this.inputController = new GameInputController(this);
 
-    this.overlayManager = new SnakeGameOverlay(this);
-    this.logicManager = new SnakeGameLogicManager(this, speed);
+    const delays = { easy: 340, medium: 200, hard: 120 };
+    this.logicManager = new SnakeGameLogicManager(this, delays[this.difficulty as keyof typeof delays]);
     useSnakeGameStore.getState().initGame();
   }
 
   public preload(): void {
-    this.load.image("snake_bg_horiz", SNAKE_ASSETS.bgHoriz);
-    this.load.image("snake_bg_vert", SNAKE_ASSETS.bgVert);
-    Object.entries(SNAKE_ASSETS.fruits).forEach(([k, v]) => this.load.image(k, v));
+    preloadSharedAssets(this, "snake");
   }
 
   public create(): void {
     window.dispatchEvent(new CustomEvent("minigame_started"));
     document.getElementById("game-container")?.setAttribute("data-scene", this.scene.key);
 
-    const isPortrait = this.scale.height > this.scale.width;
-    this.bgImage = this.add.image(0, 0, isPortrait ? "snake_bg_vert" : "snake_bg_horiz").setOrigin(0);
-    this.bgImage.setDisplaySize(this.scale.width, this.scale.height);
+    this.bgImage = this.add
+      .image(0, 0, this.scale.height > this.scale.width ? "snake_bg_vert" : "snake_bg_horiz")
+      .setOrigin(0)
+      .setDisplaySize(this.scale.width, this.scale.height);
 
     this.overlayManager.create();
     this.logicManager.initGame();
     this.overlayManager.render();
-
     this.scale.on("resize", this.handleResize, this);
 
-    this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      this.touchStartX = pointer.x;
-      this.touchStartY = pointer.y;
+    this.inputController.setupTouchSwipe((dir) => {
+      if (this.gameState === "PLAYING") this.logicManager.changeDirection(dir);
     });
 
-    this.input.on("pointerup", (pointer: Phaser.Input.Pointer) => {
-      if (this.touchStartX === undefined || this.touchStartY === undefined) return;
-
-      const swipeThreshold = 40;
-      const diffX = pointer.x - this.touchStartX;
-      const diffY = pointer.y - this.touchStartY;
-
-      if (Math.abs(diffX) > Math.abs(diffY)) {
-        if (Math.abs(diffX) > swipeThreshold) {
-          this.logicManager.changeDirection(diffX > 0 ? "RIGHT" : "LEFT");
-        }
-      } else {
-        if (Math.abs(diffY) > swipeThreshold) {
-          this.logicManager.changeDirection(diffY > 0 ? "DOWN" : "UP");
-        }
+    this.countdownText = runCountdown({
+      scene: this,
+      container: null,
+      customLabel: "ПОЛЗИ!",
+      onComplete: () => {
+        this.gameState = "PLAYING";
+        this.logicManager.resetMoveTime(this.time.now);
       }
-      this.touchStartX = this.touchStartY = undefined;
     });
-
-    if (this.input.keyboard) this.cursors = this.input.keyboard.createCursorKeys();
 
     this.sys.events.once("shutdown", () => this.cleanup(), this);
-
-    registerSceneEvent(this, "minigame_snake_start", (data) => {
-      this.scene.start("SnakeGameScene", data);
-    });
+    registerSceneEvent(this, "minigame_snake_start", (d) => this.scene.start("SnakeGameScene", d));
   }
 
   public update(time: number): void {
-    if (this.cursors) {
-      if (this.cursors.left.isDown) this.logicManager.changeDirection("LEFT");
-      else if (this.cursors.right.isDown) this.logicManager.changeDirection("RIGHT");
-      else if (this.cursors.up.isDown) this.logicManager.changeDirection("UP");
-      else if (this.cursors.down.isDown) this.logicManager.changeDirection("DOWN");
-    }
+    if (this.gameState !== "PLAYING") return;
+    const keys = this.inputController.getKeyboardDirections();
+    if (keys.dirStr) this.logicManager.changeDirection(keys.dirStr);
     this.logicManager.handleTicks(time);
   }
 
-  public addScore = (): void => {
-    useSnakeGameStore.getState().addScore(() => this.overlayManager.render());
-  };
+  public addScore = () => useSnakeGameStore.getState().addScore(() => this.overlayManager.render());
 
   public triggerCrash = (): void => {
-    useSnakeGameStore.getState().applyPenalty(() => this.overlayManager.render());
+    useSnakeGameStore.getState().applyPenalty(() => {
+      if (useSnakeGameStore.getState().hp <= 0) {
+        this.gameState = "ENDED";
+        this.logicManager.destroy();
+      }
+      this.overlayManager.render();
+    });
 
-    if (this.logicManager?.renderer?.mainGridContainer) {
-      const target = this.logicManager.renderer.mainGridContainer;
+    const snakeGfx = this.logicManager?.renderer?.["snakeGraphics"] as Phaser.GameObjects.Graphics | undefined;
+
+    if (snakeGfx) {
       this.tweens.add({
-        targets: target,
+        targets: snakeGfx,
         alpha: 0.2,
         duration: 100,
         yoyo: true,
-        repeat: 4,
+        repeat: 3,
         onComplete: () => {
-          target.alpha = 1;
+          if (snakeGfx) snakeGfx.alpha = 1;
         }
       });
     }
@@ -121,31 +110,27 @@ export class SnakeGameScene extends Scene {
 
   private handleResize = (): void => {
     if (!this.sys?.isActive()) return;
-    const isPortrait = this.scale.height > this.scale.width;
-    this.bgImage?.setTexture(isPortrait ? "snake_bg_vert" : "snake_bg_horiz").setDisplaySize(this.scale.width, this.scale.height);
+    this.bgImage
+      ?.setTexture(this.scale.height > this.scale.width ? "snake_bg_vert" : "snake_bg_horiz")
+      .setDisplaySize(this.scale.width, this.scale.height);
+    this.countdownText?.setPosition(this.scale.width / 2, this.scale.height / 2 - 40);
     this.logicManager.renderer.resize();
     this.overlayManager.render();
   };
 
   public exitGame = (): void => {
-    const snakeState = useSnakeGameStore.getState();
-    if (!snakeState.isGameOver && snakeState.score < 20) usePetStore.getState().handleGameLoss();
+    if (!useSnakeGameStore.getState().isGameOver && useSnakeGameStore.getState().score < 20) usePetStore.getState().handleGameLoss();
     window.dispatchEvent(new CustomEvent("minigame_stopped"));
-
     EventBus.emit("minigame_stop_to_main");
     EventBus.emit("main_scene_wake");
-
     this.scene.stop(this.scene.key);
-    if (this.scene.manager.isSleeping("MainScene")) {
-      this.scene.wake("MainScene");
-    } else {
-      this.scene.start("MainScene");
-    }
+    this.scene.manager.isSleeping("MainScene") ? this.scene.wake("MainScene") : this.scene.start("MainScene");
   };
 
   private cleanup(): void {
     this.scale.off("resize", this.handleResize, this);
     this.unsubscribeStore?.();
+    this.inputController?.destroy();
     this.overlayManager?.destroy();
     this.logicManager?.destroy();
     useSnakeGameStore.getState().resetStore();

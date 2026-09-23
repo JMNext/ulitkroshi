@@ -1,116 +1,65 @@
 import { createBaseDrag } from "@/MainScene/components/PetCharacter/animations/createBaseDrag";
 import { PLAY_SOUND_URL } from "@/MainScene/components/PetCharacter/constants/petCharacter.constants";
-import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 
-let cachedBounceAudio: HTMLAudioElement | null = null;
+let audio: HTMLAudioElement | null = null;
 
-export const startPlayingDrag = (
-  initialEvent: React.PointerEvent<HTMLDivElement> | PointerEvent,
-  ballKey: string,
-  onDragEndCallback?: () => void,
-  scale = 1,
-  s = 1
-) => {
-  if (typeof window !== "undefined" && !cachedBounceAudio) {
-    cachedBounceAudio = new Audio(PLAY_SOUND_URL);
-    cachedBounceAudio.volume = 1.0;
-  }
+export const startPlayingDrag = (e: any, ballKey: string, onEnd?: () => void, scale = 1, s = 1) => {
+  if (typeof window !== "undefined" && !audio) audio = new Audio(PLAY_SOUND_URL);
 
   const isPort = window.innerHeight > window.innerWidth;
-  const finalX = isPort ? 1520 : 1130;
-  const finalY = isPort ? 550 : 540;
+  const fX = isPort ? 1520 : 1130, fY = isPort ? 550 : 540;
 
-  createBaseDrag(
-    initialEvent,
-    {
-      url: ballKey,
-      action: "play",
-      onSuccess: () => {
-        const pet = document.getElementById("phaser-native-html-pet");
-        const canvas = document.querySelector("#game-container canvas");
-        const cRect = canvas?.getBoundingClientRect() || {
-          left: 0,
-          top: 0,
-          width: window.innerWidth,
-          height: window.innerHeight
-        };
-        const petRect = pet?.getBoundingClientRect();
-        const baseSize = (isPort ? 95 : 120) * (petRect ? petRect.width / 644 : 1);
+  createBaseDrag(e, {
+    url: ballKey, action: "play",
+    onSuccess: () => {
+      const pet = document.getElementById("phaser-native-html-pet");
+      const canvas = document.querySelector("#game-container canvas");
+      const cRect = canvas?.getBoundingClientRect() || { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+      const petRect = pet?.getBoundingClientRect();
+      const bSize = (isPort ? 95 : 120) * (petRect ? petRect.width / 644 : 1);
 
-        const ballImg = document.createElement("img");
-        ballImg.src = ballKey;
-        Object.assign(ballImg.style, {
-          position: "fixed",
-          top: "0",
-          left: "0",
-          zIndex: "999999",
-          pointerEvents: "none",
-          objectFit: "contain",
-          width: `${baseSize}px`,
-          height: `${baseSize}px`,
-          willChange: "transform"
-        });
-        document.body.appendChild(ballImg);
+      const ball = document.createElement("img");
+      ball.src = ballKey;
+      ball.style.cssText = `position:fixed;top:0;left:0;z-index:999999;pointer-events:none;object-fit:contain;width:${bSize}px;height:${bSize}px;will-change:transform;`;
+      document.body.appendChild(ball);
 
-        const startWorldX = ((initialEvent.clientX - cRect.left) / cRect.width) * 1920;
-        const startWorldY = ((initialEvent.clientY - cRect.top) / cRect.height) * 1080;
+      const startX = ((e.clientX - cRect.left) / cRect.width) * 1920;
+      const startY = ((e.clientY - cRect.top) / cRect.height) * 1080;
+      const dummy = { x: startX, y: startY, scale: 1, angle: 0 };
+      const { left: cLeft, top: cTop, width: cW, height: cH } = cRect;
 
-        const dummy = { x: startWorldX, y: startWorldY, scale: 1, angle: 0 };
-        const { left: cLeft, top: cTop, width: cWidth, height: cHeight } = cRect;
+      const sync = () => {
+        ball.style.transform = `translate3d(${cLeft + (dummy.x / 1920) * cW}px, ${cTop + (dummy.y / 1080) * cH}px, 0) translate(-50%, -50%) scale(${dummy.scale}) rotate(${dummy.angle}deg)`;
+      };
+      sync();
 
-        const sync = () => {
-          const posX = cLeft + (dummy.x / 1920) * cWidth;
-          const posY = cTop + (dummy.y / 1080) * cHeight;
-          ballImg.style.transform = `translate3d(${posX}px, ${posY}px, 0) translate(-50%, -50%) scale(${dummy.scale}) rotate(${dummy.angle}deg)`;
-        };
+      let start: number | null = null, played = false;
 
-        sync();
+      const animate = (t: number) => {
+        if (!start) start = t;
+        const dt = t - start;
 
-        let startTime: number | null = null;
-        let hasPlayedSound = false;
-        let isDestroyed = false;
-
-        const animate = (timestamp: number) => {
-          if (isDestroyed) return;
-          if (!startTime) startTime = timestamp;
-          const elapsed = timestamp - startTime;
-
-          if (elapsed <= 1500) {
-            const progress = elapsed / 1500;
-            const eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-            dummy.x = startWorldX + (finalX - startWorldX) * eased;
-            dummy.y = startWorldY + (finalY - startWorldY) * eased;
-            dummy.scale = 1 + 0.5 * eased;
-            sync();
-          } else if (elapsed <= 1770) {
-            if (!hasPlayedSound) {
-              hasPlayedSound = true;
-              if (cachedBounceAudio) {
-                cachedBounceAudio.currentTime = 0;
-                cachedBounceAudio.play().catch(() => {});
-              }
-            }
-          } else if (elapsed <= 2970) {
-            const p = (elapsed - 1770) / 1200;
-            dummy.x = finalX + (-200 - finalX) * p;
-            dummy.y = finalY + 100 * p - Math.sin(p * Math.PI) * 220;
-            dummy.scale = 1.5 - 0.7 * p;
-            dummy.angle = -540 * p;
-            sync();
-          } else {
-            isDestroyed = true;
-            ballImg.remove();
-            return;
-          }
-
-          requestAnimationFrame(animate);
-        };
+        if (dt <= 1500) {
+          const p = dt / 1500, ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+          dummy.x = startX + (fX - startX) * ease;
+          dummy.y = startY + (fY - startY) * ease;
+          dummy.scale = 1 + 0.5 * ease;
+          sync();
+        } else if (dt <= 1770) {
+          if (!played && audio) { played = true; audio.currentTime = 0; audio.play().catch(() => {}); }
+        } else if (dt <= 2970) {
+          const p = (dt - 1770) / 1200;
+          dummy.x = fX + (-200 - fX) * p;
+          dummy.y = fY + 100 * p - Math.sin(p * Math.PI) * 220;
+          dummy.scale = 1.5 - 0.7 * p;
+          dummy.angle = -540 * p;
+          sync();
+        } else return ball.remove();
 
         requestAnimationFrame(animate);
-      },
-      onEnd: onDragEndCallback
+      };
+      requestAnimationFrame(animate);
     },
-    scale,
-    s
-  );
+    onEnd
+  }, scale, s);
 };

@@ -1,132 +1,63 @@
 import { authApi } from "@/api/auth.api";
-import editBtnIcon from "@/assets/interface-icons/button_edit.svg";
-import avatarDefaultIcon from "@/assets/interface-icons/icon-avatar.svg";
 import { CloseButton } from "@/CloseButton/CloseButton";
-import { AVAILABLE_AVATARS } from "@/MainScene/components/Avatars/Avatars";
-import { AvatarSelectModal } from "@/MainScene/components/Avatars/AvatarSelectModal";
+import { EventBus } from "@/eventbus/EventBus";
+import { AvatarSelectView } from "@/MainScene/components/ProfileEdit/components/AvatarSelectView";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
 import NiceModal, { useModal } from "@ebay/nice-modal-react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { clsx } from "clsx";
-import { useEffect, useRef, useState } from "react";
-
-interface CustomWindow extends Window {
-  phaserGame: any;
-}
+import { useLayoutEffect, useState } from "react";
+import { ProfileActions } from "./components/ProfileActions";
+import { ProfileAvatar } from "./components/ProfileAvatar";
+import { ProfileNameField } from "./components/ProfileNameField";
 
 export const ProfileEdit = NiceModal.create(() => {
   const modal = useModal();
-  const { username, avatarId, userId, setUsername, startScanner, resetStore } = useMainGameStore();
+  const { username, avatarId, setUsername, resetStore, discriminator } = useMainGameStore();
   const [isEditing, setIsEditing] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [scale, setScale] = useState(1);
 
-  useEffect(() => {
-    if (isEditing) {
-      inputRef.current?.focus();
-    }
-  }, [isEditing]);
+  useLayoutEffect(() => {
+    if (!modal.visible) return;
+    const resize = () => {
+      const w = window.innerWidth, h = window.innerHeight;
+      const el = document.querySelector(".phaser-ui-root-container");
+      const ps = el ? parseFloat(getComputedStyle(el).getPropertyValue("--game-scale")) || 1 : 1;
+      setScale(h > w ? (w >= 768 ? Math.max(ps, (w * 0.42) / 340) : (w * 0.85) / 340) : (w >= 1024 && h >= 768 ? Math.min(1.0, Math.max(ps, (h * 0.5) / 370)) : (h * 0.88) / 370));
+    };
+    resize();
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, [modal.visible]);
 
   const handleLogout = async () => {
-    modal.hide();
-    await authApi.logout();
+    modal.hide(); setIsEditing(false);
+    EventBus.emit("force_logout_to_login");
+    try { await authApi.logout(); } catch (e) { console.error(e); }
     await resetStore();
-
-    if (typeof window !== "undefined") {
-      const customWindow = window as unknown as CustomWindow;
-      if (customWindow.phaserGame) {
-        const game = customWindow.phaserGame;
-        game.scene.stop("MainScene");
-        game.scene.start("LoginScene");
-      }
-    }
   };
 
-  const currentAvatar = AVAILABLE_AVATARS.find((a) => a.id === avatarId) || {
-    Component: () => <img src={avatarDefaultIcon} className="block h-full w-full rounded-full object-cover" alt="Default Avatar" />
-  };
-  const AvatarComponent = currentAvatar.Component;
+  const handleClose = () => { modal.hide(); setIsEditing(false); };
 
   return (
-    <Dialog.Root open={modal.visible} onOpenChange={(open) => !open && modal.hide()}>
+    <Dialog.Root open={modal.visible} onOpenChange={(open) => !open && handleClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 outline-none">
-          <div className="relative box-border flex h-auto w-[380px] flex-col items-center rounded-[32px] border-[4px] border-[#ffca28] bg-white p-6 shadow-2xl max-sm:w-[330px] max-sm:rounded-[24px] max-sm:p-4 landscape:scale-95">
-            <Dialog.Close asChild>
-              <CloseButton className="absolute top-3 right-3" />
-            </Dialog.Close>
-            <Dialog.Title className="sr-only">Профиль</Dialog.Title>
+        <Dialog.Content className="fixed top-1/2 left-1/2 z-50 box-border flex h-[370px] w-[340px] origin-center flex-col items-center overflow-hidden rounded-[28px] border-[4px] border-[#ffca28] bg-white p-5 shadow-2xl outline-none" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
+          <Dialog.Close asChild><CloseButton className="absolute top-4 right-4 z-40 cursor-pointer" /></Dialog.Close>
 
-            {userId && (
-              <div className="mt-4 text-center text-[14px] font-black tracking-wider text-slate-400/80 uppercase select-none">
-                ID: {userId}
-              </div>
-            )}
-
-            <div
-              onClick={() => NiceModal.show(AvatarSelectModal)}
-              className={clsx(
-                "pointer-events-auto relative mx-auto mt-4 h-[105px] w-[105px] cursor-pointer rounded-full bg-white shadow-sm transition-transform hover:scale-105 active:scale-95",
-                !avatarId || avatarId === "default" ? "border-0 p-0" : "border-2 border-[#e2e8f0] p-1"
-              )}
-            >
-              <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full">
-                <AvatarComponent />
+          {!isEditing ? (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-3 pt-1">
+              <Dialog.Title className="sr-only">Профиль</Dialog.Title>
+              <div className="pr-6 text-center text-[16px] font-black tracking-wider text-slate-500/90 uppercase select-none">Тег: #{discriminator || "0000"}</div>
+              <div className="cursor-pointer" onClick={() => setIsEditing(true)}><ProfileAvatar avatarId={avatarId} /></div>
+              <ProfileNameField currentName={username} setUsername={setUsername} />
+              <div className="mt-1 flex w-full flex-col gap-2">
+                <ProfileActions onStartScanner={() => { handleClose(); EventBus.emit("main_scene_stop"); EventBus.emit("scanner_scene_start"); }} onLogout={handleLogout} />
               </div>
             </div>
-
-            <div className="relative mx-auto mt-4 flex h-[34px] w-full max-w-[280px] items-center justify-center font-black">
-              {!isEditing ? (
-                <div className="flex w-full items-center justify-center gap-2">
-                  <span
-                    onClick={() => setIsEditing(true)}
-                    className="max-w-[180px] cursor-pointer overflow-hidden text-[21px] text-ellipsis whitespace-nowrap text-[#1a3d1c]"
-                  >
-                    {username}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(true)}
-                    className="flex h-8 w-8 items-center justify-center border-0 bg-transparent p-0 active:scale-90"
-                  >
-                    <img src={editBtnIcon} className="h-6 w-6 object-contain" alt="" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex w-full items-center justify-center gap-2">
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    maxLength={20}
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && setIsEditing(false)}
-                    onBlur={() => setIsEditing(false)}
-                    className="box-border h-[34px] w-full max-w-[180px] rounded-[12px] border-2 border-[#e2e8f0] bg-[#f8fafc] text-center text-[17px] font-black text-[#1a3d1c] outline-none focus:border-[#81c714]"
-                  />
-                </div>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                modal.hide();
-                startScanner();
-              }}
-              className="mx-auto mt-6 flex h-[48px] w-full max-w-[280px] cursor-pointer items-center justify-center rounded-[24px] border-0 bg-[#ff9800] text-[15px] font-black text-white uppercase shadow-sm active:scale-[0.98]"
-            >
-              Добавить питомца
-            </button>
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="mx-auto mt-3 flex h-[44px] w-full max-w-[280px] cursor-pointer items-center justify-center rounded-[24px] border-2 border-[#ef4444] bg-transparent text-[14px] font-black text-[#ef4444] uppercase shadow-sm active:scale-[0.98]"
-            >
-              Выйти
-            </button>
-          </div>
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center"><AvatarSelectView onBack={() => setIsEditing(false)} /></div>
+          )}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

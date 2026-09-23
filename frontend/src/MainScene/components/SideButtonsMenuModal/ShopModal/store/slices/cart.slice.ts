@@ -3,74 +3,57 @@ import { DYNAMIC_BOOSTS, INVENTORY_SLOT_MAP } from "../../constants/shop.constan
 import { CartState, ShopStateCombined } from "../useShopStore";
 
 export const createCartSlice: StateCreator<ShopStateCombined, [], [], CartState> = (set, get) => ({
-  selectedItem: null,
-  cart: {},
-  purchaseStatus: null,
-  inventoryConflict: null,
+  selectedItem: null, cart: {}, purchaseStatus: null, inventoryConflict: null,
 
   setSelectedItem: (selectedItem) => set({ selectedItem }),
   setPurchaseStatus: (purchaseStatus) => set({ purchaseStatus }),
   setInventoryConflict: (inventoryConflict) => set({ inventoryConflict }),
 
   addToCart: (id, qty) => {
-    const targetItem = DYNAMIC_BOOSTS.find((b) => b.id === id);
-    if (!targetItem) return false;
+    const item = DYNAMIC_BOOSTS.find((b) => b.id === id);
+    if (!item) return false;
 
-    const targetSlot = INVENTORY_SLOT_MAP[targetItem.type];
-    const currentCart = { ...get().cart };
+    const slot = INVENTORY_SLOT_MAP[item.type];
+    const current = { ...get().cart };
 
-    Object.keys(currentCart).forEach((cartIdStr) => {
-      const cartId = Number(cartIdStr);
-      if (cartId !== id) {
-        const cartItem = DYNAMIC_BOOSTS.find((b) => b.id === cartId);
-        if (cartItem && INVENTORY_SLOT_MAP[cartItem.type] === targetSlot) {
-          delete currentCart[cartId];
-        }
-      }
+    Object.keys(current).forEach((cId) => {
+      const cNum = Number(cId);
+      if (cNum !== id && INVENTORY_SLOT_MAP[DYNAMIC_BOOSTS.find((b) => b.id === cNum)?.type || ""] === slot) delete current[cNum];
     });
 
-    currentCart[id] = (currentCart[id] || 0) + qty;
-    set({ purchaseStatus: null, cart: currentCart });
+    current[id] = (current[id] || 0) + qty;
+    set({ purchaseStatus: null, cart: current });
     return true;
   },
 
   updateCartQuantity: (id, qty) => {
-    const targetItem = DYNAMIC_BOOSTS.find((b) => b.id === id);
-    if (!targetItem) return false;
+    if (!DYNAMIC_BOOSTS.some((b) => b.id === id)) return false;
+    const slot = INVENTORY_SLOT_MAP[DYNAMIC_BOOSTS.find((b) => b.id === id)!.type];
+    const current = { ...get().cart };
 
-    const targetSlot = INVENTORY_SLOT_MAP[targetItem.type];
-    const currentCart = { ...get().cart };
-
-    if (qty > (currentCart[id] || 0)) {
-      Object.keys(currentCart).forEach((cartIdStr) => {
-        const cartId = Number(cartIdStr);
-        if (cartId !== id) {
-          const cartItem = DYNAMIC_BOOSTS.find((b) => b.id === cartId);
-          if (cartItem && INVENTORY_SLOT_MAP[cartItem.type] === targetSlot) {
-            delete currentCart[cartId];
-          }
-        }
+    if (qty > (current[id] || 0)) {
+      Object.keys(current).forEach((cId) => {
+        const cNum = Number(cId);
+        if (cNum !== id && INVENTORY_SLOT_MAP[DYNAMIC_BOOSTS.find((b) => b.id === cNum)?.type || ""] === slot) delete current[cNum];
       });
     }
 
-    if (qty <= 0) delete currentCart[id];
-    else currentCart[id] = qty;
+    if (qty <= 0) delete current[id];
+    else current[id] = qty;
 
-    set({ cart: currentCart, purchaseStatus: null });
+    set({ cart: current, purchaseStatus: null });
     return true;
   },
 
-  removeFromCart: (id) =>
-    set((s) => {
-      const cart = { ...s.cart };
-      delete cart[id];
-      return { cart, purchaseStatus: null };
-    }),
+  removeFromCart: (id) => set((s) => {
+    const cart = { ...s.cart };
+    delete cart[id];
+    return { cart, purchaseStatus: null };
+  }),
 
   clearCart: () => set({ cart: {} }),
 
-  getTotalPrice: () =>
-    Math.round(
-      Object.entries(get().cart).reduce((sum, [id, qty]) => sum + (DYNAMIC_BOOSTS.find((b) => b.id === Number(id))?.price || 0) * qty, 0)
-    )
+  getTotalPrice: () => Math.round(
+    Object.entries(get().cart).reduce((sum, [id, qty]) => sum + (DYNAMIC_BOOSTS.find((b) => b.id === Number(id))?.price || 0) * qty, 0)
+  )
 });

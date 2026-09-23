@@ -1,26 +1,16 @@
 import { create } from "zustand";
 
-export interface LayoutContext {
-  screenMode: "fold" | "mobile" | "tablet" | "desktop";
-  viewW: number;
-  scale: number;
-  isVert: boolean;
-}
+export interface LayoutContext { screenMode: "fold" | "mobile" | "tablet" | "desktop"; viewW: number; scale: number; isVert: boolean; }
 
 interface Step4State {
-  layoutContext: LayoutContext | null;
-  finalScale: number;
-  setLayout: (layoutContext: LayoutContext, finalScale: number) => void;
-  resetStore: () => void;
+  layoutContext: LayoutContext | null; finalScale: number;
+  setLayout: (ctx: LayoutContext, fs: number) => void; resetStore: () => void;
 }
 
-const initialValues = {
-  layoutContext: null,
-  finalScale: 1
-} as const;
+const initial = { layoutContext: null, finalScale: 1 };
 
 export const useRegistrationStep4Store = create<Step4State>((set) => ({
-  ...initialValues,
+  ...initial,
   setLayout: (layoutContext, finalScale) => set({ layoutContext, finalScale }),
-  resetStore: () => set(initialValues)
+  resetStore: () => set(initial)
 }));

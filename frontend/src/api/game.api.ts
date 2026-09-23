@@ -1,35 +1,21 @@
-import { gameApiInstance, isMock } from "./client";
-import { mockApi } from "./api.mock";
-import { UserProfile } from "./types/types";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
+import { mockApi } from "./api.mock";
+import { gameApiInstance, isMock } from "./client";
+import { UserProfile } from "./types/types";
 
 export const gameApi = {
-  async getCoins(): Promise<{ coins: number }> {
-    if (isMock) return mockApi.getCoins();
-    return (await gameApiInstance.get<{ coins: number }>("/game/pharmacy/coins")).data;
-  },
+  getCoins: async () => isMock ? mockApi.getCoins() : (await gameApiInstance.get<{ coins: number }>("/game/pharmacy/coins")).data,
 
-  async updateCoins(actionType: "buy_medicine" | "mini_game_reward" | "buy_shop_items", total?: number): Promise<{ coins: number }> {
+  async updateCoins(actionType: "buy_medicine" | "mini_game_reward" | "buy_shop_items", total?: number) {
     if (isMock) return mockApi.updateCoins(actionType, total);
-    const safeTotal = total !== undefined ? Number(total) : 0;
-    return (await gameApiInstance.post<{ coins: number }>("/game/pharmacy/action", { actionType, total: safeTotal })).data;
+    return (await gameApiInstance.post<{ coins: number }>("/game/pharmacy/action", { actionType, total: total !== undefined ? Number(total) : 0 })).data;
   },
 
-  async damagePet(): Promise<{ coins: number; petHealth: number }> {
-    if (isMock) {
-      const res = await mockApi.updateCoins("buy_medicine");
-      return { coins: res.coins, petHealth: Math.max(1, usePetStore.getState().hp - 25) };
-    }
+  async damagePet() {
+    if (isMock) return { coins: (await mockApi.updateCoins("buy_medicine")).coins, petHealth: Math.max(1, usePetStore.getState().hp - 25) };
     return (await gameApiInstance.post<{ coins: number; petHealth: number }>("/game/pharmacy/action", { actionType: "buy_medicine" })).data;
   },
 
-  async feedPet(): Promise<UserProfile> {
-    if (isMock) return mockApi.feedPet();
-    return (await gameApiInstance.post<UserProfile>("/game/pharmacy/feed")).data;
-  },
-
-  async getPetStatus(): Promise<UserProfile> {
-    if (isMock) return mockApi.getPetStatus();
-    return (await gameApiInstance.post<UserProfile>("/game/pharmacy/status")).data;
-  }
+  feedPet: async () => isMock ? mockApi.feedPet() : (await gameApiInstance.post<UserProfile>("/game/pharmacy/feed")).data,
+  getPetStatus: async () => isMock ? mockApi.getPetStatus() : (await gameApiInstance.post<UserProfile>("/game/pharmacy/status")).data
 };

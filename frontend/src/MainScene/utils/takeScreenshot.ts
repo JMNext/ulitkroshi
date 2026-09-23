@@ -1,67 +1,61 @@
 import { toPng } from "html-to-image";
-import Phaser from "phaser";
-
-interface CustomWindow extends Window {
-  phaserGame: Phaser.Game | null;
-}
 
 export const takeScreenshot = async () => {
-  const canvasElement = document.querySelector("canvas");
-  const gameContainer = canvasElement?.parentElement;
-  const uiRoot = gameContainer?.querySelector(".phaser-ui-root-container") as HTMLDivElement;
-  const customWindow = window as unknown as CustomWindow;
+  const canvas = document.querySelector("canvas");
+  const container = canvas?.parentElement;
+  const uiRoot = container?.querySelector(".phaser-ui-root-container") as HTMLDivElement;
+  const game = (window as any).phaserGame;
 
-  if (!gameContainer || !canvasElement || !uiRoot || !customWindow.phaserGame) return;
+  if (!container || !canvas || !uiRoot || !game) return;
 
   try {
-    const width = gameContainer.clientWidth;
-    const height = gameContainer.clientHeight;
-    const pRatio = window.devicePixelRatio || 2;
+    const w = container.clientWidth, h = container.clientHeight, pr = window.devicePixelRatio || 2;
 
-    customWindow.phaserGame.renderer.snapshot((snapshotImage: unknown) => {
-      if (!snapshotImage || !(snapshotImage instanceof HTMLImageElement)) return;
+    const cutElements = uiRoot.querySelectorAll(".truncate, .text-ellipsis, .overflow-hidden, [class*='max-w-']");
+    const originalStyles: Array<{ el: Element; className: string; style: string }> = [];
 
+    cutElements.forEach((el) => {
+      originalStyles.push({ el, className: el.className, style: el.getAttribute("style") || "" });
+      el.className = el.className.replace(/(truncate|text-ellipsis|overflow-hidden|max-w-\[[^\]]+\]|max-w-\w+)/g, "");
+      (el as HTMLElement).style.overflow = "visible";
+      (el as HTMLElement).style.width = "auto";
+      (el as HTMLElement).style.maxWidth = "none";
+    });
+
+    game.renderer.snapshot((snap: any) => {
+      if (!(snap instanceof HTMLImageElement)) return;
       uiRoot.style.pointerEvents = "auto";
 
       toPng(uiRoot, {
-        cacheBust: true,
-        pixelRatio: pRatio,
-        skipFonts: true,
-        width: width,
-        height: height,
-        filter: (node: Node) => !(node instanceof HTMLElement && node.innerText === "✕")
+        cacheBust: true, pixelRatio: pr, skipFonts: true, width: w, height: h,
+        filter: (n: Node) => !(n instanceof HTMLElement && n.innerText === "✕")
       })
-        .then(async (uiDataUrl) => {
+        .then(async (uiUrl) => {
           uiRoot.style.pointerEvents = "none";
 
           const finalCanvas = document.createElement("canvas");
-          finalCanvas.width = width * pRatio;
-          finalCanvas.height = height * pRatio;
+          finalCanvas.width = w * pr; finalCanvas.height = h * pr;
           const ctx = finalCanvas.getContext("2d");
           if (!ctx) return;
 
           const imgUI = new Image();
+          await new Promise((res) => { imgUI.onload = res; imgUI.src = uiUrl; });
 
-          await new Promise((resolve) => {
-            imgUI.onload = resolve;
-            imgUI.src = uiDataUrl;
-          });
-
-          ctx.drawImage(snapshotImage, 0, 0, finalCanvas.width, finalCanvas.height);
+          ctx.drawImage(snap, 0, 0, finalCanvas.width, finalCanvas.height);
           ctx.drawImage(imgUI, 0, 0, finalCanvas.width, finalCanvas.height);
 
-          const dataUrl = finalCanvas.toDataURL("image/png");
           const link = document.createElement("a");
           link.download = `snail-game-${Date.now()}.png`;
-          link.href = dataUrl;
+          link.href = finalCanvas.toDataURL("image/png");
           link.click();
         })
-        .catch((uiError: unknown) => {
-          uiRoot.style.pointerEvents = "none";
-          console.error("[SCREENSHOT] Ошибка интерфейса:", uiError);
+        .catch(() => uiRoot.style.pointerEvents = "none")
+        .finally(() => {
+          originalStyles.forEach(({ el, className, style }) => {
+            el.className = className;
+            style ? el.setAttribute("style", style) : el.removeAttribute("style");
+          });
         });
     });
-  } catch (error) {
-    console.error("[SCREENSHOT] Критическая ошибка:", error);
-  }
+  } catch {}
 };

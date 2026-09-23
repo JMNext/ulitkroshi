@@ -1,6 +1,7 @@
 export interface UserProfile {
   id: number;
   name: string;
+  discriminator: string;
   phone: string;
   roles: string[];
   coins: number;

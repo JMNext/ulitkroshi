@@ -2,90 +2,58 @@ import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
-const shuffleArray = <T>(array: T[]): T[] => {
-  const result = [...array];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
-};
-
-const createGameDeck = (pairsCount: number, availableCards: string[]): string[] => {
-  if (!availableCards || availableCards.length === 0) return [];
-  const shuffledPool = shuffleArray(availableCards);
-  let selectedCards: string[] = [];
-  while (selectedCards.length < pairsCount) {
-    const neededCount = pairsCount - selectedCards.length;
-    selectedCards = [...selectedCards, ...shuffledPool.slice(0, neededCount)];
-  }
-  return shuffleArray([...selectedCards, ...selectedCards]);
-};
-
 interface MemoryGameState {
   score: number; isGameOver: boolean; isWash: boolean; deck: string[]; openedCards: number[]; matchedCards: string[]; canClick: boolean; isPreview: boolean; hasMisses: boolean;
-  initGame: (pairsCount: number, availableCards: string[]) => void;
-  setSwappedDeck: (newDeck: string[]) => void;
-  setCanClickTrue: () => void;
-  handleCardClick: (clickedIndex: number, totalPairs: number) => void;
-  setWash: (wash: boolean) => void;
-  resetStore: () => void;
+  initGame: (pairsCount: number, availableCards: string[]) => void; setSwappedDeck: (newDeck: string[]) => void; setCanClickTrue: () => void; handleCardClick: (clickedIndex: number, totalPairs: number) => void; setWash: (wash: boolean) => void; resetStore: () => void;
 }
 
-type MemoryDifficulty = "easy" | "medium" | "hard" | "memory";
+const shuffle = <T>(arr: T[]): T[] => {
+  const r = [...arr];
+  for (let i = r.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [r[i], r[j]] = [r[j], r[i]];
+  }
+  return r;
+};
 
-const initialValues = { score: 0, isGameOver: false, isWash: false, deck: [], openedCards: [], matchedCards: [], canClick: false, isPreview: true, hasMisses: false };
+const createDeck = (pairs: number, pool: string[]): string[] => {
+  if (!pool?.length) return [];
+  const sh = shuffle(pool); let sel: string[] = [];
+  while (sel.length < pairs) sel = [...sel, ...sh.slice(0, pairs - sel.length)];
+  return shuffle([...sel, ...sel]);
+};
+
+const initial = { score: 0, isGameOver: false, isWash: false, deck: [], openedCards: [], matchedCards: [], canClick: false, isPreview: true, hasMisses: false };
 
 export const useMemoryGameStore = create<MemoryGameState>()(
   subscribeWithSelector((set, get) => ({
-    ...initialValues,
+    ...initial,
 
-    initGame: (pairsCount, availableCards) => {
-      set({ ...initialValues, deck: createGameDeck(pairsCount, availableCards), isPreview: true, canClick: false, hasMisses: false });
-    },
-
-    setSwappedDeck: (newDeck) => set({ deck: newDeck }),
+    initGame: (pairs, pool) => set({ ...initial, deck: createDeck(pairs, pool), isPreview: true, canClick: false, hasMisses: false }),
+    setSwappedDeck: (deck) => set({ deck }),
     setCanClickTrue: () => set({ canClick: true }),
 
-    handleCardClick: (clickedIndex, totalPairs) => {
-      const { canClick, openedCards, deck, matchedCards, score, hasMisses } = get();
-      if (!canClick || openedCards.includes(clickedIndex) || matchedCards.includes(deck[clickedIndex])) return;
+    handleCardClick: (idx, pairs) => {
+      const { canClick, openedCards: op, deck, matchedCards: match, score, hasMisses } = get();
+      if (!canClick || op.includes(idx) || match.includes(deck[idx])) return;
 
-      const nextOpenedCards = [...openedCards, clickedIndex];
-      set({ openedCards: nextOpenedCards });
-      if (nextOpenedCards.length !== 2) return;
+      const nextOp = [...op, idx]; set({ openedCards: nextOp });
+      if (nextOp.length !== 2) return;
 
       set({ canClick: false });
-      const [firstIndex, secondIndex] = nextOpenedCards;
-      const isPairMatched = deck[firstIndex] === deck[secondIndex];
+      const [first, second] = nextOp;
+      const matchWin = deck[first] === deck[second];
 
-      if (isPairMatched) {
-        const nextScore = score + 1;
-        const isWin = nextScore === totalPairs;
-
-        if (isWin) {
-          const modeKey = !hasMisses ? `memory_perfect_${totalPairs}` : "memory";
-          useMainGameStore.getState().setGameOver(nextScore, modeKey as MemoryDifficulty, true);
-        }
-
-        setTimeout(() => {
-          set({
-            matchedCards: [...matchedCards, deck[firstIndex]],
-            openedCards: [],
-            score: nextScore,
-            isWash: true,
-            canClick: !isWin,
-            isGameOver: isWin
-          });
-        }, 300);
+      if (matchWin) {
+        const nextScore = score + 1, win = nextScore === pairs;
+        if (win) useMainGameStore.getState().setGameOver(nextScore, (!hasMisses ? `memory_perfect_${pairs}` : "memory") as any, true);
+        setTimeout(() => set({ matchedCards: [...match, deck[first]], openedCards: [], score: nextScore, isWash: true, canClick: !win, isGameOver: win }), 300);
       } else {
-        setTimeout(() => {
-          set({ openedCards: [], canClick: true, hasMisses: true });
-        }, 800);
+        setTimeout(() => set({ openedCards: [], canClick: true, hasMisses: true }), 800);
       }
     },
 
     setWash: (isWash) => set({ isWash }),
-    resetStore: () => set(initialValues)
+    resetStore: () => set(initial)
   }))
 );

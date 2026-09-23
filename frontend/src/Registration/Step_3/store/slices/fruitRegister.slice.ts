@@ -1,134 +1,70 @@
-import { StateCreator } from "zustand";
 import { authApi } from "@/api/auth.api";
 import { useRegistrationStep2Store } from "@/Registration/Step_2/store/useRegistrationStep2Store";
-import { Step3CombinedState, RegisterState, setShakeTimeoutId, setClearFruitsTimeoutId } from "../useRegistrationStep3Store";
+import { StateCreator } from "zustand";
+import { RegisterState, setClearFruitsTimeoutId, setShakeTimeoutId, Step3CombinedState } from "../useRegistrationStep3Store";
 
-export const createFruitRegisterSlice: StateCreator<Step3CombinedState, [], [], RegisterState> = (set, get) => ({
-  registerSel: [],
-  registerCorr: [],
-  step3Mode: "select",
-  registerShake: false,
-  registerAttempts: 0,
-  step3Error: "",
-  isRegisterSubmitting: false,
-
-  saveFirstStep: () => {
-    set({ registerSel: [], step3Mode: "verify", step3Error: "", isRegisterSubmitting: false });
-  },
-
-  toggleRegisterSelect: async (id, sessionId, onComplete) => {
-    const combinedState = get() as any;
-    const isLoginFlow = combinedState.isLogin;
-
-    if (isLoginFlow) {
-      const loginSel = combinedState.loginSel || [];
-      const loginAttempts = combinedState.loginAttempts || 0;
-      const isLoginSubmitting = combinedState.isLoginSubmitting || false;
-      const loginMode = combinedState.loginMode || "select";
-
-      if (isLoginSubmitting || loginMode === "error" || loginAttempts >= 3) return;
-      if (loginSel.includes(id)) return;
-
-      const nextLoginSel = [...loginSel, id];
-      if (nextLoginSel.length > 4) return;
-      set({ loginSel: nextLoginSel, loginError: "" } as any);
-
-      if (nextLoginSel.length === 4) {
-        set({ isLoginSubmitting: true } as any);
-        const codeStr = nextLoginSel.join("");
-        try {
-          const response = await authApi.verifyFruit(sessionId, codeStr);
-          if (response && response.accessToken) {
-            set({ isLoginSubmitting: false, loginSel: [] } as any);
-            onComplete();
-          } else {
-            throw new Error("wrong_fruit");
-          }
-        } catch (error) {
-          console.error("🚨 [FRUIT LOGIN ERROR]:", error);
-          const nextAttempts = loginAttempts + 1;
-          if (nextAttempts >= 3) {
-            set({ isLoginSubmitting: false, loginMode: "error", loginShake: true, loginAttempts: nextAttempts, loginError: "wrong_fruit" } as any);
-          } else {
-            set({ isLoginSubmitting: false, loginShake: true, loginAttempts: nextAttempts, loginError: "wrong_fruit" } as any);
-            setShakeTimeoutId(setTimeout(() => set({ loginShake: false } as any), 500));
-            setClearFruitsTimeoutId(setTimeout(() => set({ loginSel: [] } as any), 1200));
-          }
-        }
-      }
-      return;
+export const createFruitRegisterSlice: StateCreator<Step3CombinedState, [], [], RegisterState> = (set, get) => {
+  const handleFail = (att: number, isLogin: boolean) => {
+    const next = att + 1;
+    if (next >= 3) {
+      set(isLogin ? { isLoginSubmitting: false, loginMode: "error", loginShake: true, loginAttempts: next, loginError: "wrong_fruit" } : { isRegisterSubmitting: false, step3Mode: "error", registerShake: true, registerAttempts: next, step3Error: "wrong_fruit" });
+    } else {
+      set(isLogin ? { isLoginSubmitting: false, loginShake: true, loginAttempts: next, loginError: "wrong_fruit" } : { isRegisterSubmitting: false, registerShake: true, registerAttempts: next, step3Error: "wrong_fruit" });
+      setShakeTimeoutId(setTimeout(() => set(isLogin ? { loginShake: false } : { registerShake: false }), 500));
+      setClearFruitsTimeoutId(setTimeout(() => set(isLogin ? { loginSel: [] } : { registerSel: [], step3Error: "" }), 1200));
     }
+  };
 
-    const { step3Mode, registerSel, registerCorr, isRegisterSubmitting, registerAttempts } = get();
-    if (isRegisterSubmitting || step3Mode === "error" || registerAttempts >= 3) return;
+  return {
+    registerSel: [], registerCorr: [], step3Mode: "select", registerShake: false, registerAttempts: 0, step3Error: "", isRegisterSubmitting: false,
 
-    if (registerSel.includes(id)) return;
+    saveFirstStep: () => set({ registerSel: [], step3Mode: "verify", step3Error: "", isRegisterSubmitting: false }),
 
-    const next = [...registerSel, id];
-    if (next.length > 4) return;
-    set({ registerSel: next, step3Error: "" });
+    toggleRegisterSelect: async (id, sessionId, onComplete) => {
+      const state = get();
+      if (state.isLogin) {
+        const { loginMode, loginSel, isLoginSubmitting, loginAttempts } = state;
+        if (isLoginSubmitting || loginMode === "error" || loginAttempts >= 3 || loginSel.includes(id)) return;
 
-    if (next.length === 4) {
-      const numericStringCode = next.join("");
+        const nextLogin = [...loginSel, id];
+        if (nextLogin.length > 4) return;
+        set({ loginSel: nextLogin, loginError: "" });
 
-      if (step3Mode === "select") {
-        set({
-          registerCorr: next,
-          registerSel: [],
-          step3Mode: "confirm"
-        });
+        if (nextLogin.length === 4) {
+          set({ isLoginSubmitting: true });
+          try {
+            const res = await authApi.verifyFruit(sessionId, nextLogin.join(""));
+            if (res?.accessToken) { set({ isLoginSubmitting: false, loginSel: [] }); onComplete(); }
+            else throw new Error();
+          } catch { handleFail(loginAttempts, true); }
+        }
         return;
       }
 
-      if (step3Mode === "verify") {
-        set({ isRegisterSubmitting: true });
+      const { step3Mode, registerSel, registerCorr, isRegisterSubmitting, registerAttempts } = state;
+      if (isRegisterSubmitting || step3Mode === "error" || registerAttempts >= 3 || registerSel.includes(id)) return;
 
-        const isMatch = registerCorr.length === 4 && registerCorr.every((val, index) => val === next[index]);
+      const nextReg = [...registerSel, id];
+      if (nextReg.length > 4) return;
+      set({ registerSel: nextReg, step3Error: "" });
 
-        if (!isMatch) {
-          const nextAttempts = registerAttempts + 1;
-          if (nextAttempts >= 3) {
-            set({ isRegisterSubmitting: false, step3Mode: "error", registerShake: true, registerAttempts: nextAttempts, step3Error: "wrong_fruit" });
-          } else {
-            set({ isRegisterSubmitting: false, registerShake: true, registerAttempts: nextAttempts, step3Error: "wrong_fruit" });
-            setShakeTimeoutId(setTimeout(() => set({ registerShake: false }), 500));
-            setClearFruitsTimeoutId(setTimeout(() => {
-              set({ registerSel: [], step3Error: "" });
-            }, 1200));
-          }
-          return;
-        }
+      if (nextReg.length === 4) {
+        if (step3Mode === "select") return set({ registerCorr: nextReg, registerSel: [], step3Mode: "confirm" });
 
-        try {
-          const step2State = useRegistrationStep2Store.getState() as any;
-          const rawPhoneDigits =
-            step2State?.loginRawPhone ||
-            step2State?.registerRawPhone ||
-            localStorage.getItem("saved_user_phone") ||
-            localStorage.getItem("login_phone_buffer") ||
-            "";
+        if (step3Mode === "verify") {
+          set({ isRegisterSubmitting: true });
+          if (!(registerCorr.length === 4 && registerCorr.every((v, i) => v === nextReg[i]))) return handleFail(registerAttempts, false);
 
-          const cleanDigits = rawPhoneDigits.replace(/\D/g, "");
-          const fullPhone = cleanDigits.startsWith("7") ? cleanDigits : `7${cleanDigits}`;
+          try {
+            const s2 = useRegistrationStep2Store.getState() as any;
+            const digits = (s2?.loginRawPhone || s2?.registerRawPhone || localStorage.getItem("saved_user_phone") || localStorage.getItem("login_phone_buffer") || "").replace(/\D/g, "");
 
-          await authApi.verifyFruit(sessionId, numericStringCode, fullPhone);
-
-          set({ isRegisterSubmitting: false, registerSel: [], registerCorr: [] });
-          onComplete();
-        } catch (error: any) {
-          console.error("🚨 [FRUIT REGISTRATION ERROR]:", error);
-          const nextAttempts = registerAttempts + 1;
-          if (nextAttempts >= 3) {
-            set({ isRegisterSubmitting: false, step3Mode: "error", registerShake: true, registerAttempts: nextAttempts, step3Error: "wrong_fruit" });
-          } else {
-            set({ isRegisterSubmitting: false, registerShake: true, registerAttempts: nextAttempts, step3Error: "wrong_fruit" });
-            setShakeTimeoutId(setTimeout(() => set({ registerShake: false }), 500));
-            setClearFruitsTimeoutId(setTimeout(() => {
-              set({ registerSel: [], step3Error: "" });
-            }, 1200));
-          }
+            await authApi.verifyFruit(sessionId, nextReg.join(""), digits.startsWith("7") ? digits : `7${digits}`);
+            set({ isRegisterSubmitting: false, registerSel: [], registerCorr: [] });
+            onComplete();
+          } catch { handleFail(registerAttempts, false); }
         }
       }
     }
-  }
-});
+  };
+};

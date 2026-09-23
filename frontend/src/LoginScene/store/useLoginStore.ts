@@ -1,64 +1,32 @@
 import { create } from "zustand";
 
 interface LoginState {
-  status: "button" | "loading";
-  progress: number;
-  width: number;
-  height: number;
-  scale: number;
-  isVert: boolean;
+  status: "button" | "loading"; progress: number; width: number; height: number; scale: number; isVert: boolean;
   updateField: <K extends keyof LoginState>(field: K, value: LoginState[K]) => void;
-  startLoading: (onCompleteAction: () => void) => void;
-  resetStore: () => void;
+  startLoading: (onComplete: () => void) => void; resetStore: () => void;
 }
 
-const initialValues = {
-  status: "button" as const,
-  progress: 0,
-  width: 0,
-  height: 0,
-  scale: 1,
-  isVert: true
-} as const;
+const initial = { status: "button" as const, progress: 0, width: 0, height: 0, scale: 1, isVert: true };
+let animId: any = null, timeId: any = null;
 
-let activeAnimationFrameId: number | null = null;
-let activeTimeoutId: ReturnType<typeof setTimeout> | null = null;
-
-const clearActiveTimers = () => {
-  if (activeAnimationFrameId) cancelAnimationFrame(activeAnimationFrameId);
-  if (activeTimeoutId) clearTimeout(activeTimeoutId);
-  activeAnimationFrameId = activeTimeoutId = null;
-};
+const clear = () => { if (animId) cancelAnimationFrame(animId); if (timeId) clearTimeout(timeId); animId = timeId = null; };
 
 export const useLoginStore = create<LoginState>((set) => ({
-  ...initialValues,
+  ...initial,
 
-  updateField: (field, value) => set((state) => ({ ...state, [field]: value })),
+  updateField: (f, v) => set((s) => ({ ...s, [f]: v })),
 
-  startLoading: (onCompleteAction) => {
-    clearActiveTimers();
-    set({ status: "loading", progress: 0 });
-    const startTime = performance.now();
+  startLoading: (onComplete) => {
+    clear(); set({ status: "loading", progress: 0 });
+    const start = performance.now();
 
-    const animate = (now: number) => {
-      const nextProgress = Math.min((now - startTime) / 1500, 1);
-      set({ progress: nextProgress });
-
-      if (nextProgress < 1) {
-        activeAnimationFrameId = requestAnimationFrame(animate);
-      } else {
-        activeAnimationFrameId = null;
-        activeTimeoutId = setTimeout(() => {
-          activeTimeoutId = null;
-          onCompleteAction();
-        }, 50);
-      }
+    const frame = (now: number) => {
+      const p = Math.min((now - start) / 1500, 1);
+      set({ progress: p });
+      p < 1 ? animId = requestAnimationFrame(frame) : (animId = null, timeId = setTimeout(() => { timeId = null; onComplete(); }, 50));
     };
-    activeAnimationFrameId = requestAnimationFrame(animate);
+    animId = requestAnimationFrame(frame);
   },
 
-  resetStore: () => {
-    clearActiveTimers();
-    set(initialValues);
-  }
+  resetStore: () => { clear(); set(initial); }
 }));

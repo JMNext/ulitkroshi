@@ -1,47 +1,68 @@
+import { ErrorBoundary } from "@/eventbus/ErrorBoundary";
 import { BottomMenu } from "@/MainScene/components/BottomMenu/BottomMenu";
-import { FoodPanel } from "@/MainScene/components/FoodPanel/FoodPanel";
 import { Header } from "@/MainScene/components/Header/Header";
 import { HelpModal } from "@/MainScene/components/HelpModal/HelpModal";
 import { PetCharacter } from "@/MainScene/components/PetCharacter/PetCharacter";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
-import { SideButtonsMenu } from "@/MainScene/components/SideButtonsMenu/SideButtonsMenu";
+import { SideMenuLeft } from "@/MainScene/components/SideButtonsMenu/SideMenuLeft";
+import { SideMenuRight } from "@/MainScene/components/SideButtonsMenu/SideMenuRight";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
-import { ErrorBoundary } from "@/eventbus/ErrorBoundary";
 import NiceModal from "@ebay/nice-modal-react";
-import React, { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { executeMainResize } from "./mainLayoutHelper";
+import { MainScene } from "./MainScene";
 
-export const MainSceneUI = () => {
-  const { alertText, width, height, finalScale, styles, isFoodOpen, setIsFoodOpen } = useMainGameStore();
+export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
+  const { alertText, setAlertText, isHelpShown, setIsHelpShown } = useMainGameStore((s) => s);
+  const activePetIndex = usePetStore((s) => s.activePetIndex);
+  const [isLayoutReady, setIsLayoutReady] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const alertTimeoutRef = useRef<any>(null);
 
   useEffect(() => {
-    NiceModal.show(HelpModal);
-  }, []);
+    if (!isHelpShown) { NiceModal.show(HelpModal); setIsHelpShown(true); }
+  }, [isHelpShown, setIsHelpShown]);
 
-  if (!width || !height || !styles) return null;
+  useEffect(() => {
+    const handleResize = (data: any) => {
+      const uiRoot = containerRef.current?.closest(".phaser-ui-root-container") as HTMLDivElement;
+      if (uiRoot) { executeMainResize(data.width, data.height, uiRoot); setIsLayoutReady(true); }
+    };
+
+    const handleMiniGameStart = (e: any) =>
+      phaserScene.events.emit("switch_to_minigame", { scene: e.detail?.scene, difficulty: e.detail?.difficulty });
+
+    const handleShowBubble = (e: any) => {
+      if (!e.detail?.text) return;
+      if (alertTimeoutRef.current) clearTimeout(alertTimeoutRef.current);
+      setAlertText(e.detail.text);
+      alertTimeoutRef.current = setTimeout(() => setAlertText(""), 2500);
+    };
+
+    phaserScene.events.on("phaser_main_resize", handleResize);
+    window.addEventListener("start_mini_game", handleMiniGameStart);
+    window.addEventListener("ui_show_bubble", handleShowBubble);
+    if (phaserScene.sys.isActive()) phaserScene.triggerResize();
+
+    return () => {
+      phaserScene.events.off("phaser_main_resize", handleResize);
+      window.removeEventListener("start_mini_game", handleMiniGameStart);
+      window.removeEventListener("ui_show_bubble", handleShowBubble);
+      if (alertTimeoutRef.current) clearTimeout(alertTimeoutRef.current);
+    };
+  }, [phaserScene, setAlertText]);
 
   return (
     <ErrorBoundary>
-      <div className="pointer-events-none absolute inset-0 z-10 h-full w-full overflow-hidden font-black select-none">
-        <div
-          className="pointer-events-none absolute box-border flex flex-col items-center justify-center opacity-100 transition-opacity [backface-visibility:hidden] top-1/2 left-1/2 h-[1080px] w-[1920px]"
-          style={{ transform: `translate(-50%, -50%) scale(${finalScale})` }}
-        >
-          <Header styles={styles.header} />
-
-          <PetCharacter
-            styles={styles.pet}
-            alertText={alertText}
-            onAnimationEnd={() => {
-              usePetStore.getState().completeCareAction();
-            }}
-          />
-
-          <SideButtonsMenu side="left" styles={styles.sideLeft} className="pointer-events-auto" />
-          <SideButtonsMenu side="right" styles={styles.sideRight} className="pointer-events-auto" />
-
-          <FoodPanel isOpen={isFoodOpen} onClose={() => setIsFoodOpen(false)} styles={styles.food} />
-
-          <BottomMenu styles={styles.bottom} className="pointer-events-auto" />
+      <div ref={containerRef} className="pointer-events-none absolute inset-0 z-10 h-full w-full overflow-hidden font-black select-none">
+        <div className={`ui-canvas-target pointer-events-none absolute top-1/2 left-1/2 box-border flex h-[1080px] w-[1920px] flex-col items-center justify-center [backface-visibility:hidden] ${isLayoutReady ? "opacity-100" : "opacity-0"}`}>
+          <div className="ui-header-target absolute left-1/2"><Header /></div>
+          <div className="ui-left-target pointer-events-auto absolute z-30 origin-left"><SideMenuLeft /></div>
+          <div className="ui-right-target pointer-events-auto absolute z-30 origin-right"><SideMenuRight /></div>
+          <div className="ui-pet-target pointer-events-none absolute">
+            <PetCharacter key={activePetIndex} alertText={alertText} onAnimationEnd={() => {}} />
+          </div>
+          <div className="ui-bottom-target pointer-events-none absolute"><BottomMenu className="pointer-events-auto" /></div>
         </div>
       </div>
     </ErrorBoundary>
