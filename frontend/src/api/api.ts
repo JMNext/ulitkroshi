@@ -1,7 +1,7 @@
 import axios from "axios";
 
-export const isMock = true; 
-const BASE_URL = "http://localhost:3005";
+export const isMock = false;
+const BASE_URL = "http://91.200.150.9:3005";
 
 export const authApiInstance = axios.create({
   baseURL: BASE_URL,
