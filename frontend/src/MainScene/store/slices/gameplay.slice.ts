@@ -2,6 +2,19 @@ import { useApiStore } from "@/api/store/useApiStore";
 import { EventBus } from "@/eventbus/EventBus";
 import { StateCreator } from "zustand";
 import { GameplayState, MainGameStateCombined } from "../useMainGameStore";
+import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
+
+interface SnailPhaserGameWindow {
+  phaserGame?: {
+    scene: {
+      sleep: (key: string) => void;
+      wake: (key: string) => void;
+      start: (key: string) => void;
+      getScene: (key: string) => unknown;
+      isSleeping: (key: string) => boolean;
+    };
+  };
+}
 
 export const createGameplaySlice: StateCreator<MainGameStateCombined, [], [], GameplayState> = (set, get) => ({
   modal: null, alertText: null, isFoodOpen: false, isHelpShown: false, gameOverResult: null,
@@ -9,11 +22,18 @@ export const createGameplaySlice: StateCreator<MainGameStateCombined, [], [], Ga
   startScanner: () => {
     set({ modal: null, isFoodOpen: false });
     EventBus.emit("main_scene_sleep"); EventBus.emit("scanner_scene_start");
-    const game = typeof window !== "undefined" ? (window as any).phaserGame : null;
-    if (game) {
-      game.scene.sleep("MainScene");
-      if (game.scene.getScene("ScannerScene")) {
-        game.scene.isSleeping("ScannerScene") ? game.scene.wake("ScannerScene") : game.scene.start("ScannerScene");
+
+    if (typeof window !== "undefined") {
+      const gw = window as unknown as SnailPhaserGameWindow;
+      if (gw.phaserGame) {
+        gw.phaserGame.scene.sleep("MainScene");
+        if (gw.phaserGame.scene.getScene("ScannerScene")) {
+          if (gw.phaserGame.scene.isSleeping("ScannerScene")) {
+            gw.phaserGame.scene.wake("ScannerScene");
+          } else {
+            gw.phaserGame.scene.start("ScannerScene");
+          }
+        }
       }
     }
   },
@@ -29,14 +49,20 @@ export const createGameplaySlice: StateCreator<MainGameStateCombined, [], [], Ga
     let isWin = initialIsWin === true;
     let coins = 0;
 
-    if (diff === "memory") coins = isWin ? (numScore === 8 ? 2 : 1) : 0;
-    else if (diff.startsWith("memory_perfect_")) coins = isWin ? (diff === "memory_perfect_4" ? 5 : 100) : 0;
-    else {
+    if (diff === "memory") {
+      coins = isWin ? (numScore === 8 ? 2 : 1) : 0;
+    } else if (diff.startsWith("memory_perfect_")) {
+      coins = isWin ? (diff === "memory_perfect_4" ? 5 : 100) : 0;
+    } else {
       isWin = difficulty ? initialIsWin : numScore >= 20 || numScore === 999;
       coins = isWin ? 5 : 2;
     }
 
-    set({ gameOverResult: { isWin, rewardText: `+${coins}` } });
+    if ((usePetStore.getState().buffUntil > Date.now()) && (isWin || coins > 0)) {
+      coins += 1;
+    }
+
+    set({ gameOverResult: { isWin, rewardText: "+" + coins } });
     if (coins <= 0) return;
 
     get().setUpdatingCoinsGlobal(true);
@@ -48,7 +74,11 @@ export const createGameplaySlice: StateCreator<MainGameStateCombined, [], [], Ga
       const auth = useApiStore.getState();
       await auth.executeAction("mini_game_reward", coins, diff.startsWith("memory_perfect") ? "memory" : difficulty || isWin);
       set({ coins: next });
-      if (auth.user) auth.coins = next;
+
+      const currentUser = auth.user;
+      if (currentUser) {
+        useApiStore.setState({ user: { ...currentUser, coins: next } });
+      }
     } catch {
       set({ coins: prev });
     } finally {

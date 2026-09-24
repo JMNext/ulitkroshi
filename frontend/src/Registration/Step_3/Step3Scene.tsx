@@ -1,3 +1,4 @@
+import { EventBus } from "@/eventbus/EventBus";
 import { registerSceneEvent } from "@/eventbus/registerSceneEvent";
 import Phaser from "phaser";
 import { createRoot, Root } from "react-dom/client";
@@ -10,6 +11,8 @@ const CONFIG = { BASE_W: 460, BASE_H: 780 };
 export class Step3Scene extends Phaser.Scene {
   public backgroundIm!: Phaser.GameObjects.Image;
   public sessionId: string = "";
+  // Добавлен флаг для отслеживания текущего контекста флоу
+  public isLoginFlow: boolean = false;
   private uiContainer: HTMLDivElement | null = null;
   private currentOrientation: "vert" | "goriz" | null = null;
   private reactRoot: Root | null = null;
@@ -18,15 +21,18 @@ export class Step3Scene extends Phaser.Scene {
     super({ key: "Step3Scene" });
   }
 
-  public init(data?: { sessionId?: string }): void {
+  public init(data?: { sessionId?: string; isLoginFlow?: boolean }): void {
     this.sessionId = data?.sessionId || "";
+    // ИСПРАВЛЕНО: Запоминаем, какой флоу был передан при старте сцены
+    this.isLoginFlow = data?.isLoginFlow || false;
+
     const container = document.getElementById("game-container");
     if (container) {
       container.querySelectorAll("#phaser-native-step1-bubble, #phaser-native-success-bubble").forEach((el) => el.remove());
     }
 
-    // Сообщаем UI-слою об инициализации сцены, чтобы он сбросил соответствующие поля в сторе
-    this.events.emit("phaser_scene_init");
+    // ИСПРАВЛЕНО: Передаем флаг флоу в React-компонент, чтобы избежать сброса режима в "регистрацию"
+    this.events.emit("phaser_scene_init", { isLoginFlow: this.isLoginFlow });
   }
 
   public preload(): void {
@@ -37,8 +43,7 @@ export class Step3Scene extends Phaser.Scene {
   public create(): void {
     if (this.game.canvas) this.game.canvas.className = "absolute inset-0 w-full h-full z-1";
 
-    const w = Number(this.scale.width),
-      h = Number(this.scale.height);
+    const w = Number(this.scale.width), h = Number(this.scale.height);
     this.currentOrientation = h > w ? "vert" : "goriz";
     this.backgroundIm = this.add
       .image(w / 2, h / 2, `step3_bg_fon_${this.currentOrientation}`)
@@ -79,7 +84,7 @@ export class Step3Scene extends Phaser.Scene {
     }
   }
 
-  private handleExternalStart(data?: { sessionId: string }): void {
+  private handleExternalStart(data?: { sessionId: string; isLoginFlow?: boolean }): void {
     this.scene.start("Step3Scene", data);
   }
 
@@ -96,9 +101,7 @@ export class Step3Scene extends Phaser.Scene {
   }
 
   private executeResizeLogic(width: number, height: number): void {
-    const w = Number(width),
-      h = Number(height),
-      isVert = h > w;
+    const w = Number(width), h = Number(height), isVert = h > w;
     const nextOrient = isVert ? "vert" : "goriz";
 
     if (this.currentOrientation !== nextOrient) {
@@ -111,9 +114,7 @@ export class Step3Scene extends Phaser.Scene {
     }
     this.backgroundIm.setPosition(w / 2, h / 2).setDisplaySize(w, h);
 
-    const scaleX = w / CONFIG.BASE_W,
-      scaleY = h / CONFIG.BASE_H,
-      aspect = w / h;
+    const scaleX = w / CONFIG.BASE_W, scaleY = h / CONFIG.BASE_H, aspect = w / h;
     let computedScale = Math.min(scaleX, scaleY);
     if (isVert) {
       computedScale =
@@ -128,13 +129,10 @@ export class Step3Scene extends Phaser.Scene {
     computedScale = Math.max(0.42, Math.min(1.3, computedScale));
 
     const viewW = w / computedScale;
-
-    // Строго типизируем литеральный тип для TS компилятора
     const screenMode: "fold" | "mobile" | "tablet" | "desktop" = isVert
       ? (viewW < 750 ? "fold" : "mobile")
       : (aspect < 1.6 ? "tablet" : "desktop");
 
-    // Отправляем вычисленные данные наружу в React UI менеджер
     this.events.emit("phaser_scene_resize", {
       width: w,
       height: h,
@@ -145,26 +143,27 @@ export class Step3Scene extends Phaser.Scene {
     });
   }
 
-  private handleWake(): void {
+  private handleWake(sys: Phaser.Scenes.Systems, data?: { sessionId?: string; isLoginFlow?: boolean }): void {
+    if (data) {
+      this.sessionId = data.sessionId || this.sessionId;
+      this.isLoginFlow = data.isLoginFlow || false;
+    }
     this.mountReactUI();
+    this.events.emit("phaser_scene_init", { isLoginFlow: this.isLoginFlow });
     this.triggerResize();
   }
 
   private handleSleep(): void {
     this.events.emit("phaser_scene_sleep");
-    if (this.uiContainer) this.uiContainer.style.opacity = "0";
-    this.tweens.add({
-      targets: this.backgroundIm,
-      alpha: 0,
-      duration: 200,
-      onComplete: () => {
-        try {
-          this.reactRoot?.unmount();
-        } catch (_) {}
-        this.uiContainer?.remove();
-        this.reactRoot = this.uiContainer = null;
-      }
-    });
+    this.tweens.killTweensOf(this.backgroundIm);
+
+    // ИСПРАВЛЕНО: Убираем задержку unmount, размонтируем интерфейс СИНХРОННО.
+    // Это предотвратит баг «исчезновения экрана», если сцена сразу проснется обратно.
+    try {
+      this.reactRoot?.unmount();
+    } catch (_) {}
+    this.uiContainer?.remove();
+    this.reactRoot = this.uiContainer = null;
   }
 
   private cleanUp(): void {
@@ -172,6 +171,11 @@ export class Step3Scene extends Phaser.Scene {
     this.scale.off("resize", this.triggerResize, this);
     this.sys.events.off("wake", this.handleWake, this).off("sleep", this.handleSleep, this);
     this.tweens.killTweensOf(this.backgroundIm);
+
+    // ИСПРАВЛЕНО: Чистим глобальные подписки EventBus, чтобы избежать утечек памяти
+    EventBus.off("step3_scene_start");
+    EventBus.off("step3_scene_stop");
+
     try {
       this.reactRoot?.unmount();
     } catch (_) {}

@@ -21,6 +21,7 @@ export const CaptchaFruitGrid = ({ sessionId, onSuccess }: { sessionId: string; 
   const sub = isLogin ? isLoginSubmitting : isRegisterSubmitting;
   const selected = isLogin ? loginSel : registerSel;
 
+  // ИСПРАВЛЕНО: Блокирует сетку только во время показа модального подтверждения ("confirm") или отправки запроса
   const disabled = mode === "error" || mode === "confirm" || sub || attempts >= 3;
 
   useEffect(() => { URLS.forEach(url => { const img = new Image(); img.src = url; }); }, []);
@@ -37,7 +38,7 @@ export const CaptchaFruitGrid = ({ sessionId, onSuccess }: { sessionId: string; 
         <div className="box-border grid grid-cols-4 gap-4">
           {fruitOrder.map((id) => {
             const hasSel = selected.includes(id);
-            const url = URLS[id >= 1 && id <= 16 ? id - 1 : id];
+            const url = URLS[id - 1];
 
             return (
               <button key={id} type="button" disabled={disabled} onClick={(e) => handleClick(e, id)} className={clsx("pointer-events-auto box-border flex h-[94px] w-[94px] shrink-0 cursor-pointer touch-manipulation items-center justify-center overflow-hidden rounded-full border-4 bg-white p-0 transition-all outline-none active:scale-95", hasSel ? (shake ? "animate-shake border-red-500 bg-red-50 shadow-md" : "border-[#a6f034] shadow-md") : "border-slate-100 shadow-sm hover:border-sky-400 focus:border-sky-500 active:border-sky-600", disabled && "cursor-not-allowed opacity-80")}>

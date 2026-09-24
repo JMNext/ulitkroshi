@@ -21,10 +21,11 @@ export interface Step3CombinedState extends LoginState, RegisterState {
 }
 
 const genOrder = (): number[] => Array.from({ length: 16 }, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+
 let shakeId: any = null, clearId: any = null;
 
-export const setShakeTimeoutId = (id: any) => { shakeId = id; };
-export const setClearFruitsTimeoutId = (id: any) => { clearId = id; };
+export const setShakeTimeoutId = (id: any) => { if (shakeId) clearTimeout(shakeId); shakeId = id; };
+export const setClearFruitsTimeoutId = (id: any) => { if (clearId) clearTimeout(clearId); clearId = id; };
 export const clearTimers = () => { if (shakeId) clearTimeout(shakeId); if (clearId) clearTimeout(clearId); shakeId = clearId = null; };
 
 const initial = { loginSel: [], loginMode: "select" as const, loginShake: false, loginAttempts: 0, loginError: "" as const, isLoginSubmitting: false, registerSel: [], registerCorr: [], step3Mode: "select" as const, registerShake: false, registerAttempts: 0, step3Error: "" as const, isRegisterSubmitting: false };
@@ -36,13 +37,18 @@ export const useRegistrationStep3Store = create<Step3CombinedState>()((set, get,
   ...createFruitRegisterSlice(set, get, ...a),
 
   setLayout: (layoutContext, computedScale) => set({ layoutContext, computedScale }),
-  setIsLogin: (isLogin) => set((s) => ({ ...s, isLogin, loginMode: "select", step3Mode: "select" })),
+  setIsLogin: (isLogin) => {
+    clearTimers();
+    set((s) => ({ ...s, isLogin, loginMode: "select", step3Mode: "select", loginSel: [], registerSel: [], loginAttempts: 0, registerAttempts: 0, loginError: "", step3Error: "" }));
+  },
   generateNewOrder: () => set({ fruitOrder: genOrder() }),
 
   resetStore: (keep = false, success = false) => {
     clearTimers();
-    if (get().isLogin) set({ loginSel: [], loginShake: false, loginError: "", loginMode: "select", isLoginSubmitting: false });
-    else if (success) set((s) => ({ ...s, ...initial, isLogin: keep ? s.isLogin : false }));
-    else set({ registerSel: [], registerShake: false, step3Error: "", step3Mode: "select", isRegisterSubmitting: false });
+    if (get().isLogin) {
+      set({ loginSel: [], loginShake: false, loginError: "", loginMode: "select", isLoginSubmitting: false, loginAttempts: 0 });
+    } else {
+      set({ registerSel: [], registerCorr: [], registerShake: false, step3Error: "", step3Mode: "select", isRegisterSubmitting: false, registerAttempts: 0 });
+    }
   }
 }));

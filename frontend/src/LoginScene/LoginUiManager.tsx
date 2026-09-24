@@ -1,4 +1,3 @@
-import { isMock } from "@/api/client";
 import { EventBus } from "@/eventbus/EventBus";
 import { useRegistrationStep2Store } from "@/Registration/Step_2/store/useRegistrationStep2Store";
 import { useRegistrationStep3Store } from "@/Registration/Step_3/store/useRegistrationStep3Store";
@@ -25,8 +24,8 @@ export const LoginUiManager = ({ phaserScene }: { phaserScene: LoginScene }) => 
 
     const handleUnload = () => {
       const phone = localStorage.getItem("login_phone_buffer");
-      if (!isMock && phone && !localStorage.getItem("accessToken")) {
-        navigator.sendBeacon("http://localhost:3001/auth/login/cleanup-registration", JSON.stringify({ phone }));
+      if (phone && !localStorage.getItem("accessToken")) {
+        navigator.sendBeacon("http://localhost:3005/auth/login/cleanup-registration", JSON.stringify({ phone }));
       }
     };
 
@@ -40,6 +39,7 @@ export const LoginUiManager = ({ phaserScene }: { phaserScene: LoginScene }) => 
 
   const handleAction = (isLogin: boolean, action: "login" | "register") => {
     if (!phaserScene.sys.isActive()) return;
+
     useRegistrationStep2Store.getState().setIsLogin(isLogin);
     useRegistrationStep3Store.getState().setIsLogin(isLogin);
 

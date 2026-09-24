@@ -21,6 +21,9 @@ export const createNameSlice: StateCreator<Step1StateCombined, [], [], NameState
       return set({ isNameChecking: false, nameStatus: res as any, stage: 1, input: formatted.trim() });
     }
 
+    if (typeof window !== "undefined") {
+      localStorage.setItem("chosen_pet_name_buffer", formatted.trim());
+    }
     usePetStore.getState().updateField("petName", formatted.trim());
     set({ isNameChecking: false, nameStatus: "available", nameSuggestions: [], stage: 2, input: "" });
   };
@@ -35,6 +38,9 @@ export const createNameSlice: StateCreator<Step1StateCombined, [], [], NameState
 
     selectSuggestion: (sug) => {
       const formatted = fmt(sug);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("chosen_pet_name_buffer", formatted);
+      }
       usePetStore.getState().updateField("petName", formatted);
       set({ input: "", name: formatted, nameStatus: "available", nameSuggestions: [], stage: 2 });
     },

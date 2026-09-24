@@ -4,12 +4,18 @@ import { startWashingDrag } from "@/MainScene/components/PetCharacter/animations
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 import { getFruitUrlByStoreId } from "@/MainScene/components/SideButtonsMenuModal/ShopModal/constants/shop.constants";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
+import { PET_LOCK_BUBBLES } from "@/MainScene/components/PetCharacter/constants/petCharacter.constants";
 
 export type CareActionType = "wash" | "play" | "feed" | "sleep";
 export interface BaseDragConfig { url: string; action: "wash" | "play" | "eat"; onSuccess: () => void; onEnd?: () => void; }
 
 const METHODS = { play: startPlayingDrag, wash: startWashingDrag } as const;
 const dist = (x1: number, y1: number, x2: number, y2: number) => Math.hypot(x1 - x2, y1 - y2);
+
+const getRandomBuffPhrase = () => {
+  const list = PET_LOCK_BUBBLES.buffActivePhrases || [];
+  return list[Math.floor(Math.random() * list.length)] || "Я уже чистый!";
+};
 
 export const handleCareActionDown = (type: CareActionType, def: string, act: string, scale: number, s: number, e: any) => {
   const pStore = usePetStore.getState(), gStore = useMainGameStore.getState();
@@ -45,7 +51,8 @@ export const handleFruitActionDown = (id: string, isZero: boolean, scale: number
 };
 
 export const createBaseDrag = (ie: any, config: BaseDragConfig, scale = 1, s = 1): void => {
-  if (!["prostoi1", "prostoi2", "sad_state"].includes(usePetStore.getState().currentAnim)) return config.onEnd?.();
+  const pStore = usePetStore.getState();
+  if (!["prostoi1", "prostoi2", "sad_state"].includes(pStore.currentAnim)) return config.onEnd?.();
 
   const target = ie.target as HTMLElement, ev = "nativeEvent" in ie ? ie.nativeEvent : ie;
   if (target?.setPointerCapture && ev.pointerId !== undefined) try { target.setPointerCapture(ev.pointerId); } catch {}
@@ -76,7 +83,14 @@ export const createBaseDrag = (ie: any, config: BaseDragConfig, scale = 1, s = 1
     ghost.remove();
 
     if (dist(e.clientX, e.clientY, tx, ty) <= conf.r) {
-      if (config.action !== "eat") usePetStore.getState().triggerCareAction(config.action);
+      if (config.action === "wash" && Date.now() < pStore.buffUntil) {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("ui_show_bubble", { detail: { text: getRandomBuffPhrase() } }));
+        }
+        config.onEnd?.();
+        return;
+      }
+      if (config.action !== "eat") pStore.triggerCareAction(config.action);
       config.onSuccess();
     }
     config.onEnd?.();

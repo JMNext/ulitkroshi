@@ -19,6 +19,7 @@ const STYLES: Record<string, any> = {
 export const FoodSlot = ({ id }: { id: string }) => {
   const { counts, cooldowns, activeIds, currentId } = usePetStore((s) => s.inventory);
   const selectFruit = usePetStore((s) => s.selectFruitId);
+
   const [timeLeft, setTimeLeft] = useState(0);
 
   const count = counts[id] ?? 0, isZero = count <= 0, isSel = currentId === id, cd = cooldowns[id] ?? 0;
@@ -40,8 +41,24 @@ export const FoodSlot = ({ id }: { id: string }) => {
   const type = id === "fruit_02" ? (Number(fId) === 9 ? "health_100" : "health_50") : id === "fruit_03" ? "exp_25" : id === "fruit_04" ? "exp_50" : "health_25";
   const style = isCool ? { borderColor: "#94a3b8" } : STYLES[type] || { borderColor: "#cbd5e1", background: "#ffffff", color: "#000000" };
 
+  const handleSlotClick = () => {
+    if (isCool) return;
+
+    if (isSel) {
+      selectFruit("");
+      return;
+    }
+
+    if (isZero) {
+      NiceModal.show(ShopModal);
+      return;
+    }
+
+    selectFruit(id);
+  };
+
   return (
-    <div onClick={() => !isCool && (isZero ? NiceModal.show(ShopModal) : selectFruit(id))} style={style} className={clsx("relative box-border flex h-14 w-14 cursor-pointer touch-manipulation items-center justify-center rounded-[12px] border-[3px] border-solid transition-transform active:scale-95", isZero && "opacity-60 saturate-[0.85]", isCool && "pointer-events-none opacity-70")}>
+    <div onClick={handleSlotClick} style={style} className={clsx("relative box-border flex h-14 w-14 cursor-pointer touch-manipulation items-center justify-center rounded-[12px] border-[3px] border-solid transition-transform active:scale-95", isZero && "opacity-60 saturate-[0.85]", isCool && "pointer-events-none opacity-70")}>
       <img src={isSel && !isZero ? defaultEatIcon : getFruitUrlByStoreId(fId) || defaultEatIcon} className={clsx("pointer-events-none block h-11 w-11 object-contain", isZero && "opacity-40 grayscale", isCool && "opacity-30")} alt="" />
       {!(isSel && !isZero) && <span className={clsx("pointer-events-none absolute -top-1 -right-1 z-20 rounded-full px-1.5 py-0.5 text-[10px] font-black text-white shadow-sm", isZero ? "bg-gray-400" : "bg-[#f59e0b]")}>{count}</span>}
       {isCool && (

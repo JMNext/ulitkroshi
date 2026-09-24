@@ -1,45 +1,56 @@
 import { useRegistrationStep3Store } from "@/Registration/Step_3/store/useRegistrationStep3Store";
-import { authApi } from "@/api/auth.api";
-import { isMock } from "@/api/client";
+import { isMock } from "@/api/api";
+import { authApi } from "@/api/services/auth.api";
 import { EventBus } from "@/eventbus/EventBus";
 import { StateCreator } from "zustand";
 import { LoginState, Step2CombinedState } from "../useRegistrationStep2Store";
 
-const save = (p: string) => {
+interface SnailWindow { phaserGame?: { scene: { stop: (k: string) => void; start: (k: string, d?: any) => void } } }
+
+const cleanPhone = (raw: string): string => {
+  const d = String(raw || "").replace(/[^0-9]/g, "").trim();
+  return d.length === 11 && (d.startsWith("7") || d.startsWith("8")) ? "7" + d.slice(1) : d.length > 10 ? "7" + d.slice(-10) : "7" + d;
+};
+
+const saveAndSwitch = (phone: string) => {
   if (typeof window !== "undefined") {
-    localStorage.setItem("saved_user_phone", p);
-    localStorage.setItem("login_phone_buffer", p);
+    localStorage.setItem("saved_user_phone", phone);
+    localStorage.setItem("login_phone_buffer", phone);
+    localStorage.removeItem("active_reg_session_id");
+    const gw = window as unknown as SnailWindow;
+    if (gw.phaserGame) {
+      gw.phaserGame.scene.stop("Step2Scene");
+      gw.phaserGame.scene.start("Step3Scene", { sessionId: "login_flow_direct" });
+    }
   }
+  EventBus.emit("step2_scene_stop");
+  EventBus.emit("step3_scene_start", { sessionId: "login_flow_direct" });
 };
 
 let sub = false;
 
 export const createPhoneLoginSlice: StateCreator<Step2CombinedState, [], [], LoginState> = (set, get) => ({
-  loginPhone: "",
-  loginRawPhone: "",
-  loginError: "",
+  loginPhone: "", loginRawPhone: "", loginError: "",
 
   sendLoginPhone: async () => {
-    const raw = get().loginRawPhone.replace(/\D/g, "").slice(-10);
-    if (sub || (!isMock && raw.length < 10)) return;
+    const phone = cleanPhone(get().loginRawPhone);
+    if (sub) return;
+    if (phone.length !== 11) return set({ loginError: "user_not_found" });
 
     set({ loginError: "" });
     sub = true;
-    const phone = `7${raw}`;
 
     try {
-      const res = await authApi.checkLoginPhone(phone);
-      if (res?.isLogin || isMock) {
-        save(phone);
-        localStorage.removeItem("active_reg_session_id");
+      if (isMock) {
+        saveAndSwitch(phone);
         useRegistrationStep3Store.getState().setIsLogin(true);
-        EventBus.emit("step2_scene_stop");
-        EventBus.emit("step3_scene_start", { sessionId: isMock ? "mock_login_flow_session" : "login_flow_direct" });
-        const game = typeof window !== "undefined" ? (window as any).phaserGame : null;
-        if (game) {
-          game.scene.stop("Step2Scene");
-          game.scene.start("Step3Scene", { sessionId: isMock ? "mock_login_flow_session" : "login_flow_direct" });
-        }
+        return;
+      }
+
+      const res = await authApi.checkLoginPhone(phone);
+      if (res?.isLogin) {
+        saveAndSwitch(phone);
+        useRegistrationStep3Store.getState().setIsLogin(true);
       } else {
         useRegistrationStep3Store.getState().setIsLogin(false);
         set({ loginError: "user_not_found" });
@@ -59,7 +70,10 @@ export const createPhoneLoginSlice: StateCreator<Step2CombinedState, [], [], Log
     else return;
 
     const d = cur.replace(/\D/g, "").slice(0, 10);
-    set({ loginRawPhone: d, loginPhone: `+7${d}` });
-    if (d.length === 10 && !sub) setTimeout(() => get().sendLoginPhone(), 50);
+    set({ loginRawPhone: d, loginPhone: "+7" + d });
+
+    if (d.length === 10 && !sub) {
+      setTimeout(() => { get().sendLoginPhone().catch(() => {}); }, 50);
+    }
   }
 });

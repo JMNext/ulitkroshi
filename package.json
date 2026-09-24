@@ -4,12 +4,10 @@
   "type": "module",
   "scripts": {
     "dev:front": "vite",
-    "dev:auth": "tsx backend/auth-service/index.ts",
-    "dev:game": "tsx backend/game-service/index.ts",
-    "dev": "concurrently \"npm run dev:front\" \"npm run dev:auth\" \"npm run dev:game\"",
+    "dev:server": "tsx backend/server.ts",
+    "dev": "concurrently \"npm run dev:front\" \"npm run dev:server\"",
     "build:front": "tsc && vite build",
-    "build:auth": "tsc --project backend/auth-service/tsconfig.json",
-    "build:game": "tsc --project backend/game-service/tsconfig.json",
+    "build:server": "tsc --project backend/tsconfig.json",
     "build": "npm run build:front"
   },
   "devDependencies": {

@@ -1,3 +1,4 @@
+// shared/store/useRegistrationStep2Store.ts
 import { EventBus } from "@/eventbus/EventBus";
 import Phaser from "phaser";
 import { create } from "zustand";
@@ -48,9 +49,9 @@ export const useRegistrationStep2Store = create<Step2CombinedState>()((set, get,
 
   setPhaserScene: (phaserScene) => set({ phaserScene }),
   setIsLogin: (isLogin) => set({
-    isLogin, loginPhone: "", loginRawPhone: "", loginError: "", registerPhone: "", registerRawPhone: "", registerCode: "", registerError: "", registerMode: "phone"
+    isLogin, loginPhone: "", loginRawPhone: "", loginError: "" as const, registerPhone: "", registerRawPhone: "", registerCode: "", registerError: "" as const, registerMode: "phone"
   }),
-  clearErrors: () => set({ loginError: "", registerError: "" }),
+  clearErrors: () => set({ loginError: "" as const, registerError: "" as const }),
   setLayout: (layoutContext, computedScale) => set({ layoutContext, computedScale }),
 
   checkSavedDevicePhone: (onSuccess) => {
@@ -60,13 +61,15 @@ export const useRegistrationStep2Store = create<Step2CombinedState>()((set, get,
 
   resetStore: () => {
     clearTimers();
-    set({ loginPhone: "", loginRawPhone: "", loginError: "", registerPhone: "", registerCode: "", registerRawPhone: "", registerAttempts: 0, registerError: "", registerMode: "phone", registerSecs: 60, isVerifyingCode: false, layoutContext: null, computedScale: 1, phaserScene: null });
+    set({ loginPhone: "", loginRawPhone: "", loginError: "" as const, registerPhone: "", registerCode: "", registerRawPhone: "", registerAttempts: 0, registerError: "" as const, registerMode: "phone", registerSecs: 60, isVerifyingCode: false, layoutContext: null, computedScale: 1, phaserScene: null });
   },
 
   cancelToMainMenu: () => {
     clearTimers(); get().resetStore();
     EventBus.emit("step2_scene_stop"); EventBus.emit("login_scene_start");
-    const game = typeof window !== "undefined" ? (window as any).phaserGame : null;
-    if (game) { game.scene.stop("Step2Scene"); game.scene.start("LoginScene"); }
+    if (typeof window !== "undefined") {
+      const gw = window as unknown as CustomWindow;
+      if (gw.phaserGame) { gw.phaserGame.scene.stop("Step2Scene"); gw.phaserGame.scene.start("LoginScene"); }
+    }
   }
 }));

@@ -3,10 +3,12 @@ import NiceModal, { useModal } from "@ebay/nice-modal-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useLayoutEffect, useState } from "react";
 import { HELP_SECTIONS } from "./constants/helpModal.constants";
+import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
 
 export const HelpModal = NiceModal.create(() => {
   const modal = useModal();
   const [scale, setScale] = useState(1);
+  const setIsHelpShown = useMainGameStore((s) => s.setIsHelpShown);
 
   useLayoutEffect(() => {
     if (!modal.visible) return;
@@ -21,9 +23,16 @@ export const HelpModal = NiceModal.create(() => {
     return () => window.removeEventListener("resize", resize);
   }, [modal.visible]);
 
+  if (!modal.visible) return null;
+
+  const handleClose = () => {
+    setIsHelpShown(false);
+    modal.hide();
+  };
+
   return (
-    <Dialog.Root open={modal.visible} onOpenChange={(open) => !open && modal.hide()}>
-      <Dialog.Portal container={document.body}>
+    <Dialog.Root defaultOpen={true} onOpenChange={(open) => { if (!open) handleClose(); }}>
+      <Dialog.Portal container={typeof document !== "undefined" ? document.body : undefined}>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px]" />
         <Dialog.Content className="fixed top-1/2 left-1/2 z-50 box-border flex h-auto max-h-[85vh] w-[520px] origin-center flex-col items-center rounded-[32px] border-[4px] border-[#ffca28] bg-white px-5 pt-12 pb-5 shadow-2xl outline-none select-none" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
           <Dialog.Close asChild><CloseButton className="absolute top-5 right-4 z-40 cursor-pointer" /></Dialog.Close>
@@ -38,7 +47,7 @@ export const HelpModal = NiceModal.create(() => {
             ))}
           </div>
 
-          <button type="button" onClick={() => modal.hide()} className="pointer-events-auto mx-auto mt-4 flex h-[46px] w-full max-w-[400px] shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-[24px] border-0 bg-[#ff9800] p-0 text-[15px] font-black tracking-wide text-white uppercase shadow-sm outline-none active:scale-98">
+          <button type="button" onClick={handleClose} className="pointer-events-auto mx-auto mt-4 flex h-[46px] w-full max-w-[400px] shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-[24px] border-0 bg-[#ff9800] p-0 text-[15px] font-black tracking-wide text-white uppercase shadow-sm outline-none active:scale-98">
             Понятно
           </button>
         </Dialog.Content>

@@ -16,6 +16,8 @@ export const startWashingDrag = (e: any, washKey: string, onEnd?: () => void, sc
   createBaseDrag(e, {
     url: washKey, action: "wash",
     onSuccess: () => {
+      if (Date.now() < usePetStore.getState().buffUntil) return;
+
       usePetStore.getState().triggerCareAction("wash");
       const pet = document.getElementById("phaser-native-html-pet");
       const petRect = pet?.getBoundingClientRect();
@@ -24,7 +26,7 @@ export const startWashingDrag = (e: any, washKey: string, onEnd?: () => void, sc
 
       const sponge = document.createElement("img");
       sponge.src = washKey;
-      sponge.style.cssText = `position:fixed;z-index:99999;pointer-events:none;width:${size}px;height:${size}px;object-fit:contain;left:${e.clientX}px;top:${e.clientY}px;animation:spongeAbsorb 0.4s ease-in forwards;`;
+      sponge.style.cssText = `position:fixed;z-index:99999;pointer-events-none;width:${size}px;height:${size}px;object-fit:contain;left:${e.clientX}px;top:${e.clientY}px;animation:spongeAbsorb 0.4s ease-in forwards;`;
       document.body.appendChild(sponge);
 
       setTimeout(() => {
