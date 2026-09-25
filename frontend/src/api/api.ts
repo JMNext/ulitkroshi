@@ -1,7 +1,11 @@
 import axios from "axios";
 
 export const isMock = true;
-const BASE_URL = "";
+
+const isClient = typeof window !== "undefined";
+const isLocalhost = isClient && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+const BASE_URL = isLocalhost ? "http://localhost:3005" : "";
 
 export const authApiInstance = axios.create({
   baseURL: BASE_URL,
@@ -14,8 +18,6 @@ export const gameApiInstance = axios.create({
 });
 
 const setupInterceptors = (instance: typeof authApiInstance) => {
-  const isClient = typeof window !== "undefined";
-
   instance.interceptors.request.use((config) => {
     const token = isClient ? localStorage.getItem("accessToken") : null;
 
@@ -36,7 +38,6 @@ const setupInterceptors = (instance: typeof authApiInstance) => {
 
         if (refreshToken) {
           try {
-            // Используем инстанс для корректного пути
             const refreshResponse = await authApiInstance.post("/auth/refresh", { refreshToken });
             const data = refreshResponse.data;
 
