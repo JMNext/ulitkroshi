@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const isMock = false;
+export const isMock = true;
 const BASE_URL = "";
 
 export const authApiInstance = axios.create({
