@@ -1,10 +1,8 @@
-# Зависимости
 node_modules/
 /dist
 /build
 /out
 
-# Логи и отчеты
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -12,15 +10,8 @@ yarn-error.log*
 pnpm-debug.log*
 .eslintcache
 
-# Конфигурации окружения (токены, ключи)
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env.*.local
+.env*
 
-# Кэш TypeScript, Phaser и инструментов сборки
 .vite/
 .parcel-cache/
 .turbo/
@@ -29,13 +20,12 @@ pnpm-debug.log*
 .tscache/
 *.tsbuildinfo
 
-# Настройки VS Code
 .vscode/*
 !.vscode/extensions.json
 !.vscode/launch.json
 !.vscode/settings.json
 
-# Системные файлы
 .DS_Store
-.prod-code.zip
 Thumbs.db
+prod-code.zip
+*.zip
