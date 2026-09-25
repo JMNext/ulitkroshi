@@ -1,23 +1,10 @@
 import { z } from "zod";
 import { getNormalizedPhone } from "../shared/utils";
 
-// Железобетонный препроцессор, который состыкуется с фронтендом:
-// Если фронт присылает 11 цифр (например, 79991112233), мы оставляем 11 цифр.
-// Если прилетает 10 цифр, мы приписываем 7 в начало, чтобы бэк и фронт понимали друг друга!
-const cleanPhoneForZod = (val: unknown) => {
-  if (typeof val !== "string") return val;
-  const digits = val.replace(/\D/g, ""); // Оставляем только цифры
-  if (digits.length === 10) {
-    return "7" + digits;
-  }
-  return digits;
-};
-
-// Валидируем строку из 11 цифр, которая начинается на 7
 const phone = z.preprocess(
-  cleanPhoneForZod,
+  (val) => (typeof val === "string" ? val.replace(/\D/g, "") : val),
   z.string()
-    .length(11, { message: "Номер должен содержать ровно 11 цифр (с 7 в начале)" })
+    .min(1, { message: "Телефон обязателен" })
     .transform((v) => getNormalizedPhone(v))
 );
 

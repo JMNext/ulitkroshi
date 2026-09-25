@@ -34,7 +34,8 @@ export const createPhoneRegisterSlice: StateCreator<Step2CombinedState, [], [], 
     if (isMock || get().registerMode !== "code") return clearTimers();
     try {
       const sid = getSavedSessionId();
-      const res = sid ? (await authApiInstance.get<{ code: string | null }>("/auth/login/get-mvp-code?sessionId=" + sid)).data : null;
+      // ИСПРАВЛЕНО: Убрано "/auth", теперь запрос летит по верному роуту "/login/get-mvp-code" напрямую через шлюз Nginx!
+      const res = sid ? (await authApiInstance.get<{ code: string | null }>("/login/get-mvp-code?sessionId=" + sid)).data : null;
       if (get().registerMode !== "code") return;
       if (!res?.code) return setMvpPollingId(setTimeout(() => { pollMvp().catch(() => {}); }, 1000));
 
