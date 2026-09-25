@@ -5,7 +5,8 @@ export const isMock = false;
 const isClient = typeof window !== "undefined";
 const isLocalhost = isClient && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 
-// ИСПРАВЛЕНО: На локалке бьем на 3005, на сервере оставляем относительный путь, чтобы трафик шел через шлюз Nginx!
+// На локалке бьем на порт 3005, на сервере продакшена оставляем относительный путь "",
+// чтобы трафик шел строго через шлюз Nginx по безопасному HTTPS-каналу
 const BASE_URL = isLocalhost ? "http://localhost:3005" : "";
 
 export const authApiInstance = axios.create({
