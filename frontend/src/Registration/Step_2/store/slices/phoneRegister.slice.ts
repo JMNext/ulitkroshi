@@ -34,7 +34,7 @@ export const createPhoneRegisterSlice: StateCreator<Step2CombinedState, [], [], 
     if (isMock || get().registerMode !== "code") return clearTimers();
     try {
       const sid = getSavedSessionId();
-      // ИСПРАВЛЕНО: Убрано "/auth", теперь запрос летит по верному роуту "/login/get-mvp-code" напрямую через шлюз Nginx!
+      // ИСПРАВЛЕНО: Убрана приставка "/auth", теперь запрос идет по верному пути к бэкенду!
       const res = sid ? (await authApiInstance.get<{ code: string | null }>("/login/get-mvp-code?sessionId=" + sid)).data : null;
       if (get().registerMode !== "code") return;
       if (!res?.code) return setMvpPollingId(setTimeout(() => { pollMvp().catch(() => {}); }, 1000));
@@ -62,7 +62,13 @@ export const createPhoneRegisterSlice: StateCreator<Step2CombinedState, [], [], 
     sendRegisterPhone: async () => {
       const full = cleanPhone(get().registerRawPhone);
       if (full.length !== 11) return set({ registerError: "system_error" });
+
+      // ИСПРАВЛЕНО: Полностью вычищаем старые забагованные сессии из памяти перед новым запросом
       clearTimers();
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("active_reg_session_id");
+      }
+
       set({ registerError: "" });
       try {
         const check = await authApi.checkLoginPhone(full);
