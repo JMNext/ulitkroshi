@@ -37,4 +37,5 @@ pnpm-debug.log*
 
 # Системные файлы
 .DS_Store
+.prod-code.zip
 Thumbs.db

@@ -15,6 +15,9 @@ import Phaser from "phaser";
 import { createRoot } from "react-dom/client";
 import "./global.css";
 
+// 1. ИСПРАВЛЕНО: Импортируем нашу готовую сцену предзагрузки ассетов
+import { PreloaderScene } from "./PreloaderScene";
+
 declare global { interface Window { phaserGame: Phaser.Game | null; } }
 
 const EVENTS = ["click", "keydown", "touchstart"] as const;
@@ -33,6 +36,8 @@ window.phaserGame = new Phaser.Game({
   scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
   render: { antialias: true, roundPixels: true, pixelArt: false },
   scene: [
+    // 2. ИСПРАВЛЕНО: Ставим прелоадер на самое первое место, чтобы он сработал на старте игры
+    PreloaderScene,
     LoginScene,
     Step1Scene,
     Step2Scene,
@@ -44,7 +49,7 @@ window.phaserGame = new Phaser.Game({
     MemoryGameScene,
     SnakeGameScene,
     RacingGameScene,
-    ]
+  ]
 });
 
 const root = document.createElement("div");

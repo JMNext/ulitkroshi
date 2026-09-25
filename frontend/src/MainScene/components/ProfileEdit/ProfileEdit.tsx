@@ -54,11 +54,17 @@ export const ProfileEdit = NiceModal.create(() => {
       console.error(e);
     }
     await resetStore();
+    setTimeout(() => modal.remove(), 200);
   };
 
   const handleClose = () => {
     modal.hide();
     setIsEditing(false);
+    setTimeout(() => modal.remove(), 200);
+  };
+
+  const handleOpenHelp = () => {
+    NiceModal.show("help-modal");
   };
 
   return (
@@ -69,6 +75,15 @@ export const ProfileEdit = NiceModal.create(() => {
           className="fixed top-1/2 left-1/2 z-50 box-border flex h-[370px] w-[340px] origin-center flex-col items-center overflow-hidden rounded-[28px] border-[4px] border-[#ffca28] bg-white p-5 shadow-2xl outline-none"
           style={{ transform: `translate(-50%, -50%) scale(${scale})` }}
         >
+          <button
+            type="button"
+            onClick={handleOpenHelp}
+            className="absolute top-4 left-4 z-40 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border-0 bg-[#ff9800] text-[15px] font-black text-white shadow-sm transition-transform outline-none select-none active:scale-95 hover:bg-[#e68a00]"
+            title="Как играть"
+          >
+            ?
+          </button>
+
           <Dialog.Close asChild>
             <CloseButton className="absolute top-4 right-4 z-40 cursor-pointer" />
           </Dialog.Close>

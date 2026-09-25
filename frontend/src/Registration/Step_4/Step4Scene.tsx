@@ -1,8 +1,6 @@
 import { registerSceneEvent } from "@/eventbus/registerSceneEvent";
 import Phaser from "phaser";
 import { createRoot, Root } from "react-dom/client";
-import fonGorizUrl from "../../assets/background/fon_goriz.png";
-import fonVertUrl from "../../assets/background/fon_vert.png";
 import { Step4UiManager } from "./Step4UiManager";
 
 const CONF = { BASE_W: 540, BASE_H: 960, MIN: 0.3, MAX: 1.25, PAD: 0.9 };
@@ -21,17 +19,17 @@ export class Step4Scene extends Phaser.Scene {
       .forEach((el) => el.remove());
   }
 
-  public preload(): void {
-    if (!this.textures.exists("step4_bg_fon_goriz")) this.load.image("step4_bg_fon_goriz", fonGorizUrl);
-    if (!this.textures.exists("step4_bg_fon_vert")) this.load.image("step4_bg_fon_vert", fonVertUrl);
-  }
+  // ИСПРАВЛЕНО: Прелоад пустой, фон уже лежит в оперативной памяти сервера
+  public preload(): void {}
 
   public create(): void {
     if (this.game.canvas) this.game.canvas.className = "absolute inset-0 w-full h-full z-1";
 
     const w = Number(this.scale.width), h = Number(this.scale.height);
     this.currentOrientation = h > w ? "vert" : "goriz";
-    this.backgroundIm = this.add.image(w / 2, h / 2, `step4_bg_fon_${this.currentOrientation}`).setOrigin(0.5).setDepth(-2);
+
+    // ИСПРАВЛЕНО: Берем фон по общему кэшированному ключу "game_bg_"
+    this.backgroundIm = this.add.image(w / 2, h / 2, `game_bg_${this.currentOrientation}`).setOrigin(0.5).setDepth(-2);
 
     this.mountReactUI();
     if (w && h) this.executeResizeLogic(w, h);
@@ -70,7 +68,9 @@ export class Step4Scene extends Phaser.Scene {
 
     if (this.currentOrientation !== next) {
       this.currentOrientation = next;
-      const t = `step4_bg_fon_${next}`;
+
+      // ИСПРАВЛЕНО: Меняем текстуру при ресайзе через глобальный ключ "game_bg_"
+      const t = `game_bg_${next}`;
       if (this.textures.exists(t)) { this.tweens.killTweensOf(this.backgroundIm); this.backgroundIm.setAlpha(1).setTexture(t); }
     }
     this.backgroundIm.setPosition(w / 2, h / 2).setDisplaySize(w, h);

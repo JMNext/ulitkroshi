@@ -1,7 +1,6 @@
 import { Scene } from "phaser";
 import { BaseMiniGameOverlay } from "@/game/MiniGamesShared/BaseMiniGameOverlay";
 import { GameInputController } from "@/game/MiniGamesShared/GameInputController";
-import { preloadSharedAssets } from "@/game/MiniGamesShared/preloadSharedAssets";
 import { runCountdown } from "@/game/MiniGamesShared/runCountdown";
 import { CatchGameLogicManager } from "./components/CatchGameLogicManager";
 import { CatchGamePet } from "./components/CatchGamePet";
@@ -44,9 +43,8 @@ export class CatchGameScene extends Scene {
     useCatchGameStore.getState().initGame();
   }
 
-  public preload(): void {
-    preloadSharedAssets(this, "catch");
-  }
+  // ИСПРАВЛЕНО: Метод preload теперь полностью пустой, фрукты мгновенно берутся из кэша
+  public preload(): void {}
 
   public create(): void {
     window.dispatchEvent(new CustomEvent("minigame_started"));

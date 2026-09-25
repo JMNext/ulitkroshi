@@ -2,8 +2,6 @@ import { EventBus } from "@/eventbus/EventBus";
 import { registerSceneEvent } from "@/eventbus/registerSceneEvent";
 import Phaser from "phaser";
 import { createRoot, Root } from "react-dom/client";
-import fonGorizUrl from "../../assets/background/fon_goriz.png";
-import fonVertUrl from "../../assets/background/fon_vert.png";
 import { Step3UiManager } from "./Step3UiManager";
 
 const CONFIG = { BASE_W: 460, BASE_H: 780 };
@@ -11,7 +9,6 @@ const CONFIG = { BASE_W: 460, BASE_H: 780 };
 export class Step3Scene extends Phaser.Scene {
   public backgroundIm!: Phaser.GameObjects.Image;
   public sessionId: string = "";
-  // Добавлен флаг для отслеживания текущего контекста флоу
   public isLoginFlow: boolean = false;
   private uiContainer: HTMLDivElement | null = null;
   private currentOrientation: "vert" | "goriz" | null = null;
@@ -23,7 +20,6 @@ export class Step3Scene extends Phaser.Scene {
 
   public init(data?: { sessionId?: string; isLoginFlow?: boolean }): void {
     this.sessionId = data?.sessionId || "";
-    // ИСПРАВЛЕНО: Запоминаем, какой флоу был передан при старте сцены
     this.isLoginFlow = data?.isLoginFlow || false;
 
     const container = document.getElementById("game-container");
@@ -31,22 +27,21 @@ export class Step3Scene extends Phaser.Scene {
       container.querySelectorAll("#phaser-native-step1-bubble, #phaser-native-success-bubble").forEach((el) => el.remove());
     }
 
-    // ИСПРАВЛЕНО: Передаем флаг флоу в React-компонент, чтобы избежать сброса режима в "регистрацию"
     this.events.emit("phaser_scene_init", { isLoginFlow: this.isLoginFlow });
   }
 
-  public preload(): void {
-    if (!this.textures.exists("step3_bg_fon_goriz")) this.load.image("step3_bg_fon_goriz", fonGorizUrl);
-    if (!this.textures.exists("step3_bg_fon_vert")) this.load.image("step3_bg_fon_vert", fonVertUrl);
-  }
+  // ИСПРАВЛЕНО: preload теперь пустой, сцена берет готовый фон из памяти мгновенно
+  public preload(): void {}
 
   public create(): void {
     if (this.game.canvas) this.game.canvas.className = "absolute inset-0 w-full h-full z-1";
 
     const w = Number(this.scale.width), h = Number(this.scale.height);
     this.currentOrientation = h > w ? "vert" : "goriz";
+
+    // ИСПРАВЛЕНО: Используем общий быстрый ключ "game_bg_" вместо повторного скачивания файла
     this.backgroundIm = this.add
-      .image(w / 2, h / 2, `step3_bg_fon_${this.currentOrientation}`)
+      .image(w / 2, h / 2, `game_bg_${this.currentOrientation}`)
       .setOrigin(0.5)
       .setDepth(-2);
 
@@ -106,7 +101,9 @@ export class Step3Scene extends Phaser.Scene {
 
     if (this.currentOrientation !== nextOrient) {
       this.currentOrientation = nextOrient;
-      const texture = `step3_bg_fon_${nextOrient}`;
+
+      // ИСПРАВЛЕНО: Ресайз тоже переведен на глобальный кэшированный ключ "game_bg_"
+      const texture = `game_bg_${nextOrient}`;
       if (this.textures.exists(texture)) {
         this.tweens.killTweensOf(this.backgroundIm);
         this.backgroundIm.setAlpha(1).setTexture(texture);
@@ -157,8 +154,6 @@ export class Step3Scene extends Phaser.Scene {
     this.events.emit("phaser_scene_sleep");
     this.tweens.killTweensOf(this.backgroundIm);
 
-    // ИСПРАВЛЕНО: Убираем задержку unmount, размонтируем интерфейс СИНХРОННО.
-    // Это предотвратит баг «исчезновения экрана», если сцена сразу проснется обратно.
     try {
       this.reactRoot?.unmount();
     } catch (_) {}
@@ -172,7 +167,6 @@ export class Step3Scene extends Phaser.Scene {
     this.sys.events.off("wake", this.handleWake, this).off("sleep", this.handleSleep, this);
     this.tweens.killTweensOf(this.backgroundIm);
 
-    // ИСПРАВЛЕНО: Чистим глобальные подписки EventBus, чтобы избежать утечек памяти
     EventBus.off("step3_scene_start");
     EventBus.off("step3_scene_stop");
 

@@ -21,7 +21,9 @@ export class ScannerScene extends Phaser.Scene {
 
     const w = Number(this.scale.width), h = Number(this.scale.height);
     this.currentOrientation = h > w ? "vert" : "goriz";
-    this.backgroundIm = this.add.image(w / 2, h / 2, `ui_bg_fon_${this.currentOrientation}`).setOrigin(0.5).setDepth(-2).setDisplaySize(w, h);
+
+    // ИСПРАВЛЕНО: берем дефолтный фон из быстрого глобального кэша "game_bg_"
+    this.backgroundIm = this.add.image(w / 2, h / 2, `game_bg_${this.currentOrientation}`).setOrigin(0.5).setDepth(-2).setDisplaySize(w, h);
 
     this.mountReactUI();
 
@@ -82,7 +84,9 @@ export class ScannerScene extends Phaser.Scene {
       this.backgroundIm.setPosition(w / 2, h / 2).setDisplaySize(this.cameraTexture.width * scale, this.cameraTexture.height * scale);
     } else {
       const next = h > w ? "vert" : "goriz";
-      if (this.currentOrientation !== next) { this.currentOrientation = next; this.backgroundIm.setTexture(`ui_bg_fon_${next}`); }
+
+      // ИСПРАВЛЕНО: ресайз дефолтной текстуры тоже переведен на "game_bg_"
+      if (this.currentOrientation !== next) { this.currentOrientation = next; this.backgroundIm.setTexture(`game_bg_${next}`); }
       this.backgroundIm.setPosition(w / 2, h / 2).setDisplaySize(w, h);
     }
   }

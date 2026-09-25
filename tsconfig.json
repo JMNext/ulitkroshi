@@ -26,6 +26,6 @@
     "backend/src/**/*.ts",
     "frontend/src/App.tsx",
     "frontend/game-scenes.ts"
-  ],
+, "frontend/PreloaderScene.ts"  ],
   "exclude": ["**/node_modules", "**/dist"]
 }

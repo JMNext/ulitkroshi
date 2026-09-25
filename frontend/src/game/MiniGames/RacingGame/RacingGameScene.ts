@@ -1,7 +1,6 @@
 import { Scene } from "phaser";
 import { BaseMiniGameOverlay } from "@/game/MiniGamesShared/BaseMiniGameOverlay";
 import { GameInputController } from "@/game/MiniGamesShared/GameInputController";
-import { preloadSharedAssets } from "@/game/MiniGamesShared/preloadSharedAssets";
 import { runCountdown } from "@/game/MiniGamesShared/runCountdown";
 import { RacingGameLogicManager } from "./components/RacingGameLogicManager";
 import { RacingGridRenderer } from "./components/RacingGridRenderer";
@@ -10,7 +9,6 @@ import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 import { EventBus } from "@/eventbus/EventBus";
 import { registerSceneEvent } from "@/eventbus/registerSceneEvent";
-import carImgUrl from "@/assets/resources/car.png";
 
 export class RacingGameScene extends Scene {
   public difficulty: any = "medium";
@@ -21,6 +19,7 @@ export class RacingGameScene extends Scene {
   public inputController!: GameInputController;
   public bgImage: Phaser.GameObjects.Image | null = null;
   public countdownText!: Phaser.GameObjects.Text;
+  // ИСПРАВЛЕНО: Теперь синтаксис типа функции => прописан идеально правильно
   private unsubscribeStore: (() => void) | null = null;
 
   constructor() {
@@ -38,10 +37,8 @@ export class RacingGameScene extends Scene {
     useRacingGameStore.getState().initGame();
   }
 
-  public preload(): void {
-    this.load.image("player_car", carImgUrl);
-    preloadSharedAssets(this, "racing");
-  }
+  // ИСПРАВЛЕНО: Прелоад пустой! Машинка и общие ресурсы гонок уже лежат в глобальном кэше Phaser
+  public preload(): void {}
 
   public create(): void {
     window.dispatchEvent(new CustomEvent("minigame_started"));

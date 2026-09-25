@@ -1,7 +1,6 @@
 import { ErrorBoundary } from "@/eventbus/ErrorBoundary";
 import { BottomMenu } from "@/MainScene/components/BottomMenu/BottomMenu";
 import { Header } from "@/MainScene/components/Header/Header";
-import { HelpModal } from "@/MainScene/components/HelpModal/HelpModal";
 import { PetCharacter } from "@/MainScene/components/PetCharacter/PetCharacter";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 import { SideMenuLeft } from "@/MainScene/components/SideButtonsMenu/SideMenuLeft";
@@ -11,17 +10,30 @@ import NiceModal from "@ebay/nice-modal-react";
 import { useEffect, useRef, useState } from "react";
 import { executeMainResize } from "./mainLayoutHelper";
 import { MainScene } from "./MainScene";
+import { isMock } from "@/api/api";
+import { HelpModal } from "@/MainScene/components/HelpModal/HelpModal";
+import { ProfileEdit } from "@/MainScene/components/ProfileEdit/ProfileEdit";
+
+NiceModal.register("help-modal", HelpModal);
+NiceModal.register("profile-modal", ProfileEdit);
 
 export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
-  const { alertText, setAlertText, isHelpShown, setIsHelpShown } = useMainGameStore((s) => s);
+  const { alertText, setAlertText, userId } = useMainGameStore((s) => s);
   const activePetIndex = usePetStore((s) => s.activePetIndex);
   const [isLayoutReady, setIsLayoutReady] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const alertTimeoutRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!isHelpShown) { NiceModal.show(HelpModal); setIsHelpShown(true); }
-  }, [isHelpShown, setIsHelpShown]);
+    if (isMock) {
+      NiceModal.show("help-modal");
+    } else if (userId) {
+      const savedFlag = localStorage.getItem(`guide_viewed_${userId}`);
+      if (savedFlag !== "true") {
+        NiceModal.show("help-modal");
+      }
+    }
+  }, [userId]);
 
   useEffect(() => {
     const handleResize = (data: any) => {

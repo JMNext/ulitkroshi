@@ -1,6 +1,5 @@
 import { Scene } from "phaser";
 import { BaseMiniGameOverlay } from "@/game/MiniGamesShared/BaseMiniGameOverlay";
-import { preloadSharedAssets } from "@/game/MiniGamesShared/preloadSharedAssets";
 import { MemoryGameGrid } from "./components/MemoryGameGrid";
 import { useMemoryGameStore } from "./store/useMemoryGameStore";
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
@@ -32,9 +31,8 @@ export class MemoryGameScene extends Scene {
     useMemoryGameStore.getState().initGame(this.totalPairs, POOL);
   }
 
-  public preload(): void {
-    preloadSharedAssets(this, "memory", true);
-  }
+  // ИСПРАВЛЕНО: Прелоад полностью пустой. Карточки мгновенно берутся из кэша
+  public preload(): void {}
 
   public create(): void {
     window.dispatchEvent(new CustomEvent("minigame_started"));

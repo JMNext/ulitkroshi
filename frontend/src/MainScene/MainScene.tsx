@@ -1,8 +1,6 @@
 import { registerSceneEvent } from "@/eventbus/registerSceneEvent";
 import Phaser from "phaser";
 import { createRoot, Root } from "react-dom/client";
-import fonGorizUrl from "../assets/background/fon_goriz.png";
-import fonVertUrl from "../assets/background/fon_vert.png";
 import { MainSceneUI } from "./MainSceneUI";
 
 export class MainScene extends Phaser.Scene {
@@ -19,16 +17,16 @@ export class MainScene extends Phaser.Scene {
       .forEach(el => el.remove());
   }
 
-  public preload(): void {
-    if (!this.textures.exists("ui_bg_fon_goriz")) this.load.image("ui_bg_fon_goriz", fonGorizUrl);
-    if (!this.textures.exists("ui_bg_fon_vert")) this.load.image("ui_bg_fon_vert", fonVertUrl);
-  }
+  // ИСПРАВЛЕНО: preload теперь пустой, сцена не тратит время на скачивание картинок
+  public preload(): void {}
 
   public create(): void {
     if (this.game.canvas) this.game.canvas.className = "absolute inset-0 w-full h-full z-1";
 
     const { width: w, height: h } = this.scale;
-    this.backgroundIm = this.add.image(w / 2, h / 2, `ui_bg_fon_${h > w ? "vert" : "goriz"}`).setOrigin(0.5).setDepth(-2);
+
+    // ИСПРАВЛЕНО: Берем готовую текстуру "game_bg_" из кэша PreloaderScene
+    this.backgroundIm = this.add.image(w / 2, h / 2, `game_bg_${h > w ? "vert" : "goriz"}`).setOrigin(0.5).setDepth(-2);
 
     if (!this.uiContainer) {
       this.uiContainer = document.createElement("div");
@@ -68,7 +66,9 @@ export class MainScene extends Phaser.Scene {
       if (!this.sys.isActive() || !sw || !sh || !this.backgroundIm?.active) return;
 
       this.backgroundIm.setPosition(sw / 2, sh / 2).setDisplaySize(sw, sh);
-      const target = `ui_bg_fon_${sh > sw ? "vert" : "goriz"}`;
+
+      // ИСПРАВЛЕНО: Обновление текстуры при ресайзе тоже переведено на глобальный ключ "game_bg_"
+      const target = `game_bg_${sh > sw ? "vert" : "goriz"}`;
       if (this.backgroundIm.texture.key !== target && this.textures.exists(target)) this.backgroundIm.setTexture(target);
     });
   }

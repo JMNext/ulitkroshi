@@ -1,8 +1,6 @@
 import { registerSceneEvent } from "@/eventbus/registerSceneEvent";
 import Phaser from "phaser";
 import { createRoot, Root } from "react-dom/client";
-import loadGorizUrl from "../assets/login_assets/load_goriz.png";
-import loadVertUrl from "../assets/login_assets/load_vert.png";
 import { LoginUiManager } from "./LoginUiManager";
 
 export class LoginScene extends Phaser.Scene {
@@ -18,10 +16,8 @@ export class LoginScene extends Phaser.Scene {
     this.onStepCompleteCallback = data?.onStepComplete || ((act) => this.handleSwitchScene(act));
   }
 
-  public preload(): void {
-    if (!this.textures.exists("login_bg_goriz")) this.load.image("login_bg_goriz", loadGorizUrl);
-    if (!this.textures.exists("login_bg_vert")) this.load.image("login_bg_vert", loadVertUrl);
-  }
+  // ИСПРАВЛЕНО: Метод preload теперь пустой, сцена не тратит время на импорты и загрузку
+  public preload(): void {}
 
   public create(): void {
     if (typeof window !== "undefined") window.addEventListener("beforeunload", this.handleBeforeUnload);
@@ -54,6 +50,7 @@ export class LoginScene extends Phaser.Scene {
     const w = Number(this.scale.width), h = Number(this.scale.height);
     this.currentOrientation = h > w ? "vert" : "goriz";
 
+    // ИСПРАВЛЕНО: Текстура мгновенно берется по готовому ключу из PreloaderScene
     this.backgroundIm = this.add.image(w / 2, h / 2, `login_bg_${this.currentOrientation}`).setOrigin(0.5).setDepth(1);
     if (w && h) this.executeResizeLogic(w, h);
   }

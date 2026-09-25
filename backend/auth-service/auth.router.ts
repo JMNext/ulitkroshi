@@ -12,6 +12,12 @@ authRouter.post("/login/phone-check", async (req: Request, res: Response) => {
   res.json({ success: true, isLogin: await service.checkUserExists(parsed.data.phone) });
 });
 
+authRouter.get("/login/phone-check", async (req: Request, res: Response) => {
+  const parsed = phoneCheckSchema.safeParse(req.query);
+  if (!parsed.success) return res.status(400).json({ error: "Ошибка телефона" });
+  res.json({ success: true, isLogin: await service.checkUserExists(parsed.data.phone) });
+});
+
 authRouter.post("/login/phone", async (req: Request, res: Response) => {
   const parsed = smsPhoneSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Ошибка телефона" });
@@ -19,8 +25,23 @@ authRouter.post("/login/phone", async (req: Request, res: Response) => {
   res.json({ success: true, sessionId: await service.requestSmsCode(phone, chosenPetName), isLogin: await service.checkUserExists(phone) });
 });
 
+authRouter.get("/login/phone", async (req: Request, res: Response) => {
+  const parsed = smsPhoneSchema.safeParse(req.query);
+  if (!parsed.success) return res.status(400).json({ error: "Ошибка телефона" });
+  const { phone, chosenPetName } = parsed.data;
+  res.json({ success: true, sessionId: await service.requestSmsCode(phone, chosenPetName), isLogin: await service.checkUserExists(phone) });
+});
+
+
 authRouter.post("/login/verify-sms", async (req: Request, res: Response) => {
   const parsed = verifySmsSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Ошибка параметров" });
+  const sId = service.verifySmsCode(parsed.data.phone, parsed.data.code);
+  sId ? res.json({ sessionId: sId }) : res.status(400).json({ error: "Неверный код" });
+});
+
+authRouter.get("/login/verify-sms", async (req: Request, res: Response) => {
+  const parsed = verifySmsSchema.safeParse(req.query);
   if (!parsed.success) return res.status(400).json({ error: "Ошибка параметров" });
   const sId = service.verifySmsCode(parsed.data.phone, parsed.data.code);
   sId ? res.json({ sessionId: sId }) : res.status(400).json({ error: "Неверный код" });

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const isMock = false;
-const BASE_URL = "http://91.200.150.9:3005";
+const BASE_URL = "";
 
 export const authApiInstance = axios.create({
   baseURL: BASE_URL,
@@ -36,7 +36,8 @@ const setupInterceptors = (instance: typeof authApiInstance) => {
 
         if (refreshToken) {
           try {
-            const refreshResponse = await axios.post(BASE_URL + "/auth/refresh", { refreshToken });
+            // Используем инстанс для корректного пути
+            const refreshResponse = await authApiInstance.post("/auth/refresh", { refreshToken });
             const data = refreshResponse.data;
 
             if (data?.accessToken) {
