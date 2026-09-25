@@ -5,7 +5,9 @@ export const isMock = false;
 const isClient = typeof window !== "undefined";
 const isLocalhost = isClient && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 
-const BASE_URL = isLocalhost ? "http://localhost:3005" : "";
+const BASE_URL = isLocalhost
+  ? "http://localhost:3005"
+  : (isClient ? `${window.location.protocol}//${window.location.hostname}:3005` : "");
 
 export const authApiInstance = axios.create({
   baseURL: BASE_URL,
