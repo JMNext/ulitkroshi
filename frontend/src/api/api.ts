@@ -1,7 +1,13 @@
 import axios from "axios";
 
 export const isMock = false;
-const BASE_URL = "";
+
+const isClient = typeof window !== "undefined";
+const isLocalhost = isClient && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+// ИСПРАВЛЕНО: Для локалки используем порт 3005, для сервера продакшена оставляем относительный путь "",
+// чтобы разорвать бесконечный цикл редиректов ERR_TOO_MANY_REDIRECTS и пустить запросы через шлюз!
+const BASE_URL = isLocalhost ? "http://localhost:3005" : "";
 
 export const authApiInstance = axios.create({
   baseURL: BASE_URL,
@@ -14,8 +20,6 @@ export const gameApiInstance = axios.create({
 });
 
 const setupInterceptors = (instance: typeof authApiInstance) => {
-  const isClient = typeof window !== "undefined";
-
   instance.interceptors.request.use((config) => {
     const token = isClient ? localStorage.getItem("accessToken") : null;
 
