@@ -1,5 +1,4 @@
 import Phaser from "phaser";
-import { preloadSharedAssets } from "@/game/MiniGamesShared/preloadSharedAssets";
 import carImgUrl from "@/assets/resources/car.png";
 import loadGorizUrl from "@/assets/login_assets/load_goriz.png";
 import loadVertUrl from "@/assets/login_assets/load_vert.png";
@@ -31,11 +30,6 @@ export class PreloaderScene extends Phaser.Scene {
     this.load.image("game_bg_goriz", fonGorizUrl);
     this.load.image("game_bg_vert", fonVertUrl);
     this.load.audio("main_background_theme", bgMusicUrl);
-
-    preloadSharedAssets(this, "snake");
-    preloadSharedAssets(this, "racing");
-    preloadSharedAssets(this, "memory", true);
-    preloadSharedAssets(this, "catch");
     this.load.image("player_car", carImgUrl);
   }
 

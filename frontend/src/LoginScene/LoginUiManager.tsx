@@ -1,4 +1,5 @@
 import { EventBus } from "@/eventbus/EventBus";
+import { preloadSharedAssets } from "@/game/MiniGamesShared/preloadSharedAssets";
 import { clsx } from "clsx";
 import { useEffect } from "react";
 import { LoginButton } from "./components/LoginButton";
@@ -8,10 +9,11 @@ import { LoginScene } from "./LoginScene";
 import { useLoginStore } from "./store/useLoginStore";
 
 export const LoginUiManager = ({ phaserScene }: { phaserScene: LoginScene }) => {
-  const { status, startLoading, scale, isVert, updateField } = useLoginStore();
+  const { status, scale, isVert, updateField } = useLoginStore();
 
   useEffect(() => {
     updateField?.("status", "button");
+    updateField?.("progress", 0);
 
     const handleResize = (d: any) => {
       updateField("width", d.width);
@@ -49,7 +51,29 @@ export const LoginUiManager = ({ phaserScene }: { phaserScene: LoginScene }) => 
       phaserScene.scene.start(targetSceneKey, { isLoginFlow: isLogin });
     };
 
-    isLogin ? startLoading(switchScene) : switchScene();
+    if (isLogin) {
+      updateField("status", "loading");
+      updateField("progress", 0);
+
+      // Привязываем реальный загрузчик Phaser к прогрессу бегемотика
+      phaserScene.load.on("progress", (value: number) => {
+        updateField("progress", value);
+      });
+
+      phaserScene.load.once("complete", () => {
+        phaserScene.load.off("progress");
+        switchScene();
+      });
+
+      // Начинаем загрузку ассетов мини-игр прямо здесь!
+      preloadSharedAssets(phaserScene, "snake");
+      preloadSharedAssets(phaserScene, "racing");
+      preloadSharedAssets(phaserScene, "memory", true);
+      preloadSharedAssets(phaserScene, "catch");
+      phaserScene.load.start();
+    } else {
+      switchScene();
+    }
   };
 
   return (
