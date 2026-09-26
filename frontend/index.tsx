@@ -14,21 +14,13 @@ import NiceModal from "@ebay/nice-modal-react";
 import Phaser from "phaser";
 import { createRoot } from "react-dom/client";
 import "./global.css";
-
-// 1. ИСПРАВЛЕНО: Импортируем нашу готовую сцену предзагрузки ассетов
 import { PreloaderScene } from "./PreloaderScene";
 
 declare global { interface Window { phaserGame: Phaser.Game | null; } }
 
-const EVENTS = ["click", "keydown", "touchstart"] as const;
-
 if (window.phaserGame) { window.phaserGame.destroy(true); window.phaserGame = null; }
 
-const audio = new Audio(bgMusicUrl);
-audio.loop = true; audio.volume = 0.4;
-
-const play = () => { audio.play().catch(() => {}); EVENTS.forEach(ev => window.removeEventListener(ev, play)); };
-EVENTS.forEach(ev => window.addEventListener(ev, play, { passive: true }));
+export { bgMusicUrl };
 
 window.phaserGame = new Phaser.Game({
   type: Phaser.AUTO, parent: "game-container", transparent: true, preserveDrawingBuffer: true,
@@ -36,7 +28,6 @@ window.phaserGame = new Phaser.Game({
   scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
   render: { antialias: true, roundPixels: true, pixelArt: false },
   scene: [
-    // 2. ИСПРАВЛЕНО: Ставим прелоадер на самое первое место, чтобы он сработал на старте игры
     PreloaderScene,
     LoginScene,
     Step1Scene,

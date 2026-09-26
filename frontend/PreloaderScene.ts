@@ -1,11 +1,11 @@
 import Phaser from "phaser";
 import { preloadSharedAssets } from "@/game/MiniGamesShared/preloadSharedAssets";
 import carImgUrl from "@/assets/resources/car.png";
-
 import loadGorizUrl from "@/assets/login_assets/load_goriz.png";
 import loadVertUrl from "@/assets/login_assets/load_vert.png";
 import fonGorizUrl from "@/assets/background/fon_goriz.png";
 import fonVertUrl from "@/assets/background/fon_vert.png";
+import { bgMusicUrl } from "./index";
 
 export class PreloaderScene extends Phaser.Scene {
   constructor() {
@@ -30,6 +30,7 @@ export class PreloaderScene extends Phaser.Scene {
     this.load.image("login_bg_vert", loadVertUrl);
     this.load.image("game_bg_goriz", fonGorizUrl);
     this.load.image("game_bg_vert", fonVertUrl);
+    this.load.audio("main_background_theme", bgMusicUrl);
 
     preloadSharedAssets(this, "snake");
     preloadSharedAssets(this, "racing");
@@ -39,6 +40,20 @@ export class PreloaderScene extends Phaser.Scene {
   }
 
   public create(): void {
+    const bgMusic = this.sound.add("main_background_theme", { loop: true, volume: 0.4 });
+
+    const startAudio = () => {
+      const soundManager = this.sound as any;
+      if (soundManager.context && soundManager.context.state === "suspended") {
+        soundManager.context.resume();
+      }
+      if (!bgMusic.isPlaying) {
+        bgMusic.play();
+      }
+    };
+
+    this.game.input.events.once("pointerdown", startAudio);
+
     this.scene.start("LoginScene");
   }
 }
