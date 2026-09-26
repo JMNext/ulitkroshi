@@ -44,6 +44,9 @@ export const PetIndicators = ({ petName, hp, currentAnim }: PetIndicatorsProps) 
   const borderColor = isLow ? "border-red-500" : "border-[#ffca28]";
   const circleClass = clsx("absolute z-20 flex items-center justify-center h-[42px] w-[42px] rounded-full border-[3px] border-solid bg-white/95 transition-all duration-150", borderColor);
 
+  const nameLength = petName?.length || 0;
+  const fontSizeClass = nameLength > 15 ? "text-[20px]" : nameLength > 10 ? "text-[24px]" : "text-[32px]";
+
   return (
     <div
       className={clsx(
@@ -51,8 +54,13 @@ export const PetIndicators = ({ petName, hp, currentAnim }: PetIndicatorsProps) 
         ACTION_ANIMATIONS.includes(currentAnim) ? "invisible opacity-0" : "visible opacity-100"
       )}
     >
-      <div className="mb-2 flex min-h-[48px] w-full items-center justify-center gap-3 px-4">
-        <span className="max-w-[220px] overflow-hidden text-center text-[32px] font-black text-ellipsis whitespace-nowrap text-[#1a3d1c] drop-shadow-[0_2px_0_rgba(255,255,255,1)]">
+      <div className="mb-2 flex min-h-[48px] w-full flex-wrap items-center justify-center gap-3 px-4">
+        <span
+          className={clsx(
+            "max-w-[75%] text-center font-black text-[#1a3d1c] drop-shadow-[0_2px_0_rgba(255,255,255,1)] leading-tight break-words",
+            fontSizeClass
+          )}
+        >
           {petName}
         </span>
 

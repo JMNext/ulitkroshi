@@ -1,3 +1,7 @@
+import { CatchGameScene } from "@/game/MiniGames/CatchGame/CatchGameScene";
+import { MemoryGameScene } from "@/game/MiniGames/MemoryGame/MemoryGameScene";
+import { RacingGameScene } from "@/game/MiniGames/RacingGame/RacingGameScene";
+import { SnakeGameScene } from "@/game/MiniGames/SnakeGame/SnakeGameScene";
 import { LoginScene } from "@/LoginScene/LoginScene";
 import { MainScene } from "@/MainScene/MainScene";
 import { Step1Scene } from "@/Registration/Step_1/Step1Scene";
@@ -29,6 +33,10 @@ window.phaserGame = new Phaser.Game({
     Step4Scene,
     MainScene,
     ScannerScene,
+    CatchGameScene,
+    MemoryGameScene,
+    SnakeGameScene,
+    RacingGameScene,
   ]
 });
 

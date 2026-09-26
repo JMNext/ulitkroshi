@@ -4,7 +4,6 @@ import path from "path";
 import { defineConfig } from "vite";
 import checker from "vite-plugin-checker";
 
-// Кастомный плагин HMR для полной перезагрузки сцен Phaser
 function phaserHmrFix() {
   return {
     name: 'phaser-hmr-fix',
@@ -18,7 +17,6 @@ function phaserHmrFix() {
 }
 
 export default defineConfig({
-  // Заменили жесткий root: "path.resolve" на относительный путь для Vite
   root: "./frontend",
 
   plugins: [
@@ -27,7 +25,7 @@ export default defineConfig({
     phaserHmrFix(),
     checker({
       typescript: {
-        tsconfigPath: "./tsconfig.json" // Упростили путь до конфига TypeScript
+        tsconfigPath: "./tsconfig.json"
       },
       overlay: false
     })
@@ -41,16 +39,14 @@ export default defineConfig({
 
   resolve: {
     alias: {
-      // Упростили запись алиаса. Свойство root автоматически подставит
-      // нужный базовый путь к папке src фронтенда
       "@": path.resolve("frontend/src")
     }
   },
 
   build: {
-    outDir: "../dist", // Изменили на относительный путь от корня root (папки frontend) наружу
+    outDir: "../dist",
     emptyOutDir: true,
-    assetsInlineLimit: 4096,
+    assetsInlineLimit: 0,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -64,5 +60,5 @@ export default defineConfig({
     }
   },
 
-  assetsInclude: ["**/*.mp3"]
+  assetsInclude: ["**/*.mp3", "**/*.otf", "**/*.woff2"]
 });

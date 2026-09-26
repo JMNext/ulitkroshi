@@ -71,32 +71,12 @@ export class MainScene extends Phaser.Scene {
     this.reactRoot.render(<MainSceneUI phaserScene={this} />);
   }
 
-  private handleMiniGameStart = async (data: { scene: string; difficulty?: any }): Promise<void> => {
+  private handleMiniGameStart = (data: { scene: string; difficulty?: any }): void => {
     const { scene, difficulty } = data;
-    if (!scene || !this.sys.isActive()) return;
-
-    try {
-      if (!this.scene.manager.keys[scene]) {
-        if (scene === "CatchGameScene") {
-          const { CatchGameScene } = await import("@/game/MiniGames/CatchGame/CatchGameScene");
-          this.scene.add("CatchGameScene", CatchGameScene);
-        } else if (scene === "MemoryGameScene") {
-          const { MemoryGameScene } = await import("@/game/MiniGames/MemoryGame/MemoryGameScene");
-          this.scene.add("MemoryGameScene", MemoryGameScene);
-        } else if (scene === "SnakeGameScene") {
-          const { SnakeGameScene } = await import("@/game/MiniGames/SnakeGame/SnakeGameScene");
-          this.scene.add("SnakeGameScene", SnakeGameScene);
-        } else if (scene === "RacingGameScene") {
-          const { RacingGameScene } = await import("@/game/MiniGames/RacingGame/RacingGameScene");
-          this.scene.add("RacingGameScene", RacingGameScene);
-        }
-      }
-
+    if (scene && this.sys.isActive()) {
       this.scene.sleep("MainScene");
       this.scene.isSleeping(scene) ? this.scene.wake(scene, { difficulty }) : this.scene.start(scene, { difficulty });
       this.scene.bringToTop(scene);
-    } catch (err) {
-      console.error("Ошибка ленивой загрузки сцены мини-игры:", err);
     }
   };
 
