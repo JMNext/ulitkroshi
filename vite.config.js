@@ -46,7 +46,7 @@ export default defineConfig({
   build: {
     outDir: "../dist",
     emptyOutDir: true,
-    assetsInlineLimit: 0,
+    assetsInlineLimit: 4096,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -60,5 +60,5 @@ export default defineConfig({
     }
   },
 
-  assetsInclude: ["**/*.mp3", "**/*.otf", "**/*.woff2"]
+  assetsInclude: ["**/*.mp3"]
 });
