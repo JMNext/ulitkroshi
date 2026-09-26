@@ -63,7 +63,9 @@ export class MainScene extends Phaser.Scene {
       this.scene.start("LoginScene"); this.scene.bringToTop("LoginScene");
     });
 
-    this.triggerResize();
+    this.time.delayedCall(16, () => {
+      this.triggerResize();
+    });
   }
 
   private mountReactUI(): void {
@@ -87,7 +89,6 @@ export class MainScene extends Phaser.Scene {
     }
   };
 
-  // ДОБАВЛЕНО: Метод для ручного получения текущих размеров экрана из React
   public getLatestResizeData() {
     const { width: w, height: h } = this.scale;
     return { width: w, height: h, isVert: h > w };

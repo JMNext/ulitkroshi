@@ -73,7 +73,8 @@ export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
   return (
     <ErrorBoundary>
       <div ref={containerRef} className="pointer-events-none absolute inset-0 z-10 h-full w-full overflow-hidden font-black select-none">
-        <div className={`ui-canvas-target pointer-events-none absolute top-1/2 left-1/2 box-border flex h-[1080px] w-[1920px] flex-col items-center justify-center [backface-visibility:hidden] ${isLayoutReady ? "opacity-100" : "opacity-0"}`}>
+        {/* ИСПРАВЛЕНО: Убран класс opacity-0 и transition. Если разметка готова, элементы отображаются в ту же миллисекунду */}
+        <div className={`ui-canvas-target pointer-events-none absolute top-1/2 left-1/2 box-border flex h-[1080px] w-[1920px] flex-col items-center justify-center [backface-visibility:hidden] ${isLayoutReady ? "block" : "hidden"}`}>
           <div className="ui-header-target absolute left-1/2"><Header /></div>
           <div className="ui-left-target pointer-events-auto absolute z-30 origin-left"><SideMenuLeft /></div>
           <div className="ui-right-target pointer-events-auto absolute z-30 origin-right"><SideMenuRight /></div>
