@@ -22,6 +22,14 @@ const getRandomBuffPhrase = () => {
   return list[Math.floor(Math.random() * list.length)] || "Я уже чистый!";
 };
 
+const getInitialBuffUntil = () => {
+  if (typeof window === "undefined") return 0;
+  const saved = localStorage.getItem("pet_buff_until");
+  if (!saved) return 0;
+  const parsed = Number(saved);
+  return parsed > Date.now() ? parsed : 0;
+};
+
 export const createPetLogicSlice: StateCreator<PetStateCombined, [], [], PetLogicState> = (set, get) => {
   const syncStats = (hp: number, xp: number, stars: number) => {
     const u = useApiStore.getState().user; const idx = get().activePetIndex || 0;
@@ -45,7 +53,8 @@ export const createPetLogicSlice: StateCreator<PetStateCombined, [], [], PetLogi
   const initCount = useApiStore.getState().user?.unlockedPets || 1;
 
   return {
-    hp: 100, miniGamesClickCount: 0, activePetIndex: 0, currentAnim: "prostoi1", washState: "idle", mood: "happy", experience: 0, stars: 1, buffUntil: 0, unlockedPetIndexes: Array.from(new Array(initCount).keys()),
+    hp: 100, miniGamesClickCount: 0, activePetIndex: 0, currentAnim: "prostoi1", washState: "idle", mood: "happy", experience: 0, stars: 1, unlockedPetIndexes: Array.from(new Array(initCount).keys()),
+    buffUntil: getInitialBuffUntil(),
     canExecuteAction: (t) => SLEEP_ANIMS.includes(get().currentAnim) ? t === "sleep" : BASE_ANIMS.includes(get().currentAnim),
     triggerCareAction: (action) => {
       if (action === "wash" && Date.now() < get().buffUntil) {
@@ -71,6 +80,7 @@ export const createPetLogicSlice: StateCreator<PetStateCombined, [], [], PetLogi
 
       if (currentAnim === "wash") {
         nextBuff = Date.now() + 180000;
+        localStorage.setItem("pet_buff_until", String(nextBuff));
         nextMood = "happy";
       }
 
@@ -87,9 +97,7 @@ export const createPetLogicSlice: StateCreator<PetStateCombined, [], [], PetLogi
     triggerSleepAction: () => BASE_ANIMS.includes(get().currentAnim) ? get().triggerCareAction("sleep_begin") : (["sleep_circle", "sleep_begin"].includes(get().currentAnim) ? (clearTimer(), get().triggerCareAction("sleep_awake")) : null),
     incrementMiniGamesClick: () => {
       if (SLEEP_ANIMS.includes(get().currentAnim)) return PET_LOCK_BUBBLES.sleepAlert;
-      if (get().mood === "sad") {
-        return "Мне грустно, я не хочу играть в mini-игры... Поиграй со мной в мячик!";
-      }
+      if (get().mood === "sad") return PET_LOCK_BUBBLES.sadPlayAlert;
       set((s) => ({ miniGamesClickCount: s.miniGamesClickCount + 1 }));
       const fList = [...(PET_LOCK_BUBBLES.funnyPhrases || []), PET_LOCK_BUBBLES.default || ""];
       return fList[Math.floor(Math.random() * fList.length)] || "";

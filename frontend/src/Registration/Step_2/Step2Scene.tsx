@@ -22,7 +22,15 @@ export class Step2Scene extends BaseAuthScene {
   }
 
   protected override getResizeConfig() {
-    return { BASE_W: 460, BASE_H: 960, BASE_HORIZ_H: 840, MIN: 0.42, MAX: 1.3, PAD: 0.9, MOBILE_SCALE_UP: false };
+    return {
+      BASE_W: 460,
+      BASE_H: 840,
+      BASE_HORIZ_H: 840,
+      MIN: 0.4,
+      MAX: 1.5,
+      PAD: 1.0,
+      MOBILE_SCALE_UP: false
+    };
   }
 
   public override create(): void {

@@ -71,6 +71,7 @@ export const DEFAULT_FOOD_CONFIG = { hpRestoreValue: 25, restoresHp: true };
 export const PET_LOCK_BUBBLES = {
   default: "Сначала покорми меня!",
   sleepAlert: "Сначала разбуди меня!",
+  sadPlayAlert: "Мне грустно, я не хочу играть в большие игры... Поиграй со мной в мячик!",
   buffActivePhrases: [
     "Я уже чистый и вкусно пахну!",
     "Не нужно меня мыть, я полон сил и энергии!",
@@ -91,5 +92,5 @@ export const PET_LOCK_BUBBLES = {
     "Настроение на нулях, сложные игры не поднимут его. Давай покатаем мячик!",
     "Мне грустно для больших игр. Освежи меня или поиграй со мной с нижней панели!"
   ],
-  fullHpStorePhrase: "Я не хочу это eat! Покорми меня обычной едой."
+  fullHpStorePhrase: "Я не хочу это! Покорми меня обычной едой."
 };

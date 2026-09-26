@@ -23,6 +23,9 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
   let exHMult = 1.0, bScaleV = 1, bTopOffset = 110, sScale = 1, sOff = 340, sTop = 450, petTop = 460, petScale = 1.0;
   let hScale = Math.min(1.2, Math.max(0.75, viewW / 1400)), hWidth = (viewW - 120) / hScale;
 
+  let alertScale = 1.0;
+  let alertTop = -360;
+
   if (isVert) {
     exHMult = 0.45;
     hScale = Math.min(1.1, viewW / 480);
@@ -36,11 +39,15 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
       sScale = 0.9;
       sOff = Math.min(viewW / 2 - 78, 235);
       sTop = 480; petTop = 450; petScale = 0.95;
+      alertScale = 1.2;
+      alertTop = -370;
     } else {
       hWidth = viewW / hScale;
       sScale = ratio < 0.42 ? 0.60 : ratio < 0.46 ? 0.68 : 0.70;
       petScale = viewW < 340 ? 0.90 : 0.95;
       petTop = viewW < 380 ? (viewW < 325 ? 528 : 508) : 488;
+      alertScale = ratio < 0.42 ? 1.25 : 1.2;
+      alertTop = ratio < 0.42 ? -330 : -350;
     }
   } else {
     const isTablet = screenMode === "tablet";
@@ -54,10 +61,12 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
 
     if (isDesktopDevice && !isSafariPro) {
       sScale = 1; petTop = 460; petScale = 1.0;
+      alertScale = 1.0;
     } else if (isAnyLandscapeTablet) {
       sScale = 1.0; sOff = 410; hScale = 1.25; hWidth = (viewW - 120) / hScale;
       petScale = isSafariPro ? 0.95 : 1.0;
       petTop = isSafariPro ? 512 : isIPadProHoriz ? 524 : ratio >= 1.5 && ratio < 1.75 && winW <= 1280 ? 480 : 518;
+      alertScale = 1.0;
     } else {
       hScale = Math.min(1.2, Math.max(0.75, viewW / 1400));
       hWidth = (viewW - 120) / hScale;
@@ -65,6 +74,7 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
       exHMult = 1.0;
       petScale = ratio < 1.6 ? 0.95 : 1.0;
       petTop = ratio >= 1.5 && ratio < 1.75 && winW <= 1280 ? 480 : ratio < 1.6 ? 500 : 460;
+      alertScale = 1.0;
     }
   }
 
@@ -81,7 +91,8 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
     ".ui-left-target": { left: `calc(50% - ${sOff}px)`, top: `${sTop}px`, transform: `translate(-50%, -50%) scale(${sScale})` },
     ".ui-right-target": { left: `calc(50% + ${sOff}px)`, top: `${sTop}px`, transform: `translate(-50%, -50%) scale(${sScale})` },
     ".ui-pet-target": { left: "50%", top: `${petTop}px`, transform: `translate(-50%, -50%) scale(${petScale})` },
-    ".ui-bottom-target": { left: "50%", top: `${1080 + exH - bTopOffset}px`, transform: `translate(-50%, -50%) scale(${bScaleV})` }
+    ".ui-bottom-target": { left: "50%", top: `${1080 + exH - bTopOffset}px`, transform: `translate(-50%, -50%) scale(${bScaleV})` },
+    ".ui-alert-target": { left: "50%", top: `${petTop + alertTop * petScale}px`, transform: `translate(-50%, -50%) scale(${petScale * alertScale})` }
   };
 
   const applyStyles = () => {

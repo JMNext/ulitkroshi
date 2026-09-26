@@ -8,6 +8,7 @@ interface PetIndicatorsProps {
   petName: string;
   hp: number;
   currentAnim: string;
+  alertText: string | null;
 }
 
 const EMOJI_MAP: Record<string, string> = {
@@ -22,7 +23,7 @@ const formatTime = (seconds: number) => {
   return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
 };
 
-export const PetIndicators = ({ petName, hp, currentAnim }: PetIndicatorsProps) => {
+export const PetIndicators = ({ petName, hp, currentAnim, alertText }: PetIndicatorsProps) => {
   const isLow = hp <= 25;
   const safeHp = Math.min(Math.max(hp, 0), 100);
 
@@ -47,17 +48,19 @@ export const PetIndicators = ({ petName, hp, currentAnim }: PetIndicatorsProps) 
   const nameLength = petName?.length || 0;
   const fontSizeClass = nameLength > 15 ? "text-[20px]" : nameLength > 10 ? "text-[24px]" : "text-[32px]";
 
+  const shouldHide = ACTION_ANIMATIONS.includes(currentAnim) || !!alertText;
+
   return (
     <div
       className={clsx(
-        "pointer-events-none absolute top-[-20px] left-1/2 flex w-[390px] -translate-x-1/2 flex-col items-center justify-center transition-all duration-150 select-none",
-        ACTION_ANIMATIONS.includes(currentAnim) ? "invisible opacity-0" : "visible opacity-100"
+        "pointer-events-none absolute top-[-20px] left-1/2 flex w-[440px] -translate-x-1/2 flex-col items-center justify-center transition-all duration-150 select-none",
+        shouldHide ? "invisible opacity-0" : "visible opacity-100"
       )}
     >
-      <div className="mb-2 flex min-h-[48px] w-full flex-wrap items-center justify-center gap-3 px-4">
+      <div className="mb-2 flex min-h-[48px] w-full flex-wrap items-center justify-center gap-4 px-2">
         <span
           className={clsx(
-            "max-w-[75%] text-center font-black text-[#1a3d1c] drop-shadow-[0_2px_0_rgba(255,255,255,1)] leading-tight break-words",
+            "max-w-[65%] text-center font-black text-[#1a3d1c] drop-shadow-[0_2px_0_rgba(255,255,255,1)] leading-tight break-words",
             fontSizeClass
           )}
         >
@@ -65,11 +68,11 @@ export const PetIndicators = ({ petName, hp, currentAnim }: PetIndicatorsProps) 
         </span>
 
         {hasBuff && (
-          <div className="flex items-center gap-1.5 shrink-0 animate-fade-in bg-emerald-50/90 border border-emerald-500/30 rounded-full pl-1 pr-2.5 py-0.5 shadow-sm">
-            <div className="flex h-[26px] w-[26px] items-center justify-center rounded-full border border-solid border-emerald-500 bg-white">
-              <span className="text-[14px] leading-none">💪</span>
+          <div className="flex items-center gap-2 shrink-0 animate-fade-in bg-emerald-50/95 border border-emerald-500/40 rounded-full pl-1.5 pr-3 py-1 shadow-md -mt-0.5 -ml-1 origin-center">
+            <div className="flex h-[30px] w-[30px] items-center justify-center rounded-full border-[2px] border-solid border-emerald-500 bg-white shadow-sm">
+              <span className="text-[16px] leading-none">💪</span>
             </div>
-            <span className="text-[12px] font-black text-emerald-700 drop-shadow-[0_1px_0_rgba(255,255,255,1)] tabular-nums leading-noneLater">
+            <span className="text-[15px] font-black text-emerald-800 drop-shadow-[0_1px_0_rgba(255,255,255,1)] tabular-nums tracking-wide leading-none">
               {formatTime(timeLeft)}
             </span>
           </div>

@@ -48,20 +48,22 @@ export const PetCharacter = ({ alertText, onAnimationEnd }: PetCharacterProps) =
 
   return (
     <div className="pointer-events-auto absolute top-1/2 left-1/2 h-[644px] w-[644px] -translate-x-1/2 -translate-y-1/2 [backface-visibility:hidden]">
+      <PetIndicators petName={petName} hp={hp} currentAnim={currentAnim} alertText={alertText} />
+
       {alertText && (
-        <div className="animate-fade-in pointer-events-none absolute top-0 left-1/2 z-50 -mt-12 w-max -translate-x-1/2 rounded-xl border border-solid border-orange-400 bg-black/60 px-5 py-2.5 text-center backdrop-blur-sm">
-          <span className="text-[18px] leading-tight font-black tracking-wide text-orange-400 uppercase">{alertText}</span>
+        <div className="animate-fade-in pointer-events-none absolute top-[38px] left-1/2 z-50 w-[460px] max-w-[90vw] -translate-x-1/2 -ml-[2px] rounded-xl border border-solid border-orange-400 bg-black/85 px-5 py-3 text-center backdrop-blur-sm shadow-xl">
+          <span className="text-[16px] sm:text-[18px] leading-snug font-black tracking-wide text-orange-400 uppercase block break-words">
+            {alertText}
+          </span>
         </div>
       )}
-
-      <PetIndicators petName={petName} hp={hp} currentAnim={currentAnim} />
 
       <div id="phaser-native-html-pet" className="pointer-events-auto absolute inset-0 h-full w-full overflow-visible">
         {ALL_KEYS.map((key) => (
           <video
             key={key}
             ref={(el) => registerVideoElement(key, el)}
-            muted playsInline preload="auto"
+            muted playsInline preload="metadata"
             loop={LOOPING_ANIMATIONS.includes(key)}
             onEnded={() => handleEnded(key)}
             className={clsx(

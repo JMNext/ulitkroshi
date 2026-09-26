@@ -1,7 +1,7 @@
 import { EventBus } from "@/eventbus/EventBus";
 import { useRegistrationStep3Store } from "@/Registration/Step_3/store/useRegistrationStep3Store";
 import Phaser from "phaser";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { CaptchaBlockModal } from "./components/CaptchaBlockModal";
 import { CaptchaConfirmModal } from "./components/CaptchaConfirmModal";
 import { CaptchaFruitGrid } from "./components/CaptchaFruitGrid";
@@ -15,16 +15,34 @@ interface Step3UiManagerProps {
 }
 
 export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) {
-  const { isLogin, loginMode, loginAttempts, step3Mode, registerAttempts, layoutContext, computedScale } = useRegistrationStep3Store();
+  const { isLogin, loginMode, loginAttempts, step3Mode, registerAttempts, layoutContext } = useRegistrationStep3Store();
 
   const setLayout = useRegistrationStep3Store((state) => state.setLayout);
   const resetStore = useRegistrationStep3Store((state) => state.resetStore);
+
+  const [dynamicScale, setDynamicScale] = useState(1);
 
   const activeSessionId = sessionId || localStorage.getItem("active_reg_session_id") || "direct_login_session";
   const currentMode = isLogin ? loginMode : step3Mode;
   const currentAttempts = isLogin ? loginAttempts : registerAttempts;
 
   useEffect(() => {
+    const calculateSafeScale = () => {
+      if (typeof window === "undefined") return;
+
+      const baseWidth = 460;
+      const baseHeight = 780;
+
+      const maxAllowedW = window.innerWidth * 0.9;
+      const maxAllowedH = window.innerHeight * 0.9;
+
+      const scaleW = maxAllowedW / baseWidth;
+      const scaleH = maxAllowedH / baseHeight;
+      const safeScale = Math.min(scaleW, scaleH);
+
+      setDynamicScale(Math.max(0.45, Math.min(safeScale, 1.4)));
+    };
+
     const handleResize = (data: {
       width: number;
       height: number;
@@ -35,6 +53,7 @@ export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) 
     }) => {
       const { screenMode, viewW, scale, isVert } = data;
       setLayout({ screenMode, viewW, scale: scale, isVert }, scale);
+      calculateSafeScale();
     };
 
     const handleSceneInit = () => {
@@ -54,6 +73,7 @@ export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) 
           step3Error: ""
         });
       }
+      calculateSafeScale();
     };
 
     const handleReset = () => {
@@ -64,6 +84,7 @@ export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) 
       useRegistrationStep3Store.getState().setIsLogin(data.isLogin);
     };
 
+    window.addEventListener("resize", calculateSafeScale);
     phaserScene.events.on("phaser_scene_resize", handleResize);
     phaserScene.events.on("phaser_scene_init", handleSceneInit);
     phaserScene.events.on("phaser_scene_sleep", handleReset);
@@ -77,6 +98,7 @@ export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) 
     }
 
     return () => {
+      window.removeEventListener("resize", calculateSafeScale);
       phaserScene.events.off("phaser_scene_resize", handleResize);
       phaserScene.events.off("phaser_scene_init", handleSceneInit);
       phaserScene.events.off("phaser_scene_sleep", handleReset);
@@ -113,7 +135,7 @@ export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) 
     <div className="pointer-events-none absolute inset-0 flex h-full w-full items-center justify-center overflow-hidden select-none">
       <div
         className="pointer-events-none relative z-10 box-border flex h-[780px] w-[460px] origin-center flex-col items-center justify-center gap-[30px] opacity-100 transition-opacity [backface-visibility:hidden]"
-        style={{ transform: `scale(${computedScale})` }}
+        style={{ transform: `scale(${dynamicScale})` }}
       >
         <CaptchaHeaderPanel />
         <CaptchaFruitGrid sessionId={activeSessionId} onSuccess={handleSuccess} />
