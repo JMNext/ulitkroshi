@@ -1,3 +1,5 @@
+import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
+
 export function executeMainResize(width: number, height: number, uiContainer: HTMLDivElement | null) {
   if (!uiContainer) return;
 
@@ -15,7 +17,7 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
   const exH = (safeH / scale - 1080) / 2;
 
   const screenMode = isVert ? (viewW < 750 ? "fold" : "mobile") : ratio < 1.6 ? "tablet" : "desktop";
-  const layoutS = screenMode === "fold" ? Math.max(0.65, viewW / 750) : screenMode === "tablet" ? 0.85 : screenMode === "mobile" ? 1.15 : 1;
+  const layoutS = screenMode === "fold" ? Math.max(0.65, viewW / 750) : screenMode === "mobile" ? 1.22 : 1;
   const finalScale = screenMode === "mobile" && safeH / safeW > 1.65 ? scale * 1.35 : scale;
 
   let exHMult = 1.0, bScaleV = 1, bTopOffset = 110, sScale = 1, sOff = 340, sTop = 450, petTop = 460, petScale = 1.0;
@@ -26,19 +28,19 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
     hScale = Math.min(1.1, viewW / 480);
     bScaleV = Math.min(ratio < 0.42 ? 1.1 : ratio < 0.46 ? 1.15 : 1.3, (viewW - 40) / 520);
     bTopOffset = (ratio < 0.42 ? 112 : 110) * bScaleV;
-    sOff = Math.min(viewW / 2 - 60 * sScale - 24, ratio < 0.42 ? 158 : ratio < 0.46 ? 170 : 195);
+    sOff = Math.min(viewW / 2 - 60 * sScale - 24, ratio < 0.42 ? 148 : ratio < 0.46 ? 160 : 180);
     sTop = ratio < 0.42 ? 555 : ratio < 0.46 ? 495 : 475;
 
     if (ratio >= 0.6) {
       hWidth = viewW - 14 / hScale;
       sScale = 0.9;
       sOff = Math.min(viewW / 2 - 78, 235);
-      sTop = 480; petTop = 450; petScale = 0.88;
+      sTop = 480; petTop = 450; petScale = 0.95;
     } else {
       hWidth = viewW / hScale;
-      sScale = ratio < 0.42 ? 0.64 : ratio < 0.46 ? 0.74 : 0.76;
-      petScale = 0.82;
-      petTop = viewW < 380 ? (viewW < 325 ? 548 : 528) : 508;
+      sScale = ratio < 0.42 ? 0.60 : ratio < 0.46 ? 0.68 : 0.70;
+      petScale = viewW < 340 ? 0.90 : 0.95;
+      petTop = viewW < 380 ? (viewW < 325 ? 528 : 508) : 488;
     }
   } else {
     const isTablet = screenMode === "tablet";
