@@ -96,21 +96,33 @@ export class MainScene extends Phaser.Scene {
 
   public triggerResize(): void {
     if (!this.sys.isActive() || !this.scale?.width || this.resizeId !== null) return;
+
     this.resizeId = requestAnimationFrame(() => {
       const { width: w, height: h } = this.scale;
       this.executeResizeLogic(w, h);
       this.events.emit("phaser_main_resize", { width: w, height: h, isVert: h > w });
       this.resizeId = null;
+
+      setTimeout(() => {
+        if (this.sys.isActive() && this.scale?.width) {
+          const { width: rw, height: rh } = this.scale;
+          this.executeResizeLogic(rw, rh);
+          this.events.emit("phaser_main_resize", { width: rw, height: rh, isVert: rh > rw });
+        }
+      }, 100);
     });
   }
 
   private executeResizeLogic(w: number, h: number): void {
     if (!this.backgroundIm?.active) return;
+
     this.backgroundIm.setPosition(w / 2, h / 2).setDisplaySize(w, h);
 
     const target = `game_bg_${h > w ? "vert" : "goriz"}`;
     if (this.backgroundIm.texture.key !== target && this.textures.exists(target)) {
       this.backgroundIm.setTexture(target);
+      // Принудительно обновляем размеры текстуры сразу после её смены
+      this.backgroundIm.setDisplaySize(w, h);
     }
   }
 
