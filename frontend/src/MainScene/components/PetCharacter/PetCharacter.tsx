@@ -16,8 +16,14 @@ export const PetCharacter = ({ alertText, onAnimationEnd }: PetCharacterProps) =
     ALL_KEYS.forEach((key) => {
       const v = videos[key];
       if (!v) return;
-      v.currentTime = 0;
-      currentAnim === key ? v.play().catch(() => {}) : !v.paused && v.pause();
+      if (currentAnim === key) {
+        v.currentTime = 0;
+        v.play().catch(() => {});
+      } else {
+        if (!v.paused) {
+          v.pause();
+        }
+      }
     });
   }, [currentAnim, getVideoElements]);
 
@@ -25,7 +31,11 @@ export const PetCharacter = ({ alertText, onAnimationEnd }: PetCharacterProps) =
     const videos = getVideoElements();
     ALL_KEYS.forEach((key) => {
       const v = videos[key];
-      v?.pause(); v?.removeAttribute("src"); v?.load();
+      if (v) {
+        if (!v.paused) v.pause();
+        v.removeAttribute("src");
+        v.load();
+      }
       registerVideoElement(key, null);
     });
   }, [getVideoElements, registerVideoElement]);
@@ -44,7 +54,6 @@ export const PetCharacter = ({ alertText, onAnimationEnd }: PetCharacterProps) =
         </div>
       )}
 
-      {/* Единый цельный компонент индикаторов */}
       <PetIndicators petName={petName} hp={hp} currentAnim={currentAnim} />
 
       <div id="phaser-native-html-pet" className="pointer-events-auto absolute inset-0 h-full w-full overflow-visible">

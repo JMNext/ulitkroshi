@@ -1,3 +1,4 @@
+import { sleepPet } from "./sleepPet";
 import { startFeedingDrag } from "@/MainScene/components/PetCharacter/animations/startFeedingDrag";
 import { startPlayingDrag } from "@/MainScene/components/PetCharacter/animations/startPlayingDrag";
 import { startWashingDrag } from "@/MainScene/components/PetCharacter/animations/startWashingDrag";
@@ -20,7 +21,7 @@ const getRandomBuffPhrase = () => {
 export const handleCareActionDown = (type: CareActionType, def: string, act: string, scale: number, s: number, e: any) => {
   const pStore = usePetStore.getState(), gStore = useMainGameStore.getState();
   if (!pStore.canExecuteAction(type)) return;
-  if (type === "sleep") return pStore.triggerSleepAction();
+  if (type === "sleep") return sleepPet();
 
   if (type === "feed") {
     e.stopPropagation();
@@ -58,15 +59,24 @@ export const createBaseDrag = (ie: any, config: BaseDragConfig, scale = 1, s = 1
   if (target?.setPointerCapture && ev.pointerId !== undefined) try { target.setPointerCapture(ev.pointerId); } catch {}
 
   const ratio = window.innerWidth / window.innerHeight;
-  const conf = ratio >= 1 ? { c: "w-20 h-20", r: 140 } : ratio < 0.42 ? { c: "w-12 h-12", r: 75 } : { c: "w-14 h-14", r: 110 };
+  const isPortrait = ratio < 1;
+
+  // Базовый адаптивный размер рассчитывается от меньшей стороны текущего вьюпорта
+  const baseSize = isPortrait ? window.innerWidth * 0.15 : window.innerHeight * 0.15;
+  const finalSize = baseSize * scale * s;
+
+  // Динамический радиус попадания в питомца соразмерно экрану
+  const conf = ratio >= 1 ? { r: 140 } : ratio < 0.42 ? { r: 75 } : { r: 110 };
 
   const rect = document.getElementById("phaser-native-html-pet")?.getBoundingClientRect();
   const tx = rect ? rect.left + rect.width / 2 : window.innerWidth / 2, ty = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
 
   const ghost = document.createElement("div");
-  ghost.className = `fixed top-0 left-0 pointer-events-none ${conf.c} z-50 [will-change:transform]`;
+  ghost.className = "fixed top-0 left-0 pointer-events-none z-50 [will-change:transform]";
+  ghost.style.width = `${finalSize}px`;
+  ghost.style.height = `${finalSize}px`;
 
-  const sync = (x: number, y: number) => { ghost.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) scale(${scale * s})`; };
+  const sync = (x: number, y: number) => { ghost.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`; };
   sync(ev.clientX, ev.clientY);
 
   const img = document.createElement("img");

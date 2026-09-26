@@ -11,7 +11,6 @@ interface MenuButtonProps {
 export const MenuButton = ({ name, type, icon, color, animPrefix, activeFruitIcon, activeClickRef }: MenuButtonProps) => {
   const currentAnim = usePetStore((s) => s.currentAnim);
   const canExecute = usePetStore((s) => s.canExecuteAction);
-  const triggerSleep = usePetStore((s) => s.triggerSleepAction);
 
   const isAct = currentAnim.startsWith(animPrefix);
   const isSelectable = canExecute(type) || isAct;
@@ -21,8 +20,9 @@ export const MenuButton = ({ name, type, icon, color, animPrefix, activeFruitIco
     activeClickRef.current = true;
     setTimeout(() => { activeClickRef.current = false; }, type === "sleep" ? 1000 : 300);
 
-    if (type === "sleep") triggerSleep();
-    else if (canExecute(type)) handleCareActionDown(type, icon, activeFruitIcon, 1, 1, e);
+    if (type === "sleep" || canExecute(type)) {
+      handleCareActionDown(type, icon, activeFruitIcon, 1, 1, e);
+    }
   };
 
   return (

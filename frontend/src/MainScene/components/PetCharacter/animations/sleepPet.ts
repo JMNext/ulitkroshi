@@ -2,21 +2,45 @@ import { SLEEP_SOUND_URL } from "@/MainScene/components/PetCharacter/constants/p
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 
 let audio: HTMLAudioElement | null = null;
-let last: string | null = null;
-let sub = false;
+let isSubscribed = false;
 
-export const triggerSleepingClick = () => {
-  if (typeof window !== "undefined" && !sub) {
-    sub = true;
-    audio = new Audio(SLEEP_SOUND_URL);
-    audio.loop = true;
+export const sleepPet = () => {
+  if (typeof window !== "undefined") {
+    if (!audio) {
+      audio = new Audio(SLEEP_SOUND_URL);
+      audio.loop = true;
+    }
 
-    usePetStore.subscribe((s) => {
-      if (s.currentAnim === last || !audio) return;
-      last = s.currentAnim;
-      if (last === "sleep_circle") audio.play().catch(() => {});
-      else if (last !== "sleep_begin") { audio.pause(); audio.currentTime = 0; }
-    });
+    const currentAnim = usePetStore.getState().currentAnim;
+    const isSleepingNow = ["sleep_begin", "sleep_circle"].includes(currentAnim);
+
+    if (!isSleepingNow) {
+      audio.play().then(() => { if (audio) audio.pause(); }).catch(() => {});
+    } else {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+
+    if (!isSubscribed) {
+      isSubscribed = true;
+
+      usePetStore.subscribe((state) => {
+        if (!audio) return;
+
+        if (state.currentAnim === "sleep_circle") {
+          if (audio.paused) {
+            audio.currentTime = 0;
+            audio.play().catch(() => {});
+          }
+        } else if (state.currentAnim !== "sleep_begin") {
+          if (!audio.paused) {
+            audio.pause();
+            audio.currentTime = 0;
+          }
+        }
+      });
+    }
   }
+
   usePetStore.getState().triggerSleepAction();
 };
