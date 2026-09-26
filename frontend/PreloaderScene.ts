@@ -5,6 +5,8 @@ import loadVertUrl from "@/assets/login_assets/load_vert.png";
 import fonGorizUrl from "@/assets/background/fon_goriz.png";
 import fonVertUrl from "@/assets/background/fon_vert.png";
 import bgMusicUrl from "@/assets/resources/sound/main_theme.mp3";
+// 1. Импортируем картинку Бегемотика
+import begemotImgUrl from "@/assets/login_assets/begemot.png";
 
 export class PreloaderScene extends Phaser.Scene {
   constructor() {
@@ -31,6 +33,9 @@ export class PreloaderScene extends Phaser.Scene {
     this.load.image("game_bg_vert", fonVertUrl);
     this.load.audio("main_background_theme", bgMusicUrl);
     this.load.image("player_car", carImgUrl);
+
+    // 2. Предзагружаем Бегемотика, чтобы он не вешал React-UI
+    this.load.image("loader_begemot", begemotImgUrl);
   }
 
   public create(): void {
