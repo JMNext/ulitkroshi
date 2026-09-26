@@ -20,7 +20,10 @@ NiceModal.register("profile-modal", ProfileEdit);
 export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
   const { alertText, setAlertText, userId } = useMainGameStore((s) => s);
   const activePetIndex = usePetStore((s) => s.activePetIndex);
+
   const [isLayoutReady, setIsLayoutReady] = useState(false);
+  const [isUiMounted, setIsUiReady] = useState(false);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const alertTimeoutRef = useRef<any>(null);
 
@@ -41,6 +44,10 @@ export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
       if (uiRoot) {
         executeMainResize(data.width, data.height, uiRoot);
         setIsLayoutReady(true);
+
+        requestAnimationFrame(() => {
+          setIsUiReady(true);
+        });
       }
     };
 
@@ -70,11 +77,16 @@ export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
     };
   }, [phaserScene, setAlertText]);
 
+  const showUi = isLayoutReady && isUiMounted && activePetIndex !== undefined;
+
   return (
     <ErrorBoundary>
-      <div ref={containerRef} className="pointer-events-none absolute inset-0 z-10 h-full w-full overflow-hidden font-black select-none">
-        {/* ИСПРАВЛЕНО: Убран класс opacity-0 и transition. Если разметка готова, элементы отображаются в ту же миллисекунду */}
-        <div className={`ui-canvas-target pointer-events-none absolute top-1/2 left-1/2 box-border flex h-[1080px] w-[1920px] flex-col items-center justify-center [backface-visibility:hidden] ${isLayoutReady ? "block" : "hidden"}`}>
+      <div
+        ref={containerRef}
+        className="pointer-events-none absolute inset-0 z-10 h-full w-full overflow-hidden font-black select-none"
+        style={{ visibility: showUi ? "visible" : "hidden" }}
+      >
+        <div className="ui-canvas-target pointer-events-none absolute top-1/2 left-1/2 box-border flex h-[1080px] w-[1920px] flex-col items-center justify-center [backface-visibility:hidden]">
           <div className="ui-header-target absolute left-1/2"><Header /></div>
           <div className="ui-left-target pointer-events-auto absolute z-30 origin-left"><SideMenuLeft /></div>
           <div className="ui-right-target pointer-events-auto absolute z-30 origin-right"><SideMenuRight /></div>
