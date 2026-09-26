@@ -40,9 +40,13 @@ export const LoginUiManager = ({ phaserScene }: { phaserScene: LoginScene }) => 
 
     const switchScene = () => {
       EventBus.emit("login_scene_stop");
-      EventBus.emit("set_registration_flow", { isLogin });
+      const targetSceneKey = action === "login" ? "Step2Scene" : "Step1Scene";
+
       EventBus.emit(action === "login" ? "step2_scene_start" : "step1_scene_start");
       phaserScene.events.emit("switch_scene", action);
+
+      phaserScene.scene.stop("LoginScene");
+      phaserScene.scene.start(targetSceneKey, { isLoginFlow: isLogin });
     };
 
     isLogin ? startLoading(switchScene) : switchScene();

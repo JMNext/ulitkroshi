@@ -7,13 +7,15 @@ const CONF = { BASE_W: 460, BASE_VERT_H: 960, BASE_HORIZ_H: 840, PAD: 0.9 };
 
 export class Step2Scene extends Phaser.Scene {
   public backgroundIm!: Phaser.GameObjects.Image;
+  public isLoginFlow: boolean = false;
   private uiContainer: HTMLDivElement | null = null;
   private currentOrientation: "vert" | "goriz" | null = null;
   private reactRoot: Root | null = null;
 
   constructor() { super({ key: "Step2Scene" }); }
 
-  public init(): void {
+  public init(data?: { isLoginFlow?: boolean }): void {
+    this.isLoginFlow = data?.isLoginFlow || false;
     document.getElementById("game-container")
       ?.querySelectorAll("#phaser-native-step1-bubble, #phaser-native-success-bubble")
       .forEach((el) => el.remove());
@@ -29,7 +31,6 @@ export class Step2Scene extends Phaser.Scene {
 
     this.backgroundIm = this.add.image(w / 2, h / 2, `game_bg_${this.currentOrientation}`).setOrigin(0.5).setDepth(-2);
 
-    // ОПТИМИЗАЦИЯ: Монтируем UI асинхронно через setTimeout(..., 0)
     setTimeout(() => {
       this.mountReactUI();
     }, 0);
@@ -37,9 +38,12 @@ export class Step2Scene extends Phaser.Scene {
     if (w && h) this.executeResizeLogic(w, h);
 
     this.scale.on("resize", this.triggerResize, this);
-    this.sys.events.on("wake", this.handleWake, this).on("sleep", this.handleSleep, this).once("shutdown", this.cleanUp, this).once("destroy", this.cleanUp, this);
+    this.sys.events.on("wake", (sys: any, data: any) => this.handleWake(sys, data), this)
+                   .on("sleep", this.handleSleep, this)
+                   .once("shutdown", this.cleanUp, this)
+                   .once("destroy", this.cleanUp, this);
 
-    registerSceneEvent(this, "step2_scene_start", () => this.scene.start());
+    registerSceneEvent(this, "step2_scene_start", () => this.scene.start("Step2Scene"));
     registerSceneEvent(this, "step2_scene_stop", () => {
       if (this.sys.isActive()) {
         if (this.uiContainer) this.uiContainer.style.opacity = "0";
@@ -48,14 +52,13 @@ export class Step2Scene extends Phaser.Scene {
     });
 
     this.triggerResize();
-    this.events.emit("phaser_scene_ready");
+    this.events.emit("phaser_scene_ready", { isLoginFlow: this.isLoginFlow });
   }
 
   private mountReactUI(): void {
     if (this.uiContainer) return;
     this.uiContainer = document.createElement("div");
 
-    // ОПТИМИЗАЦИЯ: Добавлены базовые инлайн-стили для стабильности верстки
     this.uiContainer.style.position = "absolute";
     this.uiContainer.style.inset = "0";
     this.uiContainer.style.opacity = "0";
@@ -104,11 +107,14 @@ export class Step2Scene extends Phaser.Scene {
     this.events.emit("phaser_scene_resize", { width: w, height: h, isVert, scale: sc, viewW, screenMode: mode });
   }
 
-  private handleWake(): void {
+  private handleWake(sys: Phaser.Scenes.Systems, data?: { isLoginFlow?: boolean }): void {
+    if (data) {
+      this.isLoginFlow = data.isLoginFlow || false;
+    }
     setTimeout(() => {
       this.mountReactUI();
     }, 0);
-    this.events.emit("phaser_scene_ready");
+    this.events.emit("phaser_scene_ready", { isLoginFlow: this.isLoginFlow });
   }
 
   private handleSleep(): void {

@@ -50,9 +50,12 @@ export class PreloaderScene extends Phaser.Scene {
       if (!bgMusic.isPlaying) {
         bgMusic.play();
       }
+      window.removeEventListener("click", startAudio);
+      window.removeEventListener("touchend", startAudio);
     };
 
-    this.game.input.events.once("pointerdown", startAudio);
+    window.addEventListener("click", startAudio, { passive: true });
+    window.addEventListener("touchend", startAudio, { passive: true });
 
     this.scene.start("LoginScene");
   }
