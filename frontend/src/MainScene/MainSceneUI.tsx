@@ -58,6 +58,10 @@ export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
     window.addEventListener("start_mini_game", handleMiniGameStart);
     window.addEventListener("ui_show_bubble", handleShowBubble);
 
+    if (phaserScene.sys.isActive()) {
+      handleResize(phaserScene.getLatestResizeData());
+    }
+
     return () => {
       phaserScene.events.off("phaser_main_resize", handleResize);
       window.removeEventListener("start_mini_game", handleMiniGameStart);

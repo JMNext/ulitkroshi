@@ -25,8 +25,6 @@ export class MainScene extends Phaser.Scene {
     const { width: w, height: h } = this.scale;
     this.backgroundIm = this.add.image(w / 2, h / 2, `game_bg_${h > w ? "vert" : "goriz"}`).setOrigin(0.5).setDepth(-2);
 
-    // ИСПРАВЛЕНО: Монтируем React UI строго синхронно до вызова ресайза,
-    // чтобы компоненты мгновенно поймали размеры экрана и не оставались прозрачными
     this.mountReactUI();
 
     if (w && h) this.executeResizeLogic(w, h);
@@ -34,8 +32,6 @@ export class MainScene extends Phaser.Scene {
     this.scale.on("resize", this.triggerResize, this);
 
     this.sys.events.on("wake", () => {
-      // ИСПРАВЛЕНО: При пробуждении сцены принудительно перемонтируем интерфейс,
-      // если он был удален, чтобы исключить пустой экран после логаута
       if (!this.uiContainer) {
         this.mountReactUI();
       }
@@ -66,6 +62,8 @@ export class MainScene extends Phaser.Scene {
       });
       this.scene.start("LoginScene"); this.scene.bringToTop("LoginScene");
     });
+
+    this.triggerResize();
   }
 
   private mountReactUI(): void {
@@ -88,6 +86,12 @@ export class MainScene extends Phaser.Scene {
       this.scene.bringToTop(scene);
     }
   };
+
+  // ДОБАВЛЕНО: Метод для ручного получения текущих размеров экрана из React
+  public getLatestResizeData() {
+    const { width: w, height: h } = this.scale;
+    return { width: w, height: h, isVert: h > w };
+  }
 
   public triggerResize(): void {
     if (!this.sys.isActive() || !this.scale?.width || this.resizeId !== null) return;
