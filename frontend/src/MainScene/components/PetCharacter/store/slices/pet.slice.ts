@@ -1,7 +1,6 @@
 import { PET_LOCK_BUBBLES } from "@/MainScene/components/PetCharacter/constants/petCharacter.constants";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
 import { useApiStore } from "@/api/store/useApiStore";
-import { isMock } from "@/api/api";
 import { StateCreator } from "zustand";
 import { PetLogicState, PetMood, PetStateCombined } from "../usePetStore";
 import { authApi } from "@/api/services/auth.api";
@@ -83,7 +82,7 @@ export const createPetLogicSlice: StateCreator<PetStateCombined, [], [], PetLogi
 
       setTimeout(() => {
         set({ currentAnim: nextAnim, washState: nextAnim.startsWith("sleep") ? "hidden" : "idle", mood: nextMood, experience: nextXp, stars: nextStars, buffUntil: nextBuff });
-      }, 30);
+      }, 60);
     },
     triggerSleepAction: () => BASE_ANIMS.includes(get().currentAnim) ? get().triggerCareAction("sleep_begin") : (["sleep_circle", "sleep_begin"].includes(get().currentAnim) ? (clearTimer(), get().triggerCareAction("sleep_awake")) : null),
     incrementMiniGamesClick: () => {

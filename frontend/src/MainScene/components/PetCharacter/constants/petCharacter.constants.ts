@@ -57,7 +57,7 @@ export const PET_ANIMATION_URLS: Record<string, VideoSources> = {
 };
 
 export const ACTION_ANIMATIONS = ["wash", "play", "eat"];
-export const LOOPING_ANIMATIONS = ["wash", "sleep_circle", "sad_state", "prostoi1", "prostoi2"];
+export const LOOPING_ANIMATIONS = ["sleep_circle", "sad_state", "prostoi1", "prostoi2"];
 
 export const FOOD_CONFIGS: Record<string, FoodConfig> = {
   fruit_01: { hpRestoreValue: 25, restoresHp: true },
