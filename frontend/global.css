@@ -54,39 +54,30 @@
   }
 }
 
-/* ШРИФТЫ */
 @font-face {
   font-family: "Arteks-Forced";
-  src:
-    url("./fonts/Arteks Regular.otf") format("opentype"),
-    url("/fonts/Arteks Regular.otf") format("opentype");
+  src: url("./assets/fonts/Arteks Regular.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "Arteks-Forced";
-  src:
-    url("./fonts/Arteks Medium.otf") format("opentype"),
-    url("/fonts/Arteks Medium.otf") format("opentype");
+  src: url("./assets/fonts/Arteks Medium.otf") format("opentype");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "Arteks-Forced";
-  src:
-    url("./fonts/Arteks Bold.otf") format("opentype"),
-    url("/fonts/Arteks Bold.otf") format("opentype");
+  src: url("./assets/fonts/Arteks Bold.otf") format("opentype");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "Arteks-Forced";
-  src:
-    url("./fonts/Arteks Black.otf") format("opentype"),
-    url("/fonts/Arteks Black.otf") format("opentype");
+  src: url("./assets/fonts/Arteks Black.otf") format("opentype");
   font-weight: 900;
   font-style: normal;
   font-display: swap;

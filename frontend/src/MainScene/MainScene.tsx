@@ -23,11 +23,9 @@ export class MainScene extends Phaser.Scene {
     if (this.game.canvas) this.game.canvas.className = "absolute inset-0 w-full h-full z-1";
 
     const { width: w, height: h } = this.scale;
-
     this.backgroundIm = this.add.image(w / 2, h / 2, `game_bg_${h > w ? "vert" : "goriz"}`).setOrigin(0.5).setDepth(-2);
     if (w && h) this.executeResizeLogic(w, h);
 
-    // ОПТИМИЗАЦИЯ: Монтируем React UI асинхронно, разгружая поток отрисовки Phaser
     setTimeout(() => {
       this.mountReactUI();
     }, 0);
@@ -64,8 +62,6 @@ export class MainScene extends Phaser.Scene {
   private mountReactUI(): void {
     if (this.uiContainer) return;
     this.uiContainer = document.createElement("div");
-
-    // ОПТИМИЗАЦИЯ: Базовые стили для мгновенного позиционирования контейнера
     this.uiContainer.style.position = "absolute";
     this.uiContainer.style.inset = "0";
     this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden";
@@ -75,12 +71,32 @@ export class MainScene extends Phaser.Scene {
     this.reactRoot.render(<MainSceneUI phaserScene={this} />);
   }
 
-  private handleMiniGameStart = (data: { scene: string; difficulty?: any }): void => {
+  private handleMiniGameStart = async (data: { scene: string; difficulty?: any }): Promise<void> => {
     const { scene, difficulty } = data;
-    if (scene && this.sys.isActive()) {
+    if (!scene || !this.sys.isActive()) return;
+
+    try {
+      if (!this.scene.manager.keys[scene]) {
+        if (scene === "CatchGameScene") {
+          const { CatchGameScene } = await import("@/game/MiniGames/CatchGame/CatchGameScene");
+          this.scene.add("CatchGameScene", CatchGameScene);
+        } else if (scene === "MemoryGameScene") {
+          const { MemoryGameScene } = await import("@/game/MiniGames/MemoryGame/MemoryGameScene");
+          this.scene.add("MemoryGameScene", MemoryGameScene);
+        } else if (scene === "SnakeGameScene") {
+          const { SnakeGameScene } = await import("@/game/MiniGames/SnakeGame/SnakeGameScene");
+          this.scene.add("SnakeGameScene", SnakeGameScene);
+        } else if (scene === "RacingGameScene") {
+          const { RacingGameScene } = await import("@/game/MiniGames/RacingGame/RacingGameScene");
+          this.scene.add("RacingGameScene", RacingGameScene);
+        }
+      }
+
       this.scene.sleep("MainScene");
       this.scene.isSleeping(scene) ? this.scene.wake(scene, { difficulty }) : this.scene.start(scene, { difficulty });
       this.scene.bringToTop(scene);
+    } catch (err) {
+      console.error("Ошибка ленивой загрузки сцены мини-игры:", err);
     }
   };
 
@@ -94,8 +110,6 @@ export class MainScene extends Phaser.Scene {
     });
   }
 
-  // ОПТИМИЗАЦИЯ: Вынесли логику изменения размеров из postupdate сюда.
-  // Теперь перерасчет размеров и смена текстур фона происходят ТОЛЬКО при физическом ресайзе экрана.
   private executeResizeLogic(w: number, h: number): void {
     if (!this.backgroundIm?.active) return;
     this.backgroundIm.setPosition(w / 2, h / 2).setDisplaySize(w, h);

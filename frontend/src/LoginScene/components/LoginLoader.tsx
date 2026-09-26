@@ -21,7 +21,7 @@ export const LoginLoader = () => {
         className="absolute bottom-[-2px] h-[64px] w-[64px] object-contain origin-bottom"
         style={{
           left: `${pct}%`,
-          transform: "translateX(-50%)" // Центрируем бегемотика относительно текущего процента полосы
+          transform: "translateX(-50%)" 
         }}
         alt="Загрузка..."
       />
