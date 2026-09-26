@@ -17,15 +17,23 @@ export function Step1UiManager({ phaserScene }: { phaserScene: Step1Scene }) {
     const handleResize = (d: any) => setLayout({ screenMode: d.screenMode, viewW: d.viewW, scale: d.scale, isVert: d.isVert }, d.finalScale);
     const handleReset = () => setStage(1);
 
+    const handleFlow = (data: { isLogin: boolean }) => {
+      console.log("Режим входа/регистрации на Шаге 1:", data.isLogin);
+    };
+
     phaserScene.events.on("phaser_scene_resize", handleResize)
                        .on("phaser_scene_sleep", handleReset)
                        .on("phaser_scene_cleanup", handleReset);
+
+    EventBus.on("set_registration_flow", handleFlow);
+
     if (phaserScene.sys.isActive()) phaserScene.triggerResize();
 
     return () => {
       phaserScene.events.off("phaser_scene_resize", handleResize)
                          .off("phaser_scene_sleep", handleReset)
                          .off("phaser_scene_cleanup", handleReset);
+      EventBus.off("set_registration_flow", handleFlow);
     };
   }, [phaserScene, setLayout, setStage]);
 

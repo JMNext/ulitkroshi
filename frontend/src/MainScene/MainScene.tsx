@@ -17,7 +17,6 @@ export class MainScene extends Phaser.Scene {
       .forEach(el => el.remove());
   }
 
-  // ИСПРАВЛЕНО: preload теперь пустой, сцена не тратит время на скачивание картинок
   public preload(): void {}
 
   public create(): void {
@@ -25,21 +24,21 @@ export class MainScene extends Phaser.Scene {
 
     const { width: w, height: h } = this.scale;
 
-    // ИСПРАВЛЕНО: Берем готовую текстуру "game_bg_" из кэша PreloaderScene
     this.backgroundIm = this.add.image(w / 2, h / 2, `game_bg_${h > w ? "vert" : "goriz"}`).setOrigin(0.5).setDepth(-2);
+    if (w && h) this.executeResizeLogic(w, h);
 
-    if (!this.uiContainer) {
-      this.uiContainer = document.createElement("div");
-      this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden";
-      (document.getElementById("game-container") || document.body).appendChild(this.uiContainer);
-      this.reactRoot = createRoot(this.uiContainer);
-      this.reactRoot.render(<MainSceneUI phaserScene={this} />);
-    }
+    // ОПТИМИЗАЦИЯ: Монтируем React UI асинхронно, разгружая поток отрисовки Phaser
+    setTimeout(() => {
+      this.mountReactUI();
+    }, 0);
 
     this.scale.on("resize", this.triggerResize, this);
-    this.sys.events.on("wake", () => { this.uiContainer?.classList.remove("hidden"); this.triggerResize(); })
-                   .on("sleep", () => this.uiContainer?.classList.add("hidden"))
-                   .once("shutdown", this.cleanUp, this);
+    this.sys.events.on("wake", () => {
+      this.uiContainer?.classList.remove("hidden");
+      this.triggerResize();
+    })
+    .on("sleep", () => this.uiContainer?.classList.add("hidden"))
+    .once("shutdown", this.cleanUp, this);
 
     this.events.on("switch_to_minigame", this.handleMiniGameStart, this);
 
@@ -60,17 +59,20 @@ export class MainScene extends Phaser.Scene {
       });
       this.scene.start("LoginScene"); this.scene.bringToTop("LoginScene");
     });
+  }
 
-    this.events.on("postupdate", () => {
-      const { width: sw, height: sh } = this.scale;
-      if (!this.sys.isActive() || !sw || !sh || !this.backgroundIm?.active) return;
+  private mountReactUI(): void {
+    if (this.uiContainer) return;
+    this.uiContainer = document.createElement("div");
 
-      this.backgroundIm.setPosition(sw / 2, sh / 2).setDisplaySize(sw, sh);
+    // ОПТИМИЗАЦИЯ: Базовые стили для мгновенного позиционирования контейнера
+    this.uiContainer.style.position = "absolute";
+    this.uiContainer.style.inset = "0";
+    this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden";
 
-      // ИСПРАВЛЕНО: Обновление текстуры при ресайзе тоже переведено на глобальный ключ "game_bg_"
-      const target = `game_bg_${sh > sw ? "vert" : "goriz"}`;
-      if (this.backgroundIm.texture.key !== target && this.textures.exists(target)) this.backgroundIm.setTexture(target);
-    });
+    (document.getElementById("game-container") || document.body).appendChild(this.uiContainer);
+    this.reactRoot = createRoot(this.uiContainer);
+    this.reactRoot.render(<MainSceneUI phaserScene={this} />);
   }
 
   private handleMiniGameStart = (data: { scene: string; difficulty?: any }): void => {
@@ -86,15 +88,28 @@ export class MainScene extends Phaser.Scene {
     if (!this.sys.isActive() || !this.scale?.width || this.resizeId !== null) return;
     this.resizeId = requestAnimationFrame(() => {
       const { width: w, height: h } = this.scale;
+      this.executeResizeLogic(w, h);
       this.events.emit("phaser_main_resize", { width: w, height: h, isVert: h > w });
       this.resizeId = null;
     });
   }
 
+  // ОПТИМИЗАЦИЯ: Вынесли логику изменения размеров из postupdate сюда.
+  // Теперь перерасчет размеров и смена текстур фона происходят ТОЛЬКО при физическом ресайзе экрана.
+  private executeResizeLogic(w: number, h: number): void {
+    if (!this.backgroundIm?.active) return;
+    this.backgroundIm.setPosition(w / 2, h / 2).setDisplaySize(w, h);
+
+    const target = `game_bg_${h > w ? "vert" : "goriz"}`;
+    if (this.backgroundIm.texture.key !== target && this.textures.exists(target)) {
+      this.backgroundIm.setTexture(target);
+    }
+  }
+
   private cleanUp = (): void => {
     if (this.resizeId !== null) cancelAnimationFrame(this.resizeId);
     this.scale.off("resize", this.triggerResize, this);
-    this.events.off("postupdate").off("switch_to_minigame");
+    this.events.off("switch_to_minigame");
     this.backgroundIm?.destroy();
     try { this.reactRoot?.unmount(); } catch (_) {}
     this.uiContainer?.remove();

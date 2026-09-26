@@ -16,7 +16,6 @@ export class LoginScene extends Phaser.Scene {
     this.onStepCompleteCallback = data?.onStepComplete || ((act) => this.handleSwitchScene(act));
   }
 
-  // ИСПРАВЛЕНО: Метод preload теперь пустой, сцена не тратит время на импорты и загрузку
   public preload(): void {}
 
   public create(): void {
@@ -25,7 +24,10 @@ export class LoginScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor("#000000");
 
     this.buildBackground();
-    this.mountReactUI();
+
+    setTimeout(() => {
+      this.mountReactUI();
+    }, 0);
 
     this.scale.on("resize", this.triggerResize, this);
     this.events.on("switch_scene", this.handleSwitchScene, this);
@@ -50,7 +52,6 @@ export class LoginScene extends Phaser.Scene {
     const w = Number(this.scale.width), h = Number(this.scale.height);
     this.currentOrientation = h > w ? "vert" : "goriz";
 
-    // ИСПРАВЛЕНО: Текстура мгновенно берется по готовому ключу из PreloaderScene
     this.backgroundIm = this.add.image(w / 2, h / 2, `login_bg_${this.currentOrientation}`).setOrigin(0.5).setDepth(1);
     if (w && h) this.executeResizeLogic(w, h);
   }
@@ -60,11 +61,21 @@ export class LoginScene extends Phaser.Scene {
   private mountReactUI(): void {
     if (this.uiContainer) return;
     this.uiContainer = document.createElement("div");
+
+    this.uiContainer.style.position = "absolute";
+    this.uiContainer.style.inset = "0";
+    this.uiContainer.style.opacity = "0";
     this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden opacity-0 transition-opacity duration-200";
-    (document.getElementById("game-container") || document.body).appendChild(this.uiContainer);
+
+    const container = document.getElementById("game-container") || document.body;
+    container.appendChild(this.uiContainer);
+
     this.reactRoot = createRoot(this.uiContainer);
     this.reactRoot.render(<LoginUiManager phaserScene={this} />);
-    requestAnimationFrame(() => this.uiContainer && (this.uiContainer.style.opacity = "1"));
+
+    requestAnimationFrame(() => {
+      if (this.uiContainer) this.uiContainer.style.opacity = "1";
+    });
   }
 
   public triggerResize(): void {

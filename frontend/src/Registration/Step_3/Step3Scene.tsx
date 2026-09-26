@@ -30,7 +30,6 @@ export class Step3Scene extends Phaser.Scene {
     this.events.emit("phaser_scene_init", { isLoginFlow: this.isLoginFlow });
   }
 
-  // ИСПРАВЛЕНО: preload теперь пустой, сцена берет готовый фон из памяти мгновенно
   public preload(): void {}
 
   public create(): void {
@@ -39,13 +38,16 @@ export class Step3Scene extends Phaser.Scene {
     const w = Number(this.scale.width), h = Number(this.scale.height);
     this.currentOrientation = h > w ? "vert" : "goriz";
 
-    // ИСПРАВЛЕНО: Используем общий быстрый ключ "game_bg_" вместо повторного скачивания файла
     this.backgroundIm = this.add
       .image(w / 2, h / 2, `game_bg_${this.currentOrientation}`)
       .setOrigin(0.5)
       .setDepth(-2);
 
-    this.mountReactUI();
+    // ОПТИМИЗАЦИЯ: Асинхронный монтаж UI для плавной анимации перехода
+    setTimeout(() => {
+      this.mountReactUI();
+    }, 0);
+
     if (w && h) this.executeResizeLogic(w, h);
 
     this.scale.on("resize", this.triggerResize, this);
@@ -64,12 +66,19 @@ export class Step3Scene extends Phaser.Scene {
   private mountReactUI(): void {
     if (this.uiContainer) return;
     this.uiContainer = document.createElement("div");
+
+    // ОПТИМИЗАЦИЯ: Базовые стили для предотвращения сдвигов интерфейса
+    this.uiContainer.style.position = "absolute";
+    this.uiContainer.style.inset = "0";
+    this.uiContainer.style.opacity = "0";
     this.uiContainer.className =
       "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden opacity-0 transition-opacity duration-200";
+
     (document.getElementById("game-container") || document.body).appendChild(this.uiContainer);
 
     this.reactRoot = createRoot(this.uiContainer);
     this.reactRoot.render(<Step3UiManager phaserScene={this} sessionId={this.sessionId} />);
+
     requestAnimationFrame(() => this.uiContainer && (this.uiContainer.style.opacity = "1"));
   }
 
@@ -101,8 +110,6 @@ export class Step3Scene extends Phaser.Scene {
 
     if (this.currentOrientation !== nextOrient) {
       this.currentOrientation = nextOrient;
-
-      // ИСПРАВЛЕНО: Ресайз тоже переведен на глобальный кэшированный ключ "game_bg_"
       const texture = `game_bg_${nextOrient}`;
       if (this.textures.exists(texture)) {
         this.tweens.killTweensOf(this.backgroundIm);
@@ -145,7 +152,11 @@ export class Step3Scene extends Phaser.Scene {
       this.sessionId = data.sessionId || this.sessionId;
       this.isLoginFlow = data.isLoginFlow || false;
     }
-    this.mountReactUI();
+
+    setTimeout(() => {
+      this.mountReactUI();
+    }, 0);
+
     this.events.emit("phaser_scene_init", { isLoginFlow: this.isLoginFlow });
     this.triggerResize();
   }

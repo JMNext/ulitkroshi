@@ -5,7 +5,7 @@ import loadGorizUrl from "@/assets/login_assets/load_goriz.png";
 import loadVertUrl from "@/assets/login_assets/load_vert.png";
 import fonGorizUrl from "@/assets/background/fon_goriz.png";
 import fonVertUrl from "@/assets/background/fon_vert.png";
-import { bgMusicUrl } from "./index";
+import bgMusicUrl from "@/assets/resources/sound/main_theme.mp3";
 
 export class PreloaderScene extends Phaser.Scene {
   constructor() {

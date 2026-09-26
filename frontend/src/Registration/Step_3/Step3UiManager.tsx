@@ -60,10 +60,16 @@ export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) 
       resetStore(true, true);
     };
 
+    const handleFlow = (data: { isLogin: boolean }) => {
+      useRegistrationStep3Store.getState().setIsLogin(data.isLogin);
+    };
+
     phaserScene.events.on("phaser_scene_resize", handleResize);
     phaserScene.events.on("phaser_scene_init", handleSceneInit);
     phaserScene.events.on("phaser_scene_sleep", handleReset);
     phaserScene.events.on("phaser_scene_cleanup", handleReset);
+
+    EventBus.on("set_registration_flow", handleFlow);
 
     if (phaserScene.sys.isActive()) {
       handleSceneInit();
@@ -75,6 +81,7 @@ export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) 
       phaserScene.events.off("phaser_scene_init", handleSceneInit);
       phaserScene.events.off("phaser_scene_sleep", handleReset);
       phaserScene.events.off("phaser_scene_cleanup", handleReset);
+      EventBus.off("set_registration_flow", handleFlow);
     };
   }, [phaserScene, setLayout, resetStore]);
 
@@ -91,12 +98,10 @@ export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) 
 
       EventBus.emit("step3_scene_stop");
 
-      // НАДЕЖНОЕ ПЕРЕКЛЮЧЕНИЕ: Используем встроенный менеджер сцен Phaser
       const targetSceneKey = savedIsLoginFlow ? "MainScene" : "Step4Scene";
 
       EventBus.emit(savedIsLoginFlow ? "main_scene_start" : "step4_scene_start", { sessionId: activeSessionId });
 
-      // Сама сцена останавливает себя и запускает следующую
       phaserScene.scene.stop("Step3Scene");
       phaserScene.scene.start(targetSceneKey, { sessionId: activeSessionId });
     });

@@ -19,7 +19,6 @@ export class Step4Scene extends Phaser.Scene {
       .forEach((el) => el.remove());
   }
 
-  // ИСПРАВЛЕНО: Прелоад пустой, фон уже лежит в оперативной памяти сервера
   public preload(): void {}
 
   public create(): void {
@@ -28,10 +27,13 @@ export class Step4Scene extends Phaser.Scene {
     const w = Number(this.scale.width), h = Number(this.scale.height);
     this.currentOrientation = h > w ? "vert" : "goriz";
 
-    // ИСПРАВЛЕНО: Берем фон по общему кэшированному ключу "game_bg_"
     this.backgroundIm = this.add.image(w / 2, h / 2, `game_bg_${this.currentOrientation}`).setOrigin(0.5).setDepth(-2);
 
-    this.mountReactUI();
+    // ОПТИМИЗАЦИЯ: Асинхронное монтирование UI через setTimeout
+    setTimeout(() => {
+      this.mountReactUI();
+    }, 0);
+
     if (w && h) this.executeResizeLogic(w, h);
 
     this.scale.on("resize", this.triggerResize, this);
@@ -51,11 +53,18 @@ export class Step4Scene extends Phaser.Scene {
   private mountReactUI(): void {
     if (this.uiContainer) return;
     this.uiContainer = document.createElement("div");
+
+    // ОПТИМИЗАЦИЯ: Базовые стили для мгновенного позиционирования
+    this.uiContainer.style.position = "absolute";
+    this.uiContainer.style.inset = "0";
+    this.uiContainer.style.opacity = "0";
     this.uiContainer.className = "phaser-ui-root-container absolute inset-0 pointer-events-none z-10 overflow-hidden opacity-0 transition-opacity duration-200";
+
     (document.getElementById("game-container") || document.body).appendChild(this.uiContainer);
 
     this.reactRoot = createRoot(this.uiContainer);
     this.reactRoot.render(<Step4UiManager phaserScene={this} />);
+
     requestAnimationFrame(() => this.uiContainer && (this.uiContainer.style.opacity = "1"));
   }
 
@@ -68,8 +77,6 @@ export class Step4Scene extends Phaser.Scene {
 
     if (this.currentOrientation !== next) {
       this.currentOrientation = next;
-
-      // ИСПРАВЛЕНО: Меняем текстуру при ресайзе через глобальный ключ "game_bg_"
       const t = `game_bg_${next}`;
       if (this.textures.exists(t)) { this.tweens.killTweensOf(this.backgroundIm); this.backgroundIm.setAlpha(1).setTexture(t); }
     }
@@ -88,7 +95,12 @@ export class Step4Scene extends Phaser.Scene {
     this.events.emit("phaser_scene_resize", { width: w, height: h, isVert, scale: sc, viewW, screenMode: mode, finalScale: mode === "mobile" && h / w > 1.65 ? sc * 1.35 : sc });
   }
 
-  private handleWake(): void { this.mountReactUI(); this.triggerResize(); }
+  private handleWake(): void {
+    setTimeout(() => {
+      this.mountReactUI();
+    }, 0);
+    this.triggerResize();
+  }
 
   private handleSleep(): void {
     this.events.emit("phaser_scene_sleep");

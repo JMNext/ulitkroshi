@@ -8,6 +8,7 @@ export type EventPayloads = {
   minigame_clicker_start: undefined; minigame_memory_start: undefined; minigame_seabattle_start: undefined; minigame_stop_to_main: undefined; force_logout_to_login: undefined;
   minigame_catch_start: { difficulty: "easy" | "medium" | "hard" }; minigame_snake_start: { difficulty: "easy" | "medium" | "hard" };
   minigame_racing_start: { difficulty: "easy" | "medium" | "hard" }; minigame_tanks_start: { difficulty: "easy" | "medium" | "hard" };
+  set_registration_flow: { isLogin: boolean };
 };
 
 class TypedEventBus {

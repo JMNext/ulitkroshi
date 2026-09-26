@@ -1,6 +1,4 @@
 import { EventBus } from "@/eventbus/EventBus";
-import { useRegistrationStep2Store } from "@/Registration/Step_2/store/useRegistrationStep2Store";
-import { useRegistrationStep3Store } from "@/Registration/Step_3/store/useRegistrationStep3Store";
 import { clsx } from "clsx";
 import { useEffect } from "react";
 import { LoginButton } from "./components/LoginButton";
@@ -40,11 +38,9 @@ export const LoginUiManager = ({ phaserScene }: { phaserScene: LoginScene }) => 
   const handleAction = (isLogin: boolean, action: "login" | "register") => {
     if (!phaserScene.sys.isActive()) return;
 
-    useRegistrationStep2Store.getState().setIsLogin(isLogin);
-    useRegistrationStep3Store.getState().setIsLogin(isLogin);
-
     const switchScene = () => {
       EventBus.emit("login_scene_stop");
+      EventBus.emit("set_registration_flow", { isLogin });
       EventBus.emit(action === "login" ? "step2_scene_start" : "step1_scene_start");
       phaserScene.events.emit("switch_scene", action);
     };

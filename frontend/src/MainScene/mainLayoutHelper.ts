@@ -74,14 +74,28 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
 
   canvasEl.style.transform = `translate(-50%, -50%) scale(${finalScale})`;
 
-  const apply = (cls: string, style: any) => {
-    const el = canvasEl.querySelector(cls) as HTMLDivElement;
-    if (el) Object.assign(el.style, style);
+  const stylesToApply = {
+    ".ui-header-target": { top: `${90 - exH * exHMult}px`, width: `${hWidth}px`, transform: `translate(-50%, -50%) scale(${hScale})` },
+    ".ui-left-target": { left: `calc(50% - ${sOff}px)`, top: `${sTop}px`, transform: `translate(-50%, -50%) scale(${sScale})` },
+    ".ui-right-target": { left: `calc(50% + ${sOff}px)`, top: `${sTop}px`, transform: `translate(-50%, -50%) scale(${sScale})` },
+    ".ui-pet-target": { left: "50%", top: `${petTop}px`, transform: `translate(-50%, -50%) scale(${petScale})` },
+    ".ui-bottom-target": { left: "50%", top: `${1080 + exH - bTopOffset}px`, transform: `translate(-50%, -50%) scale(${bScaleV})` }
   };
 
-  apply(".ui-header-target", { top: `${90 - exH * exHMult}px`, width: `${hWidth}px`, transform: `translate(-50%, -50%) scale(${hScale})` });
-  apply(".ui-left-target", { left: `calc(50% - ${sOff}px)`, top: `${sTop}px`, transform: `translate(-50%, -50%) scale(${sScale})` });
-  apply(".ui-right-target", { left: `calc(50% + ${sOff}px)`, top: `${sTop}px`, transform: `translate(-50%, -50%) scale(${sScale})` });
-  apply(".ui-pet-target", { left: "50%", top: `${petTop}px`, transform: `translate(-50%, -50%) scale(${petScale})` });
-  apply(".ui-bottom-target", { left: "50%", top: `${1080 + exH - bTopOffset}px`, transform: `translate(-50%, -50%) scale(${bScaleV})` });
+  const applyStyles = () => {
+    let allApplied = true;
+    for (const [cls, style] of Object.entries(stylesToApply)) {
+      const el = canvasEl.querySelector(cls) as HTMLDivElement;
+      if (el) {
+        Object.assign(el.style, style);
+      } else {
+        allApplied = false;
+      }
+    }
+    if (!allApplied && uiContainer.isConnected) {
+      requestAnimationFrame(applyStyles);
+    }
+  };
+
+  applyStyles();
 }

@@ -1,4 +1,3 @@
-import bgMusicUrl from "@/assets/resources/sound/main_theme.mp3";
 import { CatchGameScene } from "@/game/MiniGames/CatchGame/CatchGameScene";
 import { MemoryGameScene } from "@/game/MiniGames/MemoryGame/MemoryGameScene";
 import { RacingGameScene } from "@/game/MiniGames/RacingGame/RacingGameScene";
@@ -19,8 +18,6 @@ import { PreloaderScene } from "./PreloaderScene";
 declare global { interface Window { phaserGame: Phaser.Game | null; } }
 
 if (window.phaserGame) { window.phaserGame.destroy(true); window.phaserGame = null; }
-
-export { bgMusicUrl };
 
 window.phaserGame = new Phaser.Game({
   type: Phaser.AUTO, parent: "game-container", transparent: true, preserveDrawingBuffer: true,

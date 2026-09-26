@@ -1,3 +1,4 @@
+import { EventBus } from "@/eventbus/EventBus";
 import { useRegistrationStep2Store } from "@/Registration/Step_2/store/useRegistrationStep2Store";
 import { clsx } from "clsx";
 import { createContext, useEffect } from "react";
@@ -21,14 +22,21 @@ export function Step2UiManager({ phaserScene }: { phaserScene: Step2Scene }) {
     const handleReady = () => { clearErrors(); checkSavedDevicePhone(() => phaserScene.sys.isActive() && phaserScene.triggerResize()); };
     const handleReset = () => resetStore();
 
+    const handleFlow = (data: { isLogin: boolean }) => {
+      useRegistrationStep2Store.getState().setIsLogin(data.isLogin);
+    };
+
     phaserScene.events.on("phaser_scene_resize", handleResize).on("phaser_scene_ready", handleReady)
                        .on("phaser_scene_sleep", handleReset).on("phaser_scene_cleanup", handleReset);
+
+    EventBus.on("set_registration_flow", handleFlow);
 
     if (phaserScene.sys.isActive()) { handleReady(); phaserScene.triggerResize(); }
 
     return () => {
-      phaserScene.events.off("phaser_scene_resize", handleResize).off("phaser_scene_ready", handleReady)
+      phaserScene.events.off("phaser_scene_resize", handleResize).off("phaser_ready" as any, handleReady)
                          .off("phaser_scene_sleep", handleReset).off("phaser_scene_cleanup", handleReset);
+      EventBus.off("set_registration_flow", handleFlow);
     };
   }, [phaserScene, setLayout, clearErrors, checkSavedDevicePhone, resetStore]);
 

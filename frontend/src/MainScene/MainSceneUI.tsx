@@ -38,7 +38,10 @@ export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
   useEffect(() => {
     const handleResize = (data: any) => {
       const uiRoot = containerRef.current?.closest(".phaser-ui-root-container") as HTMLDivElement;
-      if (uiRoot) { executeMainResize(data.width, data.height, uiRoot); setIsLayoutReady(true); }
+      if (uiRoot) {
+        executeMainResize(data.width, data.height, uiRoot);
+        setIsLayoutReady(true);
+      }
     };
 
     const handleMiniGameStart = (e: any) =>
@@ -54,7 +57,6 @@ export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
     phaserScene.events.on("phaser_main_resize", handleResize);
     window.addEventListener("start_mini_game", handleMiniGameStart);
     window.addEventListener("ui_show_bubble", handleShowBubble);
-    if (phaserScene.sys.isActive()) phaserScene.triggerResize();
 
     return () => {
       phaserScene.events.off("phaser_main_resize", handleResize);
