@@ -57,7 +57,7 @@ export const PET_ANIMATION_URLS: Record<string, VideoSources> = {
 };
 
 export const ACTION_ANIMATIONS = ["wash", "play", "eat"];
-export const LOOPING_ANIMATIONS = ["sleep_circle", "sad_state", "prostoi1", "prostoi2"];
+export const LOOPING_ANIMATIONS = ["wash", "sleep_circle", "sad_state", "prostoi1", "prostoi2"];
 
 export const FOOD_CONFIGS: Record<string, FoodConfig> = {
   fruit_01: { hpRestoreValue: 25, restoresHp: true },
@@ -91,5 +91,5 @@ export const PET_LOCK_BUBBLES = {
     "Настроение на нулях, сложные игры не поднимут его. Давай покатаем мячик!",
     "Мне грустно для больших игр. Освежи меня или поиграй со мной с нижней панели!"
   ],
-  fullHpStorePhrase: "Я не хочу это есть! Покорми меня обычной едой."
+  fullHpStorePhrase: "Я не хочу это eat! Покорми меня обычной едой."
 };

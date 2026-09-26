@@ -80,7 +80,10 @@ export const createPetLogicSlice: StateCreator<PetStateCombined, [], [], PetLogi
         syncStats(hp, nextXp, nextStars);
       }
       const nextAnim = hp <= 25 || nextMood === "sad" ? "sad_state" : (["wash", "play", "eat"].includes(currentAnim) && Math.random() < 0.3 ? "prostoi2" : "prostoi1");
-      set({ currentAnim: nextAnim, washState: nextAnim.startsWith("sleep") ? "hidden" : "idle", mood: nextMood, experience: nextXp, stars: nextStars, buffUntil: nextBuff });
+
+      setTimeout(() => {
+        set({ currentAnim: nextAnim, washState: nextAnim.startsWith("sleep") ? "hidden" : "idle", mood: nextMood, experience: nextXp, stars: nextStars, buffUntil: nextBuff });
+      }, 30);
     },
     triggerSleepAction: () => BASE_ANIMS.includes(get().currentAnim) ? get().triggerCareAction("sleep_begin") : (["sleep_circle", "sleep_begin"].includes(get().currentAnim) ? (clearTimer(), get().triggerCareAction("sleep_awake")) : null),
     incrementMiniGamesClick: () => {

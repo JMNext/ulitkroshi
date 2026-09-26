@@ -119,7 +119,6 @@ useApiStore.subscribe((state) => {
 
   const rawHp = Array.isArray(u.petHealths) ? u.petHealths[idx] : undefined;
 
-  // Важное исправление: если в моках прилетает 0, принудительно выставляем 100% здоровья на старте
   let currentHp = rawHp !== undefined && rawHp !== null ? Number(rawHp) : 100;
   if (currentHp <= 0) {
     currentHp = 100;
