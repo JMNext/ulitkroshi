@@ -13,6 +13,7 @@ import { MainScene } from "./MainScene";
 import { isMock } from "@/api/api";
 import { HelpModal } from "@/MainScene/components/HelpModal/HelpModal";
 import { ProfileEdit } from "@/MainScene/components/ProfileEdit/ProfileEdit";
+import { useApiStore } from "@/api/store/useApiStore";
 
 NiceModal.register("help-modal", HelpModal);
 NiceModal.register("profile-modal", ProfileEdit);
@@ -20,6 +21,9 @@ NiceModal.register("profile-modal", ProfileEdit);
 export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
   const { alertText, setAlertText, userId } = useMainGameStore((s) => s);
   const activePetIndex = usePetStore((s) => s.activePetIndex);
+
+  // Подключаем отслеживание профиля из вашего useApiStore
+  const userProfile = useApiStore((s) => s.user);
 
   const [isLayoutReady, setIsLayoutReady] = useState(false);
   const [isUiMounted, setIsUiReady] = useState(false);
@@ -77,21 +81,31 @@ export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
     };
   }, [phaserScene, setAlertText]);
 
-  const showUi = isLayoutReady && isUiMounted && activePetIndex !== undefined;
+  // ЖЁСТКАЯ ГАРАНТИЯ СИНХРОННОСТИ:
+  // Интерфейс станет видимым ТОЛЬКО тогда, когда профиль пользователя (userProfile) полностью
+  // докачался с сервера Таймвеба и успел наполнить данными usePetStore
+  const isApiDataLoaded = userProfile !== null && userProfile !== undefined;
+  const showUi = isLayoutReady && isUiMounted && isApiDataLoaded && activePetIndex !== undefined && activePetIndex !== null;
 
   return (
     <ErrorBoundary>
       <div
         ref={containerRef}
         className="pointer-events-none absolute inset-0 z-10 h-full w-full overflow-hidden font-black select-none"
-        style={{ visibility: showUi ? "visible" : "hidden" }}
+        style={{
+          opacity: showUi ? 1 : 0,
+          visibility: showUi ? "visible" : "hidden",
+          transition: "opacity 0.12s ease-out"
+        }}
       >
         <div className="ui-canvas-target pointer-events-none absolute top-1/2 left-1/2 box-border flex h-[1080px] w-[1920px] flex-col items-center justify-center [backface-visibility:hidden]">
           <div className="ui-header-target absolute left-1/2"><Header /></div>
           <div className="ui-left-target pointer-events-auto absolute z-30 origin-left"><SideMenuLeft /></div>
           <div className="ui-right-target pointer-events-auto absolute z-30 origin-right"><SideMenuRight /></div>
           <div className="ui-pet-target pointer-events-none absolute">
-            <PetCharacter key={activePetIndex} alertText={alertText} onAnimationEnd={() => {}} />
+            {showUi && (
+              <PetCharacter key={activePetIndex} alertText={alertText} onAnimationEnd={() => {}} />
+            )}
           </div>
           <div className="ui-bottom-target pointer-events-none absolute"><BottomMenu className="pointer-events-auto" /></div>
         </div>

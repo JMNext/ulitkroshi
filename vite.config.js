@@ -49,11 +49,16 @@ export default defineConfig({
     assetsInlineLimit: 4096,
     rollupOptions: {
       output: {
+        // ПРОДВИНУТАЯ ОПТИМИЗАЦИЯ: Разрезаем бандл на независимые асинхронные потоки
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            if (id.includes("phaser")) return "phaser";
-            if (id.includes("react")) return "react-vendor";
-            return "vendor";
+            if (id.includes("phaser")) return "engine-phaser"; // Выносим тяжелый движок Phaser в отдельный файл
+            if (id.includes("react")) return "engine-react";   // Выносим React
+            return "vendor-libs"; // Все остальные сторонние библиотеки
+          }
+          // Автоматически изолируем код мини игр от стартового экрана логина
+          if (id.includes("MiniGames")) {
+            return "game-content-pack";
           }
         }
       }
