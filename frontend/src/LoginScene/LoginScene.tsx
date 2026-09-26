@@ -5,21 +5,21 @@ import { LoginUiManager } from "./LoginUiManager";
 
 export class LoginScene extends Phaser.Scene {
   public backgroundIm!: Phaser.GameObjects.Image;
-  private onStepCompleteCallback!: (action: "login" | "register") => void;
   private uiContainer: HTMLDivElement | null = null;
   private currentOrientation: "vert" | "goriz" | null = null;
   private reactRoot: Root | null = null;
 
   constructor() { super({ key: "LoginScene" }); }
 
-  public init(data?: { onStepComplete?: (action: "login" | "register") => void }): void {
-    this.onStepCompleteCallback = data?.onStepComplete || ((act) => this.handleSwitchScene(act));
+  public init(): void {
+    if (this.load.isLoading()) {
+      this.load.reset();
+    }
   }
 
   public preload(): void {}
 
   public create(): void {
-    if (typeof window !== "undefined") window.addEventListener("beforeunload", this.handleBeforeUnload);
     if (this.game.canvas) this.game.canvas.className = "absolute inset-0 w-full h-full z-1";
     this.cameras.main.setBackgroundColor("#000000");
 
@@ -113,9 +113,9 @@ export class LoginScene extends Phaser.Scene {
     if (this.backgroundIm?.active) {
       this.tweens.add({
         targets: this.backgroundIm, alpha: 0, duration: 200,
-        onComplete: () => this.scene.start(to, { sessionId: "mock-session-id" })
+        onComplete: () => this.scene.start(to, { isLoginFlow: action === "login" })
       });
-    } else this.scene.start(to, { sessionId: "mock-session-id" });
+    } else this.scene.start(to, { isLoginFlow: action === "login" });
   }
 
   private handleSceneWake(): void {

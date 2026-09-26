@@ -1,7 +1,7 @@
 import { EventBus } from "@/eventbus/EventBus";
 import { preloadSharedAssets } from "@/game/MiniGamesShared/preloadSharedAssets";
 import { clsx } from "clsx";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { LoginButton } from "./components/LoginButton";
 import { LoginLoader } from "./components/LoginLoader";
 import { RegisterLink } from "./components/RegisterLink";
@@ -10,6 +10,9 @@ import { useLoginStore } from "./store/useLoginStore";
 
 export const LoginUiManager = ({ phaserScene }: { phaserScene: LoginScene }) => {
   const { status, scale, isVert, updateField } = useLoginStore();
+  const animationRef = useRef<number | null>(null);
+  const targetProgressRef = useRef<number>(0);
+  const currentProgressRef = useRef<number>(0);
 
   useEffect(() => {
     updateField?.("status", "button");
@@ -34,13 +37,29 @@ export const LoginUiManager = ({ phaserScene }: { phaserScene: LoginScene }) => 
 
     return () => {
       phaserScene.events.off("phaser_scene_resize", handleResize).off("phaser_before_unload", handleUnload);
+      if (animationRef.current !== null) {
+        cancelAnimationFrame(animationRef.current);
+      }
     };
   }, [phaserScene, updateField]);
+
+  const resumeAudioContext = () => {
+    const soundManager = phaserScene.sound as any;
+    if (soundManager && soundManager.context && soundManager.context.state === "suspended") {
+      soundManager.context.resume().catch(() => {});
+    }
+  };
 
   const handleAction = (isLogin: boolean, action: "login" | "register") => {
     if (!phaserScene.sys.isActive()) return;
 
+    resumeAudioContext();
+
     const switchScene = () => {
+      if (animationRef.current !== null) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
       EventBus.emit("login_scene_stop");
       const targetSceneKey = action === "login" ? "Step2Scene" : "Step1Scene";
 
@@ -55,17 +74,36 @@ export const LoginUiManager = ({ phaserScene }: { phaserScene: LoginScene }) => 
       updateField("status", "loading");
       updateField("progress", 0);
 
-      // Привязываем реальный загрузчик Phaser к прогрессу бегемотика
+      targetProgressRef.current = 0;
+      currentProgressRef.current = 0;
+
+      const tick = () => {
+        if (currentProgressRef.current < targetProgressRef.current) {
+          currentProgressRef.current += 0.02;
+          if (currentProgressRef.current > targetProgressRef.current) {
+            currentProgressRef.current = targetProgressRef.current;
+          }
+          updateField("progress", currentProgressRef.current);
+        }
+
+        if (targetProgressRef.current >= 1 && currentProgressRef.current >= 1) {
+          switchScene();
+        } else {
+          animationRef.current = requestAnimationFrame(tick);
+        }
+      };
+
       phaserScene.load.on("progress", (value: number) => {
-        updateField("progress", value);
+        targetProgressRef.current = value;
       });
 
       phaserScene.load.once("complete", () => {
         phaserScene.load.off("progress");
-        switchScene();
+        targetProgressRef.current = 1;
       });
 
-      // Начинаем загрузку ассетов мини-игр прямо здесь!
+      animationRef.current = requestAnimationFrame(tick);
+
       preloadSharedAssets(phaserScene, "snake");
       preloadSharedAssets(phaserScene, "racing");
       preloadSharedAssets(phaserScene, "memory", true);
@@ -91,7 +129,9 @@ export const LoginUiManager = ({ phaserScene }: { phaserScene: LoginScene }) => 
             <RegisterLink onClick={() => handleAction(false, "register")} />
           </div>
         ) : (
-          <LoginLoader />
+          <div className="pointer-events-auto">
+            <LoginLoader />
+          </div>
         )}
       </div>
     </div>
