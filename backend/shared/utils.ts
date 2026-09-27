@@ -54,7 +54,7 @@ export const mapUserFields = (u: DbUser): UserProfile => {
   return {
     id,
     phone: u?.phone || "",
-    name: fullName,
+    player_name: fullName,
     discriminator,
     coins: coinsCount,
     unlockedPets: unlockedPetsCount,
@@ -62,5 +62,5 @@ export const mapUserFields = (u: DbUser): UserProfile => {
     petHealths: finalHealths,
     petExperiences: finalXp,
     petStars: finalStars
-  };
+  } as unknown as UserProfile;
 };

@@ -14,15 +14,7 @@ const PORT = Number(process.env.SERVER_PORT) || 3005;
 app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], allowedHeaders: ["Content-Type", "Authorization"] }));
 app.use(morgan("dev"));
 app.use(express.json());
-app.use(express.text({ type: ["text/plain", "application/json"] }));
 app.use(express.urlencoded({ extended: true }));
-
-app.use((req: Request, _res: Response, next: NextFunction) => {
-  if (typeof req.body === "string") {
-    try { req.body = JSON.parse(req.body); } catch {}
-  }
-  next();
-});
 
 app.use("/auth", authRouter);
 app.use("/game", gameRouter);
