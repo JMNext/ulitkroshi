@@ -23,15 +23,6 @@ const setupInterceptors = (instance: typeof authApiInstance) => {
     if (token && config.headers) {
       config.headers.Authorization = "Bearer " + token;
     }
-
-    // ХИТРЫЙ ПЕРЕХВАТЧИК: Уничтожаем ошибку 405 из кэша прямо «на лету»!
-    if (config.url === "/game/pharmacy/action" && config.method === "post" && config.data) {
-      const { actionType, total } = config.data;
-      config.method = "get";
-      config.url = `/game/pharmacy/action?actionType=${actionType}&total=${total}`;
-      config.data = undefined;
-    }
-
     return config;
   });
 
@@ -46,7 +37,7 @@ const setupInterceptors = (instance: typeof authApiInstance) => {
 
         if (refreshToken) {
           try {
-            const refreshResponse = await authApiInstance.post("/auth/refresh", { refreshToken });
+            const refreshResponse = await axios.post("/auth/refresh", { refreshToken });
             const data = refreshResponse.data;
 
             if (data?.accessToken) {
@@ -61,14 +52,18 @@ const setupInterceptors = (instance: typeof authApiInstance) => {
             }
           } catch {
             if (isClient) {
-              localStorage.clear();
-              window.location.reload();
+              localStorage.removeItem("accessToken");
+              localStorage.removeItem("refreshToken");
+              localStorage.removeItem("is_login_flow");
+              localStorage.removeItem("local_user_coins");
             }
           }
         } else {
           if (isClient) {
-            localStorage.clear();
-            window.location.reload();
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            localStorage.removeItem("is_login_flow");
+            localStorage.removeItem("local_user_coins");
           }
         }
       }
