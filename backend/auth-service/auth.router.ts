@@ -3,6 +3,7 @@ import { requireAuth } from "../shared/auth.middleware";
 import { AuthenticatedRequest } from "../shared/types";
 import * as service from "./auth.service";
 import { phoneCheckSchema, smsPhoneSchema, verifySmsSchema, verifyFruitSchema, petStatsSchema } from "./validation.schemas";
+import { mapUserFields } from "../shared/utils";
 
 export const authRouter = Router();
 
@@ -77,11 +78,8 @@ authRouter.post("/logout", requireAuth, async (req: AuthenticatedRequest, res: R
 });
 
 authRouter.get("/me", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  const auth = req.headers.authorization;
-  const token = auth?.startsWith("Bearer ") ? auth.split(" ")[1] : null;
-  if (!token) return res.status(401).json({ error: "Нет токена" });
-  const user = await service.getMe(token);
-  user ? res.json({ user }) : res.status(401).json({ error: "Не найден" });
+  if (!req.user) return res.status(401).json({ error: "Не найден" });
+  res.json({ user: mapUserFields(req.user as any) });
 });
 
 authRouter.get("/login/get-mvp-code", (req: Request, res: Response) => {
