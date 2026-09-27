@@ -23,6 +23,15 @@ const setupInterceptors = (instance: typeof authApiInstance) => {
     if (token && config.headers) {
       config.headers.Authorization = "Bearer " + token;
     }
+
+    // ХИТРЫЙ ПЕРЕХВАТЧИК: Уничтожаем ошибку 405 из кэша прямо «на лету»!
+    if (config.url === "/game/pharmacy/action" && config.method === "post" && config.data) {
+      const { actionType, total } = config.data;
+      config.method = "get";
+      config.url = `/game/pharmacy/action?actionType=${actionType}&total=${total}`;
+      config.data = undefined;
+    }
+
     return config;
   });
 
@@ -52,12 +61,14 @@ const setupInterceptors = (instance: typeof authApiInstance) => {
             }
           } catch {
             if (isClient) {
-              const keysToRemove = ["accessToken", "refreshToken", "is_login_flow"];
-              for (let i = 0; i < keysToRemove.length; i++) {
-                localStorage.removeItem(keysToRemove[i]);
-              }
+              localStorage.clear();
               window.location.reload();
             }
+          }
+        } else {
+          if (isClient) {
+            localStorage.clear();
+            window.location.reload();
           }
         }
       }
