@@ -23,7 +23,13 @@ export const createWalletSlice: StateCreator<ApiStateCombined, [], [], WalletSli
       const res = await gameApi.getCoins();
       const cc = res?.coins ?? getLocal();
       saveLocal(cc);
-      set({ coins: cc });
+
+      const currentUser = get().user;
+      if (currentUser) {
+        set({ coins: cc, user: { ...currentUser, coins: cc } });
+      } else {
+        set({ coins: cc });
+      }
     } catch {
       set({ coins: getLocal() });
     }
@@ -56,13 +62,25 @@ export const createWalletSlice: StateCreator<ApiStateCombined, [], [], WalletSli
     }
 
     saveLocal(next);
-    set({ coins: next });
+
+    const currentUserBefore = get().user;
+    if (currentUserBefore) {
+      set({ coins: next, user: { ...currentUserBefore, coins: next } });
+    } else {
+      set({ coins: next });
+    }
 
     try {
       const res = await gameApi.updateCoins(type, amt);
       const server = res && typeof res.coins === "number" ? res.coins : next;
       saveLocal(server);
-      set({ coins: server });
+
+      const currentUserAfter = get().user;
+      if (currentUserAfter) {
+        set({ coins: server, user: { ...currentUserAfter, coins: server } });
+      } else {
+        set({ coins: server });
+      }
       return true;
     } catch {
       return true;

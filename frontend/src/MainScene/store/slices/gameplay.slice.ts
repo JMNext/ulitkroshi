@@ -77,7 +77,10 @@ export const createGameplaySlice: StateCreator<MainGameStateCombined, [], [], Ga
 
       const currentUser = auth.user;
       if (currentUser) {
-        useApiStore.setState({ user: { ...currentUser, coins: next } });
+        useApiStore.setState({
+          coins: next,
+          user: { ...currentUser, coins: next }
+        });
       }
     } catch {
       set({ coins: prev });

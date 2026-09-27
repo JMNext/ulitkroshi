@@ -25,7 +25,10 @@ export const createProfileSlice: StateCreator<MainGameStateCombined, [], [], Pro
       await auth.executeAction("buy_shop_items", safeCost);
       const currentUser = auth.user;
       if (currentUser) {
-        useApiStore.setState({ user: { ...currentUser, coins: nextCoins } });
+        useApiStore.setState({
+          coins: nextCoins,
+          user: { ...currentUser, coins: nextCoins }
+        });
       }
     } catch {
       set({ coins: prevCoins });
