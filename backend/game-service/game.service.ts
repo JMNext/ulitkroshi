@@ -18,7 +18,7 @@ export const feedPet = async (userId: number) => {
     if (!check.rows.length) return { error: "Не найден", status: 404 };
 
     const upd = await dbPool.query<DbUser>(
-      `UPDATE users SET pet_healths = LEAST(100, COALESCE(pet_healths, 100) + 20) WHERE id = $1 RETURNING *`,
+      `UPDATE users SET pet_healths = ARRAY[LEAST(100, COALESCE(pet_healths[1], 100) + 20)]::INTEGER[] WHERE id = $1 RETURNING *`,
       [userId]
     );
     const u = getFirstRow(upd);
@@ -47,21 +47,22 @@ export const handleGameAction = async (userId: number, type: string | undefined,
 
   try {
     const q = type === "buy_medicine"
-      ? `UPDATE users SET coins = GREATEST(0, COALESCE(coins, 0) + $1), pet_healths = GREATEST(1, COALESCE(pet_healths, 100) - 25) WHERE id = $2 RETURNING coins, pet_healths`
+      ? `UPDATE users SET coins = GREATEST(0, COALESCE(coins, 0) + $1), pet_healths = ARRAY[GREATEST(1, COALESCE(pet_healths[1], 100) - 25)]::INTEGER[] WHERE id = $2 RETURNING coins, pet_healths`
       : `UPDATE users SET coins = GREATEST(0, COALESCE(coins, 0) + $1) WHERE id = $2 RETURNING coins, pet_healths`;
 
-    const r = await dbPool.query<{ coins: number; pet_healths: number[] }>(q, [price, userId]);
+    const r = await dbPool.query<{ coins: number; pet_healths: number[] | null }>(q, [price, userId]);
     const u = getFirstRow(r);
     if (!u) return { error: "Не найден", status: 404 };
 
     return {
       data: {
         coins: Number(u.coins ?? 0),
-        petHealth: Array.isArray(u.pet_healths) ? Number(u.pet_healths ?? 100) : 100
+        petHealth: Array.isArray(u.pet_healths) && u.pet_healths.length > 0 ? Number(u.pet_healths[0] ?? 100) : 100
       },
       status: 200
     };
-  } catch {
+  } catch (err) {
+    console.error("Критическая ошибка SQL в handleGameAction:", err);
     return { error: "Ошибка БД", status: 500 };
   }
 };
