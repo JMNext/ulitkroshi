@@ -2,7 +2,16 @@ import axios from "axios";
 
 export const isMock = false;
 
-const BASE_URL = "";
+const getBaseUrl = (): string => {
+  if (typeof window === "undefined") return "";
+  const { protocol, hostname } = window.location;
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    return `${protocol}//${hostname}:3005`;
+  }
+  return `${protocol}//${hostname}:3005`;
+};
+
+const BASE_URL = getBaseUrl();
 
 export const authApiInstance = axios.create({
   baseURL: BASE_URL,
