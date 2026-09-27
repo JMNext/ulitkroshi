@@ -29,28 +29,15 @@ gameRouter.get("/pharmacy/coins", requireAuth, async (req: AuthenticatedRequest,
   coins ? res.json(coins) : res.status(404).json({ error: "Не найден" });
 });
 
-const handleActionRoute = async (req: AuthenticatedRequest, res: Response) => {
+gameRouter.get("/pharmacy/action", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const id = checkAuth(req, res); if (!id) return;
 
-  const actionType = req.body?.actionType || req.body?.type || req.query?.actionType;
-  const rawTotal = req.body?.total !== undefined ? req.body.total : (req.body?.amt || req.query?.total);
+  const actionType = String(req.query?.actionType || req.body?.actionType || "");
+  const rawTotal = req.query?.total !== undefined ? req.query.total : req.body?.total;
   const total = rawTotal !== undefined && rawTotal !== null ? Number(rawTotal) : 0;
 
   const resData = await service.handleGameAction(id, actionType, total);
-
-  if ("error" in resData) {
-    return res.status(resData.status).json({ error: resData.error });
-  }
+  if ("error" in resData) return res.status(resData.status).json({ error: resData.error });
 
   res.json(resData.data);
-};
-
-gameRouter.post("/pharmacy/action", requireAuth, handleActionRoute);
-gameRouter.put("/pharmacy/action", requireAuth, handleActionRoute);
-
-gameRouter.all("/pharmacy/action", (req, res) => {
-  res.status(405).json({
-    error: "Method Not Allowed (Ошибка 405)",
-    message: "Фронтенд отправил метод, но сервер ожидает POST или PUT на /api-game/pharmacy/action."
-  });
 });

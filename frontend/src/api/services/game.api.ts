@@ -18,7 +18,8 @@ export const gameApi = {
       if (typeof window !== "undefined") localStorage.setItem("local_user_coins", String(nextCoins));
       return { coins: nextCoins };
     }
-    return (await gameApiInstance.post<{ coins: number }>("/api-game/pharmacy/action", { actionType, total: total !== undefined ? Number(total) : 0 })).data;
+    const val = total !== undefined ? Number(total) : 0;
+    return (await gameApiInstance.get<{ coins: number }>(`/api-game/pharmacy/action?actionType=${actionType}&total=${val}`)).data;
   },
 
   async damagePet(): Promise<{ coins: number; petHealth: number }> {
@@ -28,7 +29,7 @@ export const gameApi = {
       if (typeof window !== "undefined") localStorage.setItem("local_user_coins", String(nextCoins));
       return { coins: nextCoins, petHealth: 75 };
     }
-    return (await gameApiInstance.post<{ coins: number; petHealth: number }>("/api-game/pharmacy/action", { actionType: "buy_medicine" })).data;
+    return (await gameApiInstance.get<{ coins: number; petHealth: number }>("/api-game/pharmacy/action?actionType=buy_medicine")).data;
   },
 
   feedPet: async (): Promise<UserProfile> => {
