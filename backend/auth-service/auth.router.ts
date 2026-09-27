@@ -2,6 +2,7 @@ import { Request, Response, Router } from "express";
 import { requireAuth } from "../shared/auth.middleware";
 import { AuthenticatedRequest } from "../shared/types";
 import * as service from "./auth.service";
+import * as gameService from "../game-service/game.service";
 import { phoneCheckSchema, smsPhoneSchema, verifySmsSchema, verifyFruitSchema, petStatsSchema } from "./validation.schemas";
 import { mapUserFields } from "../shared/utils";
 
@@ -98,4 +99,37 @@ authRouter.put("/pet/stats", requireAuth, async (req: AuthenticatedRequest, res:
   if (!parsed.success) return res.status(400).json({ error: "Неверные параметры" });
   const ok = await service.syncPetStats(id, parsed.data.petHealth, parsed.data.petExperience, parsed.data.petStars, parsed.data.petIndex);
   ok ? res.json({ success: true }) : res.status(500).json({ error: "Ошибка обновления" });
+});
+
+authRouter.get("/pharmacy/status", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const id = Number(req.user?.id); if (!id) return res.status(401).json({ error: "Не авторизован" });
+  const status = await gameService.getPetStatus(id);
+  status ? res.json(status) : res.status(404).json({ error: "Не найден" });
+});
+
+authRouter.post("/pharmacy/feed", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const id = Number(req.user?.id); if (!id) return res.status(401).json({ error: "Не авторизован" });
+  const resData = await gameService.feedPet(id);
+  resData && "error" in resData ? res.status(resData.status).json({ error: resData.error }) : res.json(resData);
+});
+
+authRouter.get("/pharmacy/coins", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const id = Number(req.user?.id); if (!id) return res.status(401).json({ error: "Не авторизован" });
+  const coins = await gameService.getUserCoins(id);
+  coins ? res.json(coins) : res.status(404).json({ error: "Не найден" });
+});
+
+authRouter.post("/pharmacy/action", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  res.setHeader("Content-Type", "application/json");
+  const id = Number(req.user?.id);
+  if (!id) return res.status(401).json({ error: "Не авторизован" });
+
+  const actionType = String(req.body?.actionType || "").trim();
+  const rawTotal = req.body?.total;
+  const total = rawTotal !== undefined && rawTotal !== null ? Number(rawTotal) : 0;
+
+  const resData = await gameService.handleGameAction(id, actionType, total);
+  if (resData && "error" in resData) return res.status(resData.status || 400).json({ error: resData.error, coins: 0 });
+
+  res.json(resData);
 });

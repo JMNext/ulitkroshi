@@ -5,7 +5,7 @@ import { DEFAULT_USER_PROFILE, getMockCoins } from "./auth.api";
 export const gameApi = {
   getCoins: async (): Promise<{ coins: number }> => {
     if (isMock) return { coins: getMockCoins() };
-    return (await gameApiInstance.get<{ coins: number }>("/api/v1/pharmacy/coins")).data;
+    return (await gameApiInstance.get<{ coins: number }>("/auth/pharmacy/coins")).data;
   },
 
   async updateCoins(actionType: "buy_medicine" | "mini_game_reward" | "buy_shop_items", total?: number): Promise<{ coins: number }> {
@@ -18,7 +18,7 @@ export const gameApi = {
       if (typeof window !== "undefined") localStorage.setItem("local_user_coins", String(nextCoins));
       return { coins: nextCoins };
     }
-    return (await gameApiInstance.post<{ coins: number }>("/api/v1/pharmacy/action", { actionType, total: total !== undefined ? Number(total) : 0 })).data;
+    return (await gameApiInstance.post<{ coins: number }>("/auth/pharmacy/action", { actionType, total: total !== undefined ? Number(total) : 0 })).data;
   },
 
   async damagePet(): Promise<{ coins: number; petHealth: number }> {
@@ -28,16 +28,16 @@ export const gameApi = {
       if (typeof window !== "undefined") localStorage.setItem("local_user_coins", String(nextCoins));
       return { coins: nextCoins, petHealth: 75 };
     }
-    return (await gameApiInstance.post<{ coins: number; petHealth: number }>("/api/v1/pharmacy/action", { actionType: "buy_medicine" })).data;
+    return (await gameApiInstance.post<{ coins: number; petHealth: number }>("/auth/pharmacy/action", { actionType: "buy_medicine" })).data;
   },
 
   feedPet: async (): Promise<UserProfile> => {
     if (isMock) return { ...DEFAULT_USER_PROFILE, coins: getMockCoins(), petHealths: [] };
-    return (await gameApiInstance.post<UserProfile>("/api/v1/pharmacy/feed")).data;
+    return (await gameApiInstance.post<UserProfile>("/auth/pharmacy/feed")).data;
   },
 
   getPetStatus: async (): Promise<UserProfile> => {
     if (isMock) return { ...DEFAULT_USER_PROFILE, coins: getMockCoins() };
-    return (await gameApiInstance.get<UserProfile>("/api/v1/pharmacy/status")).data;
+    return (await gameApiInstance.get<UserProfile>("/auth/pharmacy/status")).data;
   }
 };
