@@ -13,9 +13,14 @@ interface GameOverModalUIProps {
   gameType?: "catch" | "memory" | "snake" | "racing";
 }
 
-export const GameOverModalUI = ({ onRestart, onBack, score, difficulty, gameType }: GameOverModalUIProps) => {
+export const GameOverModalUI = ({ onRestart, onBack, score, difficulty, gameType, isWin: initialIsWin }: GameOverModalUIProps) => {
   const [scale, setScale] = useState(1);
-  const { gameOverResult } = useMainGameStore();
+  const { gameOverResult, setGameOver } = useMainGameStore();
+
+  useEffect(() => {
+    // В момент открытия модалки принудительно отправляем награду на сервер через созданный нами ранее экшен
+    setGameOver(score, difficulty, !!initialIsWin);
+  }, [score, difficulty, initialIsWin, setGameOver]);
 
   useLayoutEffect(() => {
     if (!gameOverResult) return;

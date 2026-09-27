@@ -45,7 +45,7 @@ export const createWalletSlice: StateCreator<ApiStateCombined, [], [], WalletSli
 
     if (type === "mini_game_reward") {
       let earned = total;
-      if (earned === 0) {
+      if (earned === 0 || earned === undefined) {
         if (typeof diff === "string") {
           earned = diff === "memory" ? total : total === 999 || total >= 20 ? (diff === "hard" ? 2 : 1) : 2;
         } else {
@@ -72,7 +72,7 @@ export const createWalletSlice: StateCreator<ApiStateCombined, [], [], WalletSli
     }
 
     try {
-      const res = await gameApi.updateCoins(type, amt);
+      const res = await gameApi.updateCoins(type, Number(amt || 0));
       const server = res && typeof res.coins === "number" ? res.coins : next;
       saveLocal(server);
 

@@ -58,14 +58,12 @@ const ReactiveOverlay: React.FC<ReactiveOverlayProps> = ({ gameKey, scene }) => 
   };
 
   return React.createElement("div", { className: "absolute inset-0 w-full h-full pointer-events-none" },
-    // Для игры Memory передаем hp как undefined, чтобы компонент GameHeaderLeft отрендерил ТОЛЬКО кнопку НАЗАД
     React.createElement(GameHeaderLeft, {
       hp: gameKey === "memory" ? undefined : hp,
       currentScale: scale,
       onBack: handleBack
     }),
 
-    // Верхний правый счет показываем только для остальных игр
     gameKey !== "memory" && React.createElement(GameHeaderRight, { score, currentScale: scale }),
 
     isGameOver && React.createElement("div", { className: "pointer-events-auto absolute inset-0 z-50 flex items-center justify-center bg-black/40" },
@@ -73,7 +71,6 @@ const ReactiveOverlay: React.FC<ReactiveOverlayProps> = ({ gameKey, scene }) => 
         score,
         isWin,
         gameType: gameKey as any,
-        // Передаем принудительно difficulty="memory", чтобы внутреннее условие в GameOverModalUI скрыло строчку со счетом
         difficulty: gameKey === "memory" ? "memory" : scene.difficulty,
         onRestart: handleRestart,
         onBack: handleBack
