@@ -18,7 +18,9 @@ export const feedPet = async (userId: number) => {
     if (!check.rows.length) return { error: "Не найден", status: 404 };
 
     const upd = await dbPool.query<DbUser>(
-      `UPDATE users SET pet_healths = ARRAY[LEAST(100, COALESCE(pet_healths[1], 100) + 20)]::INTEGER[] WHERE id = $1 RETURNING *`,
+      `UPDATE users
+       SET pet_healths[1] = LEAST(100, COALESCE(pet_healths[1], 100) + 20)
+       WHERE id = $1 RETURNING *`,
       [userId]
     );
     const u = getFirstRow(upd);
@@ -48,9 +50,14 @@ export const handleGameAction = async (userId: number, type: string | undefined,
   try {
     let q = "";
     if (type === "buy_medicine") {
-      q = `UPDATE users SET coins = GREATEST(0, COALESCE(coins, 0) + $1), pet_healths = ARRAY[GREATEST(1, COALESCE(pet_healths[1], 100) - 25)]::INTEGER[] WHERE id = $2 RETURNING coins, pet_healths`;
+      q = `UPDATE users
+           SET coins = GREATEST(0, COALESCE(coins, 0) + $1),
+               pet_healths[1] = GREATEST(1, COALESCE(pet_healths[1], 100) - 25)
+           WHERE id = $2 RETURNING coins, pet_healths`;
     } else {
-      q = `UPDATE users SET coins = GREATEST(0, COALESCE(coins, 0) + $1) WHERE id = $2 RETURNING coins, pet_healths`;
+      q = `UPDATE users
+           SET coins = GREATEST(0, COALESCE(coins, 0) + $1)
+           WHERE id = $2 RETURNING coins, pet_healths`;
     }
 
     const r = await dbPool.query<any>(q, [price, userId]);
