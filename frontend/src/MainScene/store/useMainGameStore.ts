@@ -47,7 +47,9 @@ export const useMainGameStore = create<MainGameStateCombined>()((set, get, ...a)
   },
   setUpdatingCoinsGlobal: (val) => { isUpdatingCoinsGlobal = val; },
   resetStore: async () => {
-    set({ avatarId: "default", modal: null, username: "", discriminator: "0000", userId: null, isHelpShown: false, alertText: null, isFoodOpen: false, gameOverResult: null });
+    // Безопасное обнуление: принудительно затираем coins в 0 вместе с остальными полями сессии
+    set({ coins: 0, avatarId: "default", modal: null, username: "", discriminator: "0000", userId: null, isHelpShown: false, alertText: null, isFoodOpen: false, gameOverResult: null });
+
     if (typeof window !== "undefined") {
       EventBus.emit("main_scene_stop"); EventBus.emit("login_scene_start");
       const win = window as unknown as CustomWindow;
@@ -64,7 +66,6 @@ useApiStore.subscribe((state) => {
   if (!u && !isMock) return;
 
   const activeUser = u || { ...DEFAULT_USER_PROFILE, coins: getMockCoins() };
-
   const extendedUser = activeUser as UserProfile & { name?: string; username?: string; tgName?: string; discriminator?: string; tag?: string };
 
   const rawName = extendedUser.name || extendedUser.player_name || extendedUser.username || extendedUser.tgName || "Player#1000";
@@ -95,7 +96,7 @@ useApiStore.subscribe((state) => {
   if (localName) namePart = localName.trim();
 
   const nextState: any = {
-    coins: u ? (state.coins !== undefined && state.coins !== null ? state.coins : (u.coins || 0)) : getMockCoins(),
+    coins: u ? (state.coins !== undefined && state.coins !== null ? state.coins : (u.coins || 0)) : useMainGameStore.getState().coins,
     username: namePart,
     discriminator: discPart,
     userId: extendedUser.id ? Number(extendedUser.id) : null

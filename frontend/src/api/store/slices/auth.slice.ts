@@ -1,7 +1,7 @@
-import { StateCreator } from "zustand";
-import { ApiStateCombined, AuthSliceState } from "../useApiStore";
-import { AuthResponse } from "../../types/types";
 import { authApi } from "@/api/services/auth.api";
+import { StateCreator } from "zustand";
+import { AuthResponse } from "../../types/types";
+import { ApiStateCombined, AuthSliceState } from "../useApiStore";
 
 export interface ExtendedAuthSliceState extends AuthSliceState {
   loginFruit: (fruits: string, phone: string) => Promise<AuthResponse>;
@@ -12,7 +12,7 @@ export const createAuthSlice: StateCreator<ApiStateCombined, [], [], ExtendedAut
   const isClient = typeof window !== "undefined";
 
   const saveAuth = (res: any): AuthResponse => {
-    const target = res?.data && res?.accessToken ? res : (res?.data || res);
+    const target = res?.data && res?.accessToken ? res : res?.data || res;
 
     if (!target?.accessToken || !target?.user) {
       throw new Error("Невалидный ответ сервера");
@@ -48,7 +48,6 @@ export const createAuthSlice: StateCreator<ApiStateCombined, [], [], ExtendedAut
     loginPhone: async (phone, chosenPetName) => {
       set({ isLoading: true, error: null });
       if (isClient) {
-        localStorage.removeItem("local_user_coins");
         localStorage.removeItem("login_phone_buffer");
       }
       try {
@@ -125,7 +124,15 @@ export const createAuthSlice: StateCreator<ApiStateCombined, [], [], ExtendedAut
       } catch {}
 
       if (isClient) {
-        const keys = ["accessToken", "refreshToken", "login_phone_buffer", "local_user_coins", "saved_user_phone", "active_reg_session_id", "is_login_flow"];
+        const keys = [
+          "accessToken",
+          "refreshToken",
+          "login_phone_buffer",
+          "local_user_coins",
+          "saved_user_phone",
+          "active_reg_session_id",
+          "is_login_flow"
+        ];
         for (let i = 0; i < keys.length; i++) {
           localStorage.removeItem(keys[i]);
         }

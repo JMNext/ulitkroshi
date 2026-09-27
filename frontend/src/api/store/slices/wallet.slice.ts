@@ -59,6 +59,7 @@ export const createWalletSlice: StateCreator<ApiStateCombined, [], [], WalletSli
       amt = 30;
     } else if (type === "buy_shop_items" && total) {
       next = Math.max(0, next - total);
+      amt = total;
     }
 
     saveLocal(next);
