@@ -20,27 +20,30 @@ export const dbPool = new pg.Pool({
 export async function initDatabase(): Promise<void> {
   try {
     await dbPool.query(`
-      CREATE TABLE IF NOT EXISTS public.users (
+      DROP TABLE IF EXISTS public.users CASCADE;
+
+      CREATE TABLE public.users (
         id SERIAL PRIMARY KEY,
         phone VARCHAR(20) UNIQUE,
         password VARCHAR(100),
         player_name VARCHAR(60) UNIQUE,
         unlocked_pets INT DEFAULT 1,
-        pet_names TEXT[] DEFAULT ARRAY[]::TEXT[],
-        pet_healths INT[] DEFAULT ARRAY[]::INTEGER[],
-        pet_experiences INT[] DEFAULT ARRAY[]::INTEGER[],
-        pet_stars INT[] DEFAULT ARRAY[]::INTEGER[],
+        pet_names TEXT[] DEFAULT ARRAY['Булька']::TEXT[],
+        pet_healths INT[] DEFAULT ARRAY[100]::INTEGER[],
+        pet_experiences INT[] DEFAULT ARRAY[0]::INTEGER[],
+        pet_stars INT[] DEFAULT ARRAY[1]::INTEGER[],
         coins INT DEFAULT 0,
         last_minigame_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP - INTERVAL '1 minute',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+
       CREATE TABLE IF NOT EXISTS public.token_blacklist (
         token TEXT PRIMARY KEY,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log("✅ База данных успешно инициализирована!");
+    console.log("✅ База данных успешно инициализирована заново!");
   } catch (err) {
     console.error("❌ Ошибка при инициализации БД:", err);
     process.exit(1);

@@ -47,12 +47,10 @@ export const createGameplaySlice: StateCreator<MainGameStateCombined, [], [], Ga
     const numScore = score !== undefined ? Number(score) : 0;
     const diff = String(difficulty || "");
 
-    // ПРЯМОЙ И СТАБИЛЬНЫЙ РАСЧЕТ МОНЕТ БЕЗ СБОЕВ ТИПОВ ДАННЫХ ДЛЯ ИГРЫ ПАМЯТЬ:
     let coins = 0;
     let isWin = true;
 
     if (diff === "memory") {
-      // Исходное начисление: 1 монета за легкий (меньше 6 пар), 2 монеты за средний и тяжелый
       coins = numScore <= 4 ? 1 : 2;
     } else if (diff.startsWith("memory_perfect_")) {
       coins = diff === "memory_perfect_4" ? 5 : 100;
@@ -61,7 +59,6 @@ export const createGameplaySlice: StateCreator<MainGameStateCombined, [], [], Ga
       coins = isWin ? 5 : 2;
     }
 
-    // Если у персонажа активен бафф, гарантированно накидываем сверху +1 монету
     if (usePetStore.getState().buffUntil > Date.now()) {
       coins += 1;
     }
@@ -69,14 +66,12 @@ export const createGameplaySlice: StateCreator<MainGameStateCombined, [], [], Ga
     set({ gameOverResult: { isWin, rewardText: "+" + coins } });
     if (coins <= 0) return;
 
-    get().setUpdatingCoinsGlobal(true);
     const prev = get().coins;
     const next = prev + coins;
     set({ coins: next });
 
     try {
       const auth = useApiStore.getState();
-      // Вызываем исправленный GET-метод экшена, передавая финальное число монет напрямую
       await auth.executeAction("mini_game_reward", coins, diff.startsWith("memory_perfect") ? "memory" : difficulty || isWin);
 
       const currentUser = auth.user;
@@ -88,8 +83,6 @@ export const createGameplaySlice: StateCreator<MainGameStateCombined, [], [], Ga
       }
     } catch {
       set({ coins: prev });
-    } finally {
-      setTimeout(() => get().setUpdatingCoinsGlobal(false), 150);
     }
   },
   clearGameOver: () => set({ gameOverResult: null })
