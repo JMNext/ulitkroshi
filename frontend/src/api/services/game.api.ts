@@ -3,7 +3,10 @@ import { UserProfile } from "@/api/types/types";
 import { DEFAULT_USER_PROFILE, getMockCoins } from "./auth.api";
 
 export const gameApi = {
-  getCoins: async (): Promise<{ coins: number }> => ({ coins: getMockCoins() }),
+  getCoins: async (): Promise<{ coins: number }> => {
+    if (isMock) return { coins: getMockCoins() };
+    return (await gameApiInstance.get<{ coins: number }>("/game/pharmacy/coins")).data;
+  },
 
   async updateCoins(actionType: "buy_medicine" | "mini_game_reward" | "buy_shop_items", total?: number): Promise<{ coins: number }> {
     if (isMock) {

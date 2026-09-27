@@ -58,6 +58,10 @@ export const authApi = {
 
     const u = res.user || res.data || res;
 
+    if (typeof window !== "undefined" && u && typeof u.coins === "number") {
+      localStorage.setItem("local_user_coins", String(u.coins));
+    }
+
     let finalName = u.player_name || u.name || u.username || u.tgName || "Player";
     if (!finalName.includes("#")) {
       const disc = u.discriminator || u.tag || (u.id ? String(u.id).padStart(4, "0") : "1000");
@@ -76,6 +80,9 @@ export const authApi = {
     if (d?.accessToken) {
       localStorage.setItem("accessToken", d.accessToken);
       localStorage.setItem("refreshToken", d.refreshToken);
+      if (d?.user && typeof d.user.coins === "number") {
+        localStorage.setItem("local_user_coins", String(d.user.coins));
+      }
     }
     return d;
   },
