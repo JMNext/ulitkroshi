@@ -46,11 +46,14 @@ export const handleGameAction = async (userId: number, type: string | undefined,
   const price = type === "buy_shop_items" ? -(Number(total) || 0) : type === "mini_game_reward" ? Number(total) || 0 : type === "buy_medicine" ? -30 : 0;
 
   try {
-    const q = type === "buy_medicine"
-      ? `UPDATE users SET coins = GREATEST(0, COALESCE(coins, 0) + $1), pet_healths = ARRAY[GREATEST(1, COALESCE(pet_healths[1], 100) - 25)]::INTEGER[] WHERE id = $2 RETURNING coins, pet_healths`
-      : `UPDATE users SET coins = GREATEST(0, COALESCE(coins, 0) + $1) WHERE id = $2 RETURNING coins, pet_healths`;
+    let q = "";
+    if (type === "buy_medicine") {
+      q = `UPDATE users SET coins = GREATEST(0, COALESCE(coins, 0) + $1), pet_healths = ARRAY[GREATEST(1, COALESCE(pet_healths[1], 100) - 25)]::INTEGER[] WHERE id = $2 RETURNING coins, pet_healths`;
+    } else {
+      q = `UPDATE users SET coins = GREATEST(0, COALESCE(coins, 0) + $1) WHERE id = $2 RETURNING coins, pet_healths`;
+    }
 
-    const r = await dbPool.query<{ coins: number; pet_healths: number[] | null }>(q, [price, userId]);
+    const r = await dbPool.query<any>(q, [price, userId]);
     const u = getFirstRow(r);
     if (!u) return { error: "Не найден", status: 404 };
 
@@ -62,7 +65,6 @@ export const handleGameAction = async (userId: number, type: string | undefined,
       status: 200
     };
   } catch (err) {
-    console.error("Критическая ошибка SQL в handleGameAction:", err);
     return { error: "Ошибка БД", status: 500 };
   }
 };
