@@ -20,7 +20,7 @@ gameRouter.get("/pharmacy/status", requireAuth, async (req: AuthenticatedRequest
 gameRouter.post("/pharmacy/feed", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const id = checkAuth(req, res); if (!id) return;
   const resData = await service.feedPet(id);
-  "error" in resData ? res.status(resData.status).json({ error: resData.error }) : res.json(resData.data);
+  resData && "error" in resData ? res.status(resData.status).json({ error: resData.error }) : res.json(resData);
 });
 
 gameRouter.get("/pharmacy/coins", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
@@ -30,11 +30,33 @@ gameRouter.get("/pharmacy/coins", requireAuth, async (req: AuthenticatedRequest,
 });
 
 gameRouter.post("/pharmacy/action", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  res.setHeader("Content-Type", "application/json");
   const id = checkAuth(req, res); if (!id) return;
 
   const actionType = String(req.body?.actionType || "").trim();
-  const total = req.body?.total !== undefined ? Number(req.body.total) : 0;
+  const rawTotal = req.body?.total;
+  const total = rawTotal !== undefined && rawTotal !== null ? Number(rawTotal) : 0;
 
   const resData = await service.handleGameAction(id, actionType, total);
-  "error" in resData ? res.status(resData.status).json({ error: resData.error }) : res.json(resData.data);
+
+  if (resData && "error" in resData) {
+    return res.status(resData.status || 400).json({
+      error: resData.error,
+      coins: 0,
+      serverDebug: {
+        userId: id,
+        incomingBody: req.body,
+        serviceResult: resData
+      }
+    });
+  }
+
+  res.json({
+    ...resData,
+    serverDebug: {
+      userId: id,
+      incomingBody: req.body,
+      status: "Успешно обработано сервером"
+    }
+  });
 });

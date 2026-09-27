@@ -71,8 +71,12 @@ export const createWalletSlice: StateCreator<ApiStateCombined, [], [], WalletSli
       set({ coins: next });
     }
 
+    console.log(`[КОШЕЛЕК] Сетевой запрос к gameApi.updateCoins. Тип: ${type}, Количество: ${amt}`);
+
     try {
       const res = await gameApi.updateCoins(type, Number(amt || 0));
+      console.log("[КОШЕЛЕК] Сырой ответ от бэкенда:", res);
+
       const server = res && typeof res.coins === "number" ? res.coins : next;
       saveLocal(server);
 
@@ -83,7 +87,8 @@ export const createWalletSlice: StateCreator<ApiStateCombined, [], [], WalletSli
         set({ coins: server });
       }
       return true;
-    } catch {
+    } catch (err: any) {
+      console.error("[КОШЕЛЕК] Ошибка в executeAction catch:", err?.message || err);
       return true;
     }
   }

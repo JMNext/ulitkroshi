@@ -63,6 +63,8 @@ export const createGameplaySlice: StateCreator<MainGameStateCombined, [], [], Ga
       coins += 1;
     }
 
+    console.log(`[ФРОНТЕНД] Расчёт завершён. Очки: ${numScore}, Сложность: ${diff}, Награда: ${coins}`);
+
     set({ gameOverResult: { isWin, rewardText: "+" + coins } });
     if (coins <= 0) return;
 
@@ -72,6 +74,8 @@ export const createGameplaySlice: StateCreator<MainGameStateCombined, [], [], Ga
 
     try {
       const auth = useApiStore.getState();
+      console.log(`[ФРОНТЕНД] Отправка в executeAction. Текущие монеты в useApiStore: ${auth.coins}`);
+
       await auth.executeAction("mini_game_reward", coins, diff.startsWith("memory_perfect") ? "memory" : difficulty || isWin);
 
       const currentUser = auth.user;
@@ -81,7 +85,8 @@ export const createGameplaySlice: StateCreator<MainGameStateCombined, [], [], Ga
           user: { ...currentUser, coins: next }
         });
       }
-    } catch {
+    } catch (err: any) {
+      console.error("[ФРОНТЕНД] Ошибка отправки награды в сеть:", err?.message || err);
       set({ coins: prev });
     }
   },
