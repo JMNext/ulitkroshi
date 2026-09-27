@@ -32,7 +32,6 @@ authRouter.get("/login/phone", async (req: Request, res: Response) => {
   res.json({ success: true, sessionId: await service.requestSmsCode(phone, chosenPetName), isLogin: await service.checkUserExists(phone) });
 });
 
-
 authRouter.post("/login/verify-sms", async (req: Request, res: Response) => {
   const parsed = verifySmsSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Ошибка параметров" });
@@ -82,7 +81,7 @@ authRouter.get("/me", requireAuth, async (req: AuthenticatedRequest, res: Respon
   const token = auth?.startsWith("Bearer ") ? auth.split(" ")[1] : null;
   if (!token) return res.status(401).json({ error: "Нет токена" });
   const user = await service.getMe(token);
-  user ? res.json(user) : res.status(401).json({ error: "Не найден" });
+  user ? res.json({ user }) : res.status(401).json({ error: "Не найден" });
 });
 
 authRouter.get("/login/get-mvp-code", (req: Request, res: Response) => {

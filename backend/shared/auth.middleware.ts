@@ -16,10 +16,14 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
     if (bl.rows.length) return res.status(401).json({ error: "Сессия отозвана. Войдите заново." });
 
     const dec = jwt.verify(token, JWT_SECRET) as { id: number };
-    const user = getFirstRow(await dbPool.query("SELECT id, player_name FROM users WHERE id = \$1", [dec.id]));
+    const user = getFirstRow(await dbPool.query("SELECT * FROM users WHERE id = \$1", [dec.id]));
     if (!user) return res.status(401).json({ error: "Пользователь не найден." });
 
-    req.user = { id: Number(user.id), name: String(user.player_name || `Player_${user.id}`) };
+    req.user = {
+      id: Number(user.id),
+      name: String(user.player_name || `Player_${user.id}`),
+      ...user
+    };
     next();
   } catch {
     return res.status(401).json({ error: "Сессия истекла. Войдите заново." });

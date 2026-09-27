@@ -31,6 +31,11 @@ gameRouter.get("/pharmacy/coins", requireAuth, async (req: AuthenticatedRequest,
 
 gameRouter.post("/pharmacy/action", requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const id = checkAuth(req, res); if (!id) return;
-  const resData = await service.handleGameAction(id, req.body?.actionType, req.body?.total !== undefined ? Number(req.body.total) : undefined);
+
+  const actionType = req.body?.actionType || req.body?.type;
+  const rawTotal = req.body?.total !== undefined ? req.body.total : req.body?.amt;
+  const total = rawTotal !== undefined && rawTotal !== null ? Number(rawTotal) : 0;
+
+  const resData = await service.handleGameAction(id, actionType, total);
   "error" in resData ? res.status(resData.status).json({ error: resData.error }) : res.json(resData.data);
 });
