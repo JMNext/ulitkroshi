@@ -17,7 +17,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/auth", authRouter);
-app.use("/game", gameRouter);
+app.use("/api-game", gameRouter);
 
 app.get("/", (_req: Request, res: Response) => {
   res.json({ message: "Единый монолитный сервер Улиткрошей успешно запущен! 🐌🔑" });

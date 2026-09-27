@@ -29,7 +29,6 @@ gameRouter.get("/pharmacy/coins", requireAuth, async (req: AuthenticatedRequest,
   coins ? res.json(coins) : res.status(404).json({ error: "Не найден" });
 });
 
-// ЛОВУШКА 1: Дублируем роут на POST и PUT методы, чтобы намертво убить ошибку 405
 const handleActionRoute = async (req: AuthenticatedRequest, res: Response) => {
   const id = checkAuth(req, res); if (!id) return;
 
@@ -37,14 +36,10 @@ const handleActionRoute = async (req: AuthenticatedRequest, res: Response) => {
   const rawTotal = req.body?.total !== undefined ? req.body.total : (req.body?.amt || req.query?.total);
   const total = rawTotal !== undefined && rawTotal !== null ? Number(rawTotal) : 0;
 
-  // Лог прямо в тело HTTP-ответа, чтобы ты увидел его во фронтенде во вкладке Network!
   const resData = await service.handleGameAction(id, actionType, total);
 
   if ("error" in resData) {
-    return res.status(resData.status).json({
-      error: resData.error,
-      debug: { incomingBody: req.body, incomingQuery: req.query, parsedType: actionType, parsedTotal: total }
-    });
+    return res.status(resData.status).json({ error: resData.error });
   }
 
   res.json(resData.data);
@@ -53,10 +48,9 @@ const handleActionRoute = async (req: AuthenticatedRequest, res: Response) => {
 gameRouter.post("/pharmacy/action", requireAuth, handleActionRoute);
 gameRouter.put("/pharmacy/action", requireAuth, handleActionRoute);
 
-// Перехватчик для любых неопознанных методов, чтобы выдать точную причину 405 в консоль браузера
 gameRouter.all("/pharmacy/action", (req, res) => {
   res.status(405).json({
     error: "Method Not Allowed (Ошибка 405)",
-    message: `Фронтенд отправил метод ${req.method}, но сервер ожидает POST или PUT на /game/pharmacy/action. Проверь инстанс Axios!`
+    message: "Фронтенд отправил метод, но сервер ожидает POST или PUT на /api-game/pharmacy/action."
   });
 });
