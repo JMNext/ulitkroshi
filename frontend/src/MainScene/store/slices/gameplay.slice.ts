@@ -45,20 +45,24 @@ export const createGameplaySlice: StateCreator<MainGameStateCombined, [], [], Ga
 
   setGameOver: async (score, difficulty, initialIsWin) => {
     const numScore = score !== undefined ? Number(score) : 0;
-    const diff = String(difficulty);
-    let isWin = initialIsWin === true;
+    const diff = String(difficulty || "");
+
+    // ПРЯМОЙ И СТАБИЛЬНЫЙ РАСЧЕТ МОНЕТ БЕЗ СБОЕВ ТИПОВ ДАННЫХ ДЛЯ ИГРЫ ПАМЯТЬ:
     let coins = 0;
+    let isWin = true;
 
     if (diff === "memory") {
-      coins = isWin ? (numScore === 8 ? 2 : 1) : 0;
+      // Исходное начисление: 1 монета за легкий (меньше 6 пар), 2 монеты за средний и тяжелый
+      coins = numScore <= 4 ? 1 : 2;
     } else if (diff.startsWith("memory_perfect_")) {
-      coins = isWin ? (diff === "memory_perfect_4" ? 5 : 100) : 0;
+      coins = diff === "memory_perfect_4" ? 5 : 100;
     } else {
-      isWin = difficulty ? initialIsWin : numScore >= 20 || numScore === 999;
+      isWin = initialIsWin === true;
       coins = isWin ? 5 : 2;
     }
 
-    if ((usePetStore.getState().buffUntil > Date.now()) && (isWin || coins > 0)) {
+    // Если у персонажа активен бафф, гарантированно накидываем сверху +1 монету
+    if (usePetStore.getState().buffUntil > Date.now()) {
       coins += 1;
     }
 
@@ -72,8 +76,8 @@ export const createGameplaySlice: StateCreator<MainGameStateCombined, [], [], Ga
 
     try {
       const auth = useApiStore.getState();
+      // Вызываем исправленный GET-метод экшена, передавая финальное число монет напрямую
       await auth.executeAction("mini_game_reward", coins, diff.startsWith("memory_perfect") ? "memory" : difficulty || isWin);
-      set({ coins: next });
 
       const currentUser = auth.user;
       if (currentUser) {
