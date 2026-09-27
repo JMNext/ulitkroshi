@@ -20,9 +20,7 @@ export const dbPool = new pg.Pool({
 export async function initDatabase(): Promise<void> {
   try {
     await dbPool.query(`
-      DROP TABLE IF EXISTS public.users CASCADE;
-
-      CREATE TABLE public.users (
+      CREATE TABLE IF NOT EXISTS public.users (
         id SERIAL PRIMARY KEY,
         phone VARCHAR(20) UNIQUE,
         password VARCHAR(100),
@@ -43,7 +41,7 @@ export async function initDatabase(): Promise<void> {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log("✅ База данных успешно инициализирована заново!");
+    console.log("✅ База данных успешно инициализирована!");
   } catch (err) {
     console.error("❌ Ошибка при инициализации БД:", err);
     process.exit(1);
