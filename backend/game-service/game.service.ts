@@ -18,7 +18,9 @@ export const feedPet = async (userId: number) => {
     if (!check.rows.length) return { error: "Не найден", status: 404 };
 
     const upd = await dbPool.query<DbUser>(
-      `UPDATE users SET pet_healths = ARRAY[LEAST(100, COALESCE(pet_healths[1], 100) + 20)]::INTEGER[] WHERE id = $1 RETURNING *`,
+      `UPDATE users
+       SET pet_healths = ARRAY[LEAST(100, COALESCE(pet_healths[1], 100) + 20)]::INTEGER[]
+       WHERE id = $1 RETURNING *`,
       [userId]
     );
     const u = getFirstRow(upd);
@@ -39,42 +41,41 @@ export const getUserCoins = async (userId: number) => {
 };
 
 export const handleGameAction = async (userId: number, type: string | undefined, total?: number) => {
-  if (!type || !["buy_medicine", "buy_shop_items", "mini_game_reward"].includes(type)) {
-    return { error: `Неизвестное действие: ${type}`, status: 400 };
+  const cleanType = String(type || "").trim();
+
+  if (!cleanType || !["buy_medicine", "buy_shop_items", "mini_game_reward"].includes(cleanType)) {
+    return { error: `Неизвестное действие: ${cleanType}`, status: 400 };
   }
 
-  const price = type === "buy_shop_items" ? -(Number(total) || 0) : type === "mini_game_reward" ? Number(total) || 0 : type === "buy_medicine" ? -30 : 0;
+  // Гарантированно парсим число из GET-запроса, защищаясь от NaN и строк
+  const parsedTotal = total !== undefined && !isNaN(Number(total)) ? Math.abs(Math.round(Number(total))) : 0;
+  const price = cleanType === "buy_shop_items" ? -parsedTotal : cleanType === "mini_game_reward" ? parsedTotal : cleanType === "buy_medicine" ? -30 : 0;
 
   try {
     let q = "";
-    if (type === "buy_medicine") {
+    if (cleanType === "buy_medicine") {
       q = `UPDATE users
            SET coins = GREATEST(0, COALESCE(coins, 0) + $1),
                pet_healths = ARRAY[GREATEST(1, COALESCE(pet_healths[1], 100) - 25)]::INTEGER[]
-           WHERE id = $2 RETURNING coins, pet_healths`;
+           WHERE id = $2 RETURNING coins`;
     } else {
       q = `UPDATE users
            SET coins = GREATEST(0, COALESCE(coins, 0) + $1)
-           WHERE id = $2 RETURNING coins, pet_healths`;
+           WHERE id = $2 RETURNING coins`;
     }
 
     const r = await dbPool.query<any>(q, [price, userId]);
     const u = getFirstRow(r);
-    if (!u) return { error: "Пользователь не найден в БД при апдейте", status: 404 };
+    if (!u) return { error: "Пользователь не найден", status: 404 };
 
     return {
       data: {
         coins: Number(u.coins ?? 0),
-        petHealth: Array.isArray(u.pet_healths) && u.pet_healths.length > 0 ? Number(u.pet_healths[0] ?? 100) : 100
+        petHealth: 100
       },
       status: 200
     };
-  } catch (err: any) {
-    // ЛОВУШКА 2: Если база упала, возвращаем текст системной ошибки PostgreSQL прямо на фронтенд!
-    return {
-      error: "Фатальная ошибка SQL-запроса в базу данных",
-      message: err?.message || String(err),
-      status: 500
-    };
+  } catch (err) {
+    return { error: "Ошибка транзакции БД", status: 500 };
   }
 };
