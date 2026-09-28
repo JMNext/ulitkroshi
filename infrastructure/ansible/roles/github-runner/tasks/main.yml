@@ -1,0 +1,65 @@
+---
+- name: Создание пользователя для раннера
+  user:
+    name: "{{ runner_user }}"
+    groups: docker
+    append: yes
+    shell: /bin/bash
+    create_home: yes
+
+- name: Создание рабочей директории раннера
+  file:
+    path: "{{ runner_dir }}"
+    state: directory
+    owner: "{{ runner_user }}"
+    group: "{{ runner_user }}"
+    mode: '0755'
+
+- name: Скачивание пакета GitHub Actions Runner
+  get_url:
+    url: "https://github.com/actions/runner/releases/download/v{{ runner_version }}/actions-runner-linux-x64-{{ runner_version }}.tar.gz"
+    dest: "/tmp/actions-runner.tar.gz"
+    mode: '0644'
+
+- name: Распаковка раннера
+  unarchive:
+    src: "/tmp/actions-runner.tar.gz"
+    dest: "{{ runner_dir }}"
+    remote_src: yes
+    owner: "{{ runner_user }}"
+    group: "{{ runner_user }}"
+    creates: "{{ runner_dir }}/config.sh"
+
+- name: Проверка наличия регистрации раннера
+  stat:
+    path: "{{ runner_dir }}/.runner"
+  register: runner_registered
+
+- name: Регистрация раннера в репозитории GitHub
+  command: >
+    ./config.sh
+    --url {{ github_repo_url }}
+    --token {{ github_runner_token }}
+    --name {{ github_runner_name }}
+    --labels {{ github_runner_labels | join(',') }}
+    --unattended
+    --replace
+  args:
+    chdir: "{{ runner_dir }}"
+  become: yes
+  become_user: "{{ runner_user }}"
+  when: (not runner_registered.stat.exists) and (github_runner_token != '')
+
+- name: Установка systemd сервиса для GitHub Runner
+  template:
+    src: github-actions-runner.service.j2
+    dest: /etc/systemd/system/github-actions-runner.service
+    mode: '0644'
+
+- name: Запуск и активация systemd сервиса раннера
+  systemd:
+    name: github-actions-runner
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  when: runner_registered.stat.exists or (github_runner_token != '')

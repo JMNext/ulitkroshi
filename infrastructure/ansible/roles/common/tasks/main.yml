@@ -1,0 +1,55 @@
+---
+- name: Обновление apt-кеша
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Установка базовых системных утилит
+  apt:
+    name:
+      - curl
+      - wget
+      - git
+      - htop
+      - ufw
+      - fail2ban
+      - ca-certificates
+      - gnupg
+      - lsb-release
+      - jq
+      - unzip
+    state: present
+
+- name: Настройка часового пояса
+  timezone:
+    name: "{{ timezone | default('Europe/Moscow') }}"
+
+- name: Создание группы для системного пользователя
+  group:
+    name: "{{ system_user }}"
+    state: present
+
+- name: Создание системного пользователя
+  user:
+    name: "{{ system_user }}"
+    group: "{{ system_user }}"
+    groups: sudo
+    append: yes
+    shell: /bin/bash
+    create_home: yes
+
+- name: Настройка фаервола UFW (разрешить SSH, HTTP, HTTPS)
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop:
+    - "22"
+    - "80"
+    - "443"
+
+- name: Включение сервиса fail2ban
+  systemd:
+    name: fail2ban
+    state: started
+    enabled: yes

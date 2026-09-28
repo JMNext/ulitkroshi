@@ -1,0 +1,17 @@
+---
+system_user: "sysop"
+timezone: "Europe/Moscow"
+
+docker_users:
+  - "root"
+  - "{{ system_user }}"
+  - "actions-runner"
+
+github_repo_url: "https://github.com/JMNext/ulitkroshi"
+github_runner_token: ""
+github_runner_name: "jmnext-vds-prod-runner"
+github_runner_labels:
+  - "self-hosted"
+  - "linux"
+  - "x64"
+  - "production"
