@@ -28,6 +28,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Clean Previous Build Artifacts
+        run: |
+          docker run --rm -v $(pwd):/work -w /work alpine rm -rf dist || rm -rf dist || true
+
       - name: Setup Node.js Environment
         uses: actions/setup-node@v4
         with:
