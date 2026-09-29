@@ -122,6 +122,20 @@ ANSIBLE_CONFIG=./ansible.cfg ansible-playbook -i infrastructure/ansible/inventor
 
 ---
 
+## 8. Регламент Git, версионирования и CHANGELOG.md
+
+* **Ветки:**
+  * `main` — Production (сборка только из этой ветки на домен `ulitkroshi.ru`).
+  * `develop` — Staging / разработка (деплой на `ulitkroshi.intelcosystem.com`).
+  * Рабочие ветки от `develop`: `feature/<имя>`, `fix/<имя>`, `hotfix/<имя>`, `chore/<имя>`, `docs/<имя>`.
+* **Коммиты (Conventional Commits):**
+  * Текущий формат: `<тип>(<область>): <описание>` (`feat`, `fix`, `chore`, `docs`, `refactor`).
+  * При подключении трекера (Redmine): `[TICKET-ID] <тип>(<область>): <описание>` (например, `[ULIT-105] feat(auth): sms verification`).
+* **Версионирование (SemVer):** `vMAJOR.MINOR.PATCH`. Теги: `stage_vX.Y.Z` (тест/демо), `vX.Y.Z` (релиз в `main`).
+* **CHANGELOG.md:** Обязательно фиксировать все важные фичи, изменения и фиксы в `CHANGELOG.md` по стандарту Keep a Changelog (`[Unreleased]`, `[X.Y.Z]`).
+
+---
+
 ## Управление задачами
 
 1. **Сначала планирование**: Запиши план в файл `tasks/todo.md` с отмечаемыми пунктами
