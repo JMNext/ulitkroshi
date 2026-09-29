@@ -1,40 +1,22 @@
-# Чек-лист синхронизации и настройки CI/CD проекта «Улиткроши» (VDS JMNext)
+# Чек-лист актуализации документации проекта «Улиткроши»
 
 ## Задачи
-- [x] 1. Анализ текущего состояния Git (ветки, различия между `boss/main`, локальными ветками и `origin`)
-- [x] 2. Анализ механизмов CI/CD и деплоя первоначальных разработчиков (`boss/main`)
-- [x] 3. Анализ инфраструктуры `cure-infra` (ветка `integrate-cure-infra`, Ansible роли, Gitea runner, Nginx, Docker)
-- [x] 4. Оценка достаточности настроек и согласование архитектуры CI/CD (Self-Hosted Runner через systemd, автодеплой по push в develop + тег)
-- [x] 5. Подтягивание всех актуальных наработок первоначальных разработчиков (`boss/main`) в рабочую ветку (`feature/global-patch`) и пуш в `origin`
-- [x] 6. Подготовка конфигурации развертывания проекта под Docker Compose (бэкенд Node.js 22 + PostgreSQL 17 + Nginx)
-- [x] 7. Создание Ansible-плейбука для VDS JMNext (подготовка сервера, Docker, systemd GitHub Actions Runner)
-- [x] 8. Создание пайплайна GitHub Actions (`.github/workflows/deploy.yml`)
-- [x] 9. Фиксация результатов анализа и документации в `tasks/`
+- [x] 1. Актуализация `tasks/todo.md` (фиксация плана)
+- [x] 2. Подготовка и обновление `AGENTS.md` (строго до 300 строк, актуализация стэка на Node.js/PostgreSQL, Ansible NTFS `ANSIBLE_CONFIG=./ansible.cfg`, Debian 13, Certbot SSL, Self-Hosted Runner и триггеры CI/CD)
+- [x] 3. Проверка объема `AGENTS.md` (проверка `wc -l AGENTS.md` <= 300 — текущий объем 147 строк)
+- [x] 4. Создание и актуализация `README.md` для человека (архитектура, стек, диаграммы Mermaid, ссылка на стенд, CI/CD, Ansible на NTFS, Debian 13 особенности, Certbot SSL решение, описание игровых механик и локальный запуск)
+- [x] 5. Обновление `tasks/lessons.md` с извлеченными уроками (NTFS permissions для `ansible.cfg`, standalone certbot, Debian 13 trixie специфики, регистр файлов)
+- [x] 6. Фиксация изменений в git и push в `develop`
+- [x] 7. Отчет пользователю с подробными пояснениями
 
 ## Обзор результатов
-
-1. **Синхронизация наработок первоначальных разработчиков:**
-   * Получены все 86 коммитов ветки `boss/main` (HEAD `59f909e`).
-   * Влиты в рабочую ветку `feature/global-patch` с разрешением конфликта `.gitignore`.
-   * Сохранены все проектные инструкции (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `tasks/*`).
-   * Изменения отправлены в репозиторий `origin` (`git@github.com:JMNext/ulitkroshi.git`), а также создано зеркало `origin/boss-main`.
-
-2. **Анализ CI/CD авторов и инфраструктуры `cure-infra`:**
-   * Установлено, что у первоначальных разработчиков автоматизированного CI/CD не было (ручной скрипт `deploy.bat` через scp/ssh).
-   * Исследована ветка `integrate-cure-infra` репозитория `cure-infra`. Взяты лучшие практики: Docker Engine, PostgreSQL 17 в Docker, модульный Nginx reverse proxy, systemd runner.
-   * Выбрана архитектура CI/CD: Self-Hosted GitHub Actions Runner под systemd + автодеплой по push в `develop` и релизным тегам `v*.*.*`.
-
-3. **Созданные инфраструктурные компоненты (`deployment/`):**
-   * `deployment/backend.Dockerfile`: образ Node.js 22 Alpine с tsx для монолитного бэкенда.
-   * `deployment/nginx/nginx.conf`: Nginx reverse proxy с SPA-роутингом, кэшированием статики Phaser и исправлением ошибки 405 (проксирование `/auth/` и `/game/`).
-   * `deployment/postgres/init.sql`: SQL-скрипт инициализации таблиц `users` и `token_blacklist` с индексами.
-   * `deployment/docker-compose.yml`: оркестрация Postgres, Backend и Nginx с healthcheck'ами.
-   * `deployment/.env.example`: шаблон переменных окружения.
-
-4. **Созданный CI/CD пайплайн (`.github/workflows/deploy.yml`):**
-   * Автоматический запуск на `[self-hosted, linux, x64]` по пушу в `develop` или тегу `v*.*.*`.
-   * Сборка фронтенда (`npm run build:front`), деплой через `docker compose up -d --build` и верификация `/health`.
-
-5. **Созданные Ansible-плейбуки (`infrastructure/ansible/`):**
-   * `ansible.cfg` и инвентари (`development`, `production`).
-   * Роли: `common` (UFW, fail2ban, базовые пакеты), `docker` (Docker CE + Compose v2), `github-runner` (официальный GitHub Actions Runner под systemd).
+1. **Файл `AGENTS.md`:**
+   - Полностью переработан и сокращен со 272 до 147 строк (лимит: 300 строк).
+   - Содержит все критические правила для ИИ-агента: актуальный стек (Node.js 22 + Express + PostgreSQL 17), параметры VDS, правила запуска Ansible с `ANSIBLE_CONFIG=./ansible.cfg`, решение проблем с Debian 13 (`bookworm`, `libicu-dev`) и Certbot (`--standalone` первичный запуск).
+2. **Файл `README.md`:**
+   - Написан подробный, визуально привлекательный и структурированный документ для людей.
+   - Включает Mermaid-диаграмму архитектуры, бейджи продакшна и статуса, обоснование выбора Self-Hosted Runner, описание триггеров CI/CD, инструкцию по решению NTFS-ограничений в Ansible, специфику Debian 13 и Certbot, а также полное описание игровых механик и руководство по локальному запуску.
+3. **Файл `tasks/lessons.md`:**
+   - Дополнен 5 новыми уроками (Windows vs Linux case sensitivity, NTFS world-writable gotcha в Ansible, Debian 13 trixie специфики, Certbot standalone bootstrap, конфликты имен контейнеров).
+4. **Продакшн стенд:**
+   - Успешно развернут и доступен по безопасному HTTPS с валидным сертификатом Let's Encrypt: `https://ulitkroshi.intelcosystem.com`.
