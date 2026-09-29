@@ -1,20 +1,11 @@
-# Чек-лист исправления ошибки: Черный экран в Яндекс Браузере на iOS
+# Чек-лист: Автоматическое версионирование с номером сборки (CI/CD)
 
-## Причина проблемы
-1. В `index.html` отсутствовал элемент `<div id="game-container"></div>`, из-за чего Phaser крепил canvas в конец `body` после 100vh-блока `#root`, сдвигая холст за пределы экрана до старта `LoginScene`.
-2. В `PreloaderScene` на старте загружался аудиофайл 1.1 МБ (`main_theme.mp3`) через Web Audio API. В iOS WKWebView (Яндекс Браузер) вызов `AudioContext.decodeAudioData()` на приостановленном (suspended) контексте без предварительного тапа пользователя зависает и никогда не вызывает callback завершения загрузки, навсегда блокируя переход на `LoginScene`.
-3. Отсутствовал таймаут безопасности в `PreloaderScene` на случай сбоя или зависания загрузчика ассетов.
-
-## Задачи
-- [x] 1. Создание рабочей ветки `fix/ios-yandex-browser-black-screen` от `develop`
-- [x] 2. Добавление `<div id="game-container"></div>` в `frontend/index.html` и настройка стилей холста в `frontend/global.css`
-- [x] 3. Доработка `frontend/PreloaderScene.ts`:
-  - Добавление таймаута безопасности (3 сек) для гарантированного перехода на `LoginScene`
-  - Обработка событий `loaderror`
-  - Безопасная фоновая подгрузка аудио без блокировки начального рендера
-  - Реакция на изменение размера экрана (`resize`) для центрирования элементов загрузки
-- [x] 4. Защита работы с `localStorage` и Web Audio в iOS WKWebView
-- [x] 5. Обновление `CHANGELOG.md` (секция `[Unreleased]`)
-- [x] 6. Коммит по регламенту Conventional Commits: `fix(ios): устранение черного экрана в Яндекс Браузере на iOS (WKWebView)`
-- [x] 7. Слияние ветки в `develop` и отправка в удаленный репозиторий (`git push origin develop`)
-- [ ] 8. Верификация деплоя на Staging стенде `https://ulitkroshi.intelcosystem.com`
+## План
+- [x] 1. Создание рабочей ветки `feature/auto-build-versioning` от `develop`
+- [x] 2. Обновление версии в `package.json` до `1.2.1`
+- [x] 3. Настройка `vite.config.js` на динамический суффикс номера сборки: `v1.2.1-b<GITHUB_RUN_NUMBER>` (в CI) и `v1.2.1-dev` (локально)
+- [x] 4. Формирование закрытого релиза `[1.2.1] — 2026-09-29` в `CHANGELOG.md` и открытие чистого блока `[Не выпущено]`
+- [x] 5. Актуализация описания версионирования в `README.md` и `AGENTS.md`
+- [x] 6. Коммит по Conventional Commits: `feat(versioning): добавление номера сборки CI (GITHUB_RUN_NUMBER) в версию приложения`
+- [x] 7. Слияние в `develop` и отправка в удаленный репозиторий (`git push origin develop`)
+- [ ] 8. Проверка на стенде `https://ulitkroshi.intelcosystem.com` (отображение бейджа с точным номером билда)
