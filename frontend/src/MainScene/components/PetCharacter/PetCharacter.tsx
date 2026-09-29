@@ -73,8 +73,11 @@ export const PetCharacter = ({ alertText, onAnimationEnd }: PetCharacterProps) =
             )}
             style={{ imageRendering: "crisp-edges" }}
           >
-            <source src={PET_ANIMATION_URLS[key].webm} type="video/webm; codecs=vp9,vorbis" />
+            {/* Для Safari на iOS и macOS: HEVC с альфа-каналом ОБЯЗАН быть первым, иначе Safari выберет WebM без альфа-канала */}
+            <source src={PET_ANIMATION_URLS[key].mov} type='video/mp4; codecs="hvc1"' />
             <source src={PET_ANIMATION_URLS[key].mov} type='video/quicktime; codecs="hvc1"' />
+            {/* Для Chrome, Edge, Firefox, Android: WebM с альфа-каналом (VP9) */}
+            <source src={PET_ANIMATION_URLS[key].webm} type="video/webm; codecs=vp9,vorbis" />
           </video>
         ))}
       </div>
