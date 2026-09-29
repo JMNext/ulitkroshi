@@ -61,15 +61,27 @@ jobs:
           docker volume create ulitkroshi-certbot-var || true
           docker rm -f ulitkroshi-certbot ulitkroshi-nginx ulitkroshi-backend ulitkroshi-postgres || true
 
-      - name: Obtain SSL Certificate (Standalone mode if missing)
+      - name: Obtain SSL Certificate (Standalone mode if missing or self-signed)
         run: |
           DOMAIN="ulitkroshi.intelcosystem.com"
           EMAIL="admin@intelcosystem.com"
 
-          CERT_EXISTS=$(docker run --rm -v ulitkroshi-certbot-etc:/etc/letsencrypt alpine sh -c "[ -d /etc/letsencrypt/live/$DOMAIN ] && echo 'yes' || echo 'no'")
+          # Проверяем, является ли текущий сертификат настоящим Let's Encrypt (а не самоподписанным заглушечным)
+          IS_LETSENCRYPT=$(docker run --rm -v ulitkroshi-certbot-etc:/etc/letsencrypt alpine sh -c "
+            if [ -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem ]; then
+              apk add --no-cache openssl > /dev/null 2>&1
+              openssl x509 -in /etc/letsencrypt/live/$DOMAIN/fullchain.pem -issuer -noout | grep -iq 'Let.s Encrypt' && echo 'yes' || echo 'no'
+            else
+              echo 'no'
+            fi
+          ")
 
-          if [ "$CERT_EXISTS" != "yes" ]; then
-            echo "🔐 Requesting Let's Encrypt certificate for $DOMAIN via standalone..."
+          echo "Is current certificate Let's Encrypt: $IS_LETSENCRYPT"
+
+          if [ "$IS_LETSENCRYPT" != "yes" ]; then
+            echo "🔐 Certificate is missing or self-signed. Cleaning and requesting real Let's Encrypt certificate for $DOMAIN..."
+            docker run --rm -v ulitkroshi-certbot-etc:/etc/letsencrypt alpine rm -rf "/etc/letsencrypt/live/$DOMAIN" "/etc/letsencrypt/archive/$DOMAIN" "/etc/letsencrypt/renewal/$DOMAIN.conf"
+            
             docker run --rm \
               -p 80:80 \
               -v ulitkroshi-certbot-etc:/etc/letsencrypt \
@@ -80,9 +92,9 @@ jobs:
               --agree-tos \
               --email "$EMAIL" \
               --non-interactive
-            echo "✅ Certificate obtained successfully!"
+            echo "✅ Real Let's Encrypt certificate obtained successfully!"
           else
-            echo "✅ SSL certificate for $DOMAIN already exists."
+            echo "✅ Valid Let's Encrypt certificate for $DOMAIN already exists."
           fi
 
       - name: Deploy Services with Docker Compose
