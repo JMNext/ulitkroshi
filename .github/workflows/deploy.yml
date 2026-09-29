@@ -48,24 +48,7 @@ jobs:
         run: |
           mkdir -p deployment
           if [ ! -f deployment/.env ]; then
-            if [ -f deployment/.env.example ]; then
-              echo "Creating deployment/.env from deployment/.env.example"
-              cp deployment/.env.example deployment/.env
-            else
-              echo "Generating default deployment/.env"
-              cat << 'EOF' > deployment/.env
-NODE_ENV=production
-SERVER_PORT=3005
-HTTP_PORT=80
-DB_USER=postgres
-DB_PASSWORD=ChangeMeStrongPassword2026!
-DB_NAME=ulitkroshi_db
-DB_HOST=postgres
-DB_PORT=5432
-JWT_SECRET=super_secret_jwt_key_ulitkroshi_2026_jmnext
-SMS_RU_API_KEY=
-EOF
-            fi
+            cp deployment/.env.example deployment/.env
           fi
 
       - name: Deploy Services with Docker Compose
@@ -76,8 +59,6 @@ EOF
         run: |
           echo "Waiting for services to become healthy..."
           sleep 10
-          
-          # Check Nginx and Backend
           for i in {1..15}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/health || true)
             if [ "$STATUS" = "200" ]; then
