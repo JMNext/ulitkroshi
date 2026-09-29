@@ -1,8 +1,11 @@
-import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
+import fs from "fs";
 import path from "path";
 import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
 import checker from "vite-plugin-checker";
+
+const pkg = JSON.parse(fs.readFileSync(new URL("./package.json", import.meta.url), "utf-8"));
 
 function phaserHmrFix() {
   return {
@@ -18,6 +21,9 @@ function phaserHmrFix() {
 
 export default defineConfig({
   root: "./frontend",
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version)
+  },
 
   plugins: [
     tailwindcss(),
@@ -49,14 +55,12 @@ export default defineConfig({
     assetsInlineLimit: 4096,
     rollupOptions: {
       output: {
-        // ПРОДВИНУТАЯ ОПТИМИЗАЦИЯ: Разрезаем бандл на независимые асинхронные потоки
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            if (id.includes("phaser")) return "engine-phaser"; // Выносим тяжелый движок Phaser в отдельный файл
-            if (id.includes("react")) return "engine-react";   // Выносим React
-            return "vendor-libs"; // Все остальные сторонние библиотеки
+            if (id.includes("phaser")) return "engine-phaser";
+            if (id.includes("react")) return "engine-react";
+            return "vendor-libs";
           }
-          // Автоматически изолируем код мини игр от стартового экрана логина
           if (id.includes("MiniGames")) {
             return "game-content-pack";
           }

@@ -17,3 +17,6 @@ declare module "*.png" {
   const src: string;
   export default src;
 }
+
+// Глобальная переменная версии приложения
+declare const __APP_VERSION__: string;
