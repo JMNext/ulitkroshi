@@ -1,3 +1,4 @@
+import { VersionBadge } from "./VersionBadge";
 import { CatchGameScene } from "@/game/MiniGames/CatchGame/CatchGameScene";
 import { MemoryGameScene } from "@/game/MiniGames/MemoryGame/MemoryGameScene";
 import { RacingGameScene } from "@/game/MiniGames/RacingGame/RacingGameScene";
@@ -43,4 +44,9 @@ window.phaserGame = new Phaser.Game({
 const root = document.createElement("div");
 root.id = "nice-modal-global-root";
 document.body.appendChild(root);
-createRoot(root).render(<NiceModal.Provider />);
+createRoot(root).render(
+  <>
+    <NiceModal.Provider />
+    <VersionBadge />
+  </>
+);
