@@ -4,19 +4,19 @@ services:
   postgres:
     image: postgres:17-alpine
     container_name: ulitkroshi-postgres
-    restart: always
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
-      POSTGRES_DB: ${DB_NAME:-ulitkroshi_db}
+      POSTGRES_DB: ${POSTGRES_DB:-ulitkroshi}
+      POSTGRES_USER: ${POSTGRES_USER:-ulitkroshi_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ulitkroshi_pass}
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - ulitkroshi-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-ulitkroshi_db}"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ulitkroshi_user} -d ${POSTGRES_DB:-ulitkroshi}"]
+      interval: 5s
       timeout: 5s
       retries: 5
 
@@ -25,37 +25,39 @@ services:
       context: ..
       dockerfile: deployment/backend.Dockerfile
     container_name: ulitkroshi-backend
-    restart: always
+    restart: unless-stopped
     environment:
       NODE_ENV: production
+      PORT: 3005
       SERVER_PORT: 3005
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
-      DB_USER: ${DB_USER:-postgres}
+      DB_USER: ${POSTGRES_USER:-ulitkroshi_user}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ulitkroshi_pass}
+      DB_NAME: ${POSTGRES_DB:-ulitkroshi}
       DB_HOST: postgres
-      DB_NAME: ${DB_NAME:-ulitkroshi_db}
-      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       DB_PORT: 5432
-      SMS_RU_API_KEY: ${SMS_RU_API_KEY:-}
+      DATABASE_URL: postgres://${POSTGRES_USER:-ulitkroshi_user}:${POSTGRES_PASSWORD:-ulitkroshi_pass}@postgres:5432/${POSTGRES_DB:-ulitkroshi}
+      JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-key-ulitkroshi-2026}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-super-secret-refresh-key-ulitkroshi-2026}
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - ulitkroshi-network
-    expose:
-      - "3005"
 
   nginx:
     image: nginx:1.27-alpine
     container_name: ulitkroshi-nginx
-    restart: always
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ../dist:/var/www/frontend/dist:ro
-      - certbot-etc:/etc/letsencrypt
-      - certbot-var:/var/www/certbot
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - certbot-etc:/etc/letsencrypt:ro
+      - certbot-var:/var/www/certbot:ro
     depends_on:
       - backend
     networks:
@@ -63,23 +65,24 @@ services:
 
   certbot:
     image: certbot/certbot:latest
-    container_name: ulitkroshi-certbot
     restart: unless-stopped
     volumes:
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h & wait $${!}; done;'"
     networks:
       - ulitkroshi-network
-
-networks:
-  ulitkroshi-network:
-    driver: bridge
 
 volumes:
   postgres-data:
     name: ulitkroshi-postgres-data
   certbot-etc:
+    external: true
     name: ulitkroshi-certbot-etc
   certbot-var:
+    external: true
     name: ulitkroshi-certbot-var
+
+networks:
+  ulitkroshi-network:
+    name: ulitkroshi-network
