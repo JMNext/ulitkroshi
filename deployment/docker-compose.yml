@@ -1,3 +1,5 @@
+name: ulitkroshi
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -76,8 +78,8 @@ networks:
 
 volumes:
   postgres-data:
-    driver: local
+    name: ulitkroshi-postgres-data
   certbot-etc:
-    driver: local
+    name: ulitkroshi-certbot-etc
   certbot-var:
-    driver: local
+    name: ulitkroshi-certbot-var

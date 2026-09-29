@@ -58,9 +58,11 @@ jobs:
       - name: Bootstrap Dummy SSL Certificate if Missing
         run: |
           DOMAIN="ulitkroshi.intelcosystem.com"
-          # Создаем временный сертификат для старта Nginx, если настоящий еще не выпущен
-          docker compose -f deployment/docker-compose.yml up -d postgres
-          docker run --rm -v ulitkroshi_certbot-etc:/etc/letsencrypt alpine sh -c "
+          # Создаем тома через compose и генерируем временный сертификат для безаварийного старта Nginx
+          docker volume create ulitkroshi-certbot-etc || true
+          docker volume create ulitkroshi-certbot-var || true
+          
+          docker run --rm -v ulitkroshi-certbot-etc:/etc/letsencrypt alpine sh -c "
             DIR=\"/etc/letsencrypt/live/$DOMAIN\"
             if [ ! -f \"\$DIR/fullchain.pem\" ]; then
               mkdir -p \"\$DIR\"
@@ -79,15 +81,31 @@ jobs:
         run: |
           docker compose -f deployment/docker-compose.yml up -d --build --remove-orphans
 
+      - name: Verify Nginx is Ready on Port 80
+        run: |
+          echo "Waiting for Nginx on port 80..."
+          for i in {1..15}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/health || true)
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Nginx is listening on port 80! (HTTP $STATUS)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "⚠️ Nginx not responding on port 80, checking logs:"
+          docker compose -f deployment/docker-compose.yml logs nginx
+          exit 1
+
       - name: Issue or Renew Let's Encrypt SSL Certificate
         run: |
           DOMAIN="ulitkroshi.intelcosystem.com"
           EMAIL="admin@intelcosystem.com"
 
-          # Проверяем, является ли текущий сертификат самоподписанным заглушкой
-          IS_DUMMY=$(docker compose -f deployment/docker-compose.yml exec -T nginx openssl x509 -in /etc/letsencrypt/live/$DOMAIN/fullchain.pem -issuer -noout 2>/dev/null | grep -i "Let's Encrypt" || true)
+          # Проверяем издателя текущего сертификата
+          ISSUER=$(docker compose -f deployment/docker-compose.yml exec -T nginx openssl x509 -in /etc/letsencrypt/live/$DOMAIN/fullchain.pem -issuer -noout 2>/dev/null || true)
+          echo "Current SSL Certificate Issuer: $ISSUER"
 
-          if [ -z "$IS_DUMMY" ]; then
+          if echo "$ISSUER" | grep -qv "Let's Encrypt"; then
             echo "🔐 Requesting real Let's Encrypt SSL certificate for $DOMAIN..."
             docker compose -f deployment/docker-compose.yml run --rm --entrypoint "certbot certonly --webroot --webroot-path=/var/www/certbot --email $EMAIL --agree-tos --no-eff-email --force-renewal -d $DOMAIN" certbot
             echo "🔄 Reloading Nginx with new Let's Encrypt certificate..."
@@ -98,12 +116,12 @@ jobs:
 
       - name: Wait for Services & Health Check
         run: |
-          echo "Waiting for services to become healthy..."
-          sleep 10
+          echo "Waiting for services to become healthy on HTTPS..."
+          sleep 5
           for i in {1..15}; do
-            STATUS=$(curl -k -s -o /dev/null -w "%{http_code}" https://localhost/health || curl -s -o /dev/null -w "%{http_code}" http://localhost/health || true)
+            STATUS=$(curl -k -s -o /dev/null -w "%{http_code}" https://localhost/health || true)
             if [ "$STATUS" = "200" ]; then
-              echo "✅ All services healthy! HTTP $STATUS"
+              echo "✅ All services healthy on HTTPS! HTTP $STATUS"
               exit 0
             fi
             echo "Waiting for health check... attempt $i/15 (got $STATUS)"
