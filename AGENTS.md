@@ -131,7 +131,7 @@ ANSIBLE_CONFIG=./ansible.cfg ansible-playbook -i infrastructure/ansible/inventor
 * **Коммиты (Conventional Commits):**
   * Текущий формат: `<тип>(<область>): <описание>` (`feat`, `fix`, `chore`, `docs`, `refactor`).
   * При подключении трекера (Redmine): `[TICKET-ID] <тип>(<область>): <описание>` (например, `[ULIT-105] feat(auth): sms verification`).
-* **Версионирование (SemVer):** `vMAJOR.MINOR.PATCH`. Теги: `stage_vX.Y.Z` (тест/демо), `vX.Y.Z` (релиз в `main`).
+* **Версионирование (SemVer):** `vMAJOR.MINOR.PATCH-b<BUILD>` (номер сборки `GITHUB_RUN_NUMBER` из CI). Теги: `stage_vX.Y.Z` (тест/демо), `vX.Y.Z` (релиз в `main`).
 * **CHANGELOG.md:** Обязательно фиксировать все важные фичи, изменения и фиксы в `CHANGELOG.md` по стандарту Keep a Changelog (`[Unreleased]`, `[X.Y.Z]`).
 
 ---

@@ -7,6 +7,11 @@ import checker from "vite-plugin-checker";
 
 const pkg = JSON.parse(fs.readFileSync(new URL("./package.json", import.meta.url), "utf-8"));
 
+// Динамическое версионирование со сквозным номером сборки из CI/CD (GITHUB_RUN_NUMBER)
+// Пример: 1.2.1-b45 на стенде GitHub Actions, либо 1.2.1-dev при локальной разработке
+const buildNum = process.env.GITHUB_RUN_NUMBER ? `b${process.env.GITHUB_RUN_NUMBER}` : (process.env.BUILD_NUMBER || "dev");
+const appVersion = `${pkg.version}-${buildNum}`;
+
 function phaserHmrFix() {
   return {
     name: 'phaser-hmr-fix',
@@ -22,7 +27,7 @@ function phaserHmrFix() {
 export default defineConfig({
   root: "./frontend",
   define: {
-    __APP_VERSION__: JSON.stringify(pkg.version)
+    __APP_VERSION__: JSON.stringify(appVersion)
   },
 
   plugins: [
