@@ -1,6 +1,6 @@
 # 🐌 Улиткроши — Детский развивающий игровой комплекс (PWA)
 
-[![Production](https://img.shields.io/badge/Production-ulitkroshi.intelcosystem.com-brightgreen?style=flat-square&logo=nginx)](https://ulitkroshi.intelcosystem.com)
+[![Staging](https://img.shields.io/badge/Staging-ulitkroshi.intelcosystem.com-brightgreen?style=flat-square&logo=nginx)](https://ulitkroshi.intelcosystem.com)
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions%20Self--Hosted-blue?style=flat-square&logo=githubactions)](https://github.com/JMNext/ulitkroshi/actions)
 [![Frontend](https://img.shields.io/badge/Frontend-React%2018%20%7C%20Phaser%203%20%7C%20PWA-orange?style=flat-square&logo=react)](https://ulitkroshi.intelcosystem.com)
 [![Backend](https://img.shields.io/badge/Backend-Node.js%2022%20%7C%20Express-green?style=flat-square&logo=node.js)](https://ulitkroshi.intelcosystem.com)
@@ -9,8 +9,9 @@
 
 **«Улиткроши»** — это прогрессивное веб-приложение (PWA) и интерактивный развивающий комплекс для детей от 4 до 12 лет. Проект сочетает механику заботы о виртуальном питомце (тамагочи), развитие моторики и когнитивных навыков через 4 аркадные мини-игры, эволюцию персонажей, систему инвентаря и безопасную двухфакторную авторизацию с графическим фруктовым паролем.
 
-* **Боевой сервер проекта (Production):** [https://ulitkroshi.intelcosystem.com](https://ulitkroshi.intelcosystem.com)
-* **Целевой сервер развертывания:** VDS JMNext (`135.106.228.10`, Debian 13 trixie).
+* **Develop / Staging сервер (разработка и демонстрация Заказчику):** [https://ulitkroshi.intelcosystem.com](https://ulitkroshi.intelcosystem.com)
+* **Боевой сервер (Production):** Будет развернут позже на официальном домене `ulitkroshi.ru`.
+* **Сервер стенда:** VDS JMNext (`135.106.228.10`, Debian 13 trixie).
 
 ---
 
@@ -70,7 +71,7 @@ flowchart TD
 4. **Отказоустойчивость:** Раннер зарегистрирован как системный демон Linux (`systemd`), автоматически стартует при загрузке системы и перезапускается при сбоях.
 
 ### 2.2. Триггеры запуска пайплайна
-* **Push в ветку `develop`:** Основной рабочий триггер. При каждом слиянии или пуше в ветку `develop` запускается полный цикл сборки фронтенда, сборка Docker-образов, применение миграций БД и верификация доступности `/health`.
+* **Push в ветку `develop`:** Основной рабочий триггер. При каждом слиянии или пуше в ветку `develop` запускается полный цикл сборки фронтенда, сборка Docker-образов, деплой на staging-стенд и верификация доступности `/health`.
 * **Push тегов `v*.*.*`:** Создание релизного тега автоматически запускает публикацию релизной версии.
 * **Ручной запуск (`workflow_dispatch`):** Пайплайн можно запустить вручную через интерфейс GitHub Actions с опциональным параметром `skip_build: true`, что позволяет мгновенно перезапустить контейнеры инфраструктуры без повторной компиляции фронтенда.
 
@@ -100,7 +101,7 @@ ANSIBLE_CONFIG=./ansible.cfg ansible-playbook   -i infrastructure/ansible/invent
 
 ## 🔒 4. Автоматизация SSL (Let's Encrypt & Certbot)
 
-Для домена `https://ulitkroshi.intelcosystem.com` настроен автоматический выпуск и продление бесплатных SSL/TLS-сертификатов Let's Encrypt.
+Для домена стенда `https://ulitkroshi.intelcosystem.com` настроен автоматический выпуск и продление бесплатных SSL/TLS-сертификатов Let's Encrypt.
 
 ### 4.1. Решение проблемы «курицы и яйца» при первом запуске
 Классическая проблема развертывания Nginx с SSL в Docker:
@@ -185,7 +186,7 @@ ANSIBLE_CONFIG=./ansible.cfg ansible-playbook   -i infrastructure/ansible/invent
 
 ```
 ulitkroshi/
-├── .github/workflows/deploy.yml   # Пайплайн автоматического деплоя на VDS
+├── .github/workflows/deploy.yml   # Пайплайн автоматического деплоя на Staging стенд
 ├── backend/                       # Исходный код монолитного бэкенда
 │   ├── auth-service/              # SMS авторизация, JWT, фруктовый пин-код
 │   ├── game-service/              # Логика питомцев, мини-игр и наград
