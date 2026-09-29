@@ -55,16 +55,53 @@ jobs:
             cp deployment/.env.example deployment/.env
           fi
 
+      - name: Bootstrap Dummy SSL Certificate if Missing
+        run: |
+          DOMAIN="ulitkroshi.intelcosystem.com"
+          # Создаем временный сертификат для старта Nginx, если настоящий еще не выпущен
+          docker compose -f deployment/docker-compose.yml up -d postgres
+          docker run --rm -v ulitkroshi_certbot-etc:/etc/letsencrypt alpine sh -c "
+            DIR=\"/etc/letsencrypt/live/$DOMAIN\"
+            if [ ! -f \"\$DIR/fullchain.pem\" ]; then
+              mkdir -p \"\$DIR\"
+              apk add --no-cache openssl > /dev/null 2>&1
+              openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
+                -keyout \"\$DIR/privkey.pem\" \
+                -out \"\$DIR/fullchain.pem\" \
+                -subj \"/CN=$DOMAIN\" > /dev/null 2>&1
+              echo 'Created bootstrap dummy SSL certificate'
+            else
+              echo 'Certificate already exists in volume'
+            fi
+          "
+
       - name: Deploy Services with Docker Compose
         run: |
           docker compose -f deployment/docker-compose.yml up -d --build --remove-orphans
+
+      - name: Issue or Renew Let's Encrypt SSL Certificate
+        run: |
+          DOMAIN="ulitkroshi.intelcosystem.com"
+          EMAIL="admin@intelcosystem.com"
+
+          # Проверяем, является ли текущий сертификат самоподписанным заглушкой
+          IS_DUMMY=$(docker compose -f deployment/docker-compose.yml exec -T nginx openssl x509 -in /etc/letsencrypt/live/$DOMAIN/fullchain.pem -issuer -noout 2>/dev/null | grep -i "Let's Encrypt" || true)
+
+          if [ -z "$IS_DUMMY" ]; then
+            echo "🔐 Requesting real Let's Encrypt SSL certificate for $DOMAIN..."
+            docker compose -f deployment/docker-compose.yml run --rm --entrypoint "certbot certonly --webroot --webroot-path=/var/www/certbot --email $EMAIL --agree-tos --no-eff-email --force-renewal -d $DOMAIN" certbot
+            echo "🔄 Reloading Nginx with new Let's Encrypt certificate..."
+            docker compose -f deployment/docker-compose.yml exec -T nginx nginx -s reload || docker compose -f deployment/docker-compose.yml restart nginx
+          else
+            echo "✅ Valid Let's Encrypt certificate is already active"
+          fi
 
       - name: Wait for Services & Health Check
         run: |
           echo "Waiting for services to become healthy..."
           sleep 10
           for i in {1..15}; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/health || true)
+            STATUS=$(curl -k -s -o /dev/null -w "%{http_code}" https://localhost/health || curl -s -o /dev/null -w "%{http_code}" http://localhost/health || true)
             if [ "$STATUS" = "200" ]; then
               echo "✅ All services healthy! HTTP $STATUS"
               exit 0
