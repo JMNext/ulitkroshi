@@ -20,7 +20,8 @@ export class CatchGamePet {
 
     const petMov = new URL("@/assets/resources/1stpet-animation/prostoi-converted.mov", import.meta.url).href;
     const petWebm = new URL("@/assets/resources/1stpet-animation/prostoi-converted.webm", import.meta.url).href;
-    this.videoElement.src = this.scene.sys.game.device.video.webm ? petWebm : petMov;
+    const isApple = this.scene.sys.game.device.os.iOS || this.scene.sys.game.device.browser.safari;
+    this.videoElement.src = isApple ? petMov : (this.scene.sys.game.device.video.webm ? petWebm : petMov);
     document.body.appendChild(this.videoElement);
     this.videoElement.play().catch(() => {});
 
