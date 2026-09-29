@@ -15,6 +15,16 @@
     group: "{{ runner_user }}"
     mode: '0755'
 
+- name: Установка системных библиотек ICU и SSL для .NET runtime (Debian 13)
+  apt:
+    name:
+      - libicu-dev
+      - libssl-dev
+      - libkrb5-3
+      - zlib1g
+    state: present
+    update_cache: yes
+
 - name: Скачивание пакета GitHub Actions Runner
   get_url:
     url: "https://github.com/actions/runner/releases/download/v{{ runner_version }}/actions-runner-linux-x64-{{ runner_version }}.tar.gz"
@@ -29,6 +39,12 @@
     owner: "{{ runner_user }}"
     group: "{{ runner_user }}"
     creates: "{{ runner_dir }}/config.sh"
+
+- name: Установка зависимостей раннера через официальный скрипт
+  command: ./bin/installdependencies.sh
+  args:
+    chdir: "{{ runner_dir }}"
+  failed_when: false
 
 - name: Проверка наличия регистрации раннера
   stat:
