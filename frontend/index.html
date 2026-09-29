@@ -10,8 +10,17 @@
     <link rel="preload" href="/fonts/Arteks Regular.otf" as="font" type="font/ttf" crossorigin />
     <link rel="preload" href="/fonts/Arteks Bold.otf" as="font" type="font/ttf" crossorigin />
     <title>УЛИТКРОШИ</title>
+    <script>
+      window.addEventListener("error", function (e) {
+        console.error("[Global Error]:", e.error || e.message);
+      });
+      window.addEventListener("unhandledrejection", function (e) {
+        console.error("[Unhandled Rejection]:", e.reason);
+      });
+    </script>
   </head>
   <body>
+    <div id="game-container"></div>
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
   </body>

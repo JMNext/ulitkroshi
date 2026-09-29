@@ -21,10 +21,22 @@ declare global { interface Window { phaserGame: Phaser.Game | null; } }
 if (window.phaserGame) { window.phaserGame.destroy(true); window.phaserGame = null; }
 
 window.phaserGame = new Phaser.Game({
-  type: Phaser.AUTO, parent: "game-container", transparent: true, preserveDrawingBuffer: true,
+  type: Phaser.AUTO,
+  parent: "game-container",
+  transparent: true,
+  preserveDrawingBuffer: true,
   physics: { default: "arcade", arcade: { debug: false } },
-  scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
+  scale: {
+    mode: Phaser.Scale.RESIZE,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: "100%",
+    height: "100%"
+  },
   render: { antialias: true, roundPixels: true, pixelArt: false },
+  audio: {
+    disableWebAudio: false,
+    noAudio: false
+  },
   scene: [
     PreloaderScene,
     LoginScene,
