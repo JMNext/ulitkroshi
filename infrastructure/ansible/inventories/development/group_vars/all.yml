@@ -1,0 +1,21 @@
+---
+# Настройки пользователя и системы
+system_user: "sysop"
+timezone: "Europe/Moscow"
+
+# Настройки Docker
+docker_users:
+  - "root"
+  - "{{ system_user }}"
+  - "actions-runner"
+
+# Настройки GitHub Actions Runner
+github_repo_url: "https://github.com/JMNext/ulitkroshi"
+# Получите токен регистрации в GitHub: Repository -> Settings -> Actions -> Runners -> New self-hosted runner
+github_runner_token: "ALV4BRC7PFWTAXJVTDARYVLKXMINQ"
+github_runner_name: "jmnext-vds-runner"
+github_runner_labels:
+  - "self-hosted"
+  - "linux"
+  - "x64"
+  - "jmnext-vds"

@@ -1,0 +1,79 @@
+name: Deploy Ulitkroshi to JMNext VDS
+
+on:
+  push:
+    branches:
+      - develop
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      skip_build:
+        description: 'Skip frontend build step'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: deploy-jmnext-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build & Deploy to JMNext VDS
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Frontend Dependencies
+        run: |
+          npm ci
+
+      - name: Build Frontend (PWA & Assets)
+        run: |
+          npm run build:front
+
+      - name: Prepare Deployment Environment
+        run: |
+          if [ ! -f deployment/.env ]; then
+            echo "⚠️ deployment/.env not found, creating from deployment/.env.example"
+            cp deployment/.env.example deployment/.env
+          fi
+
+      - name: Deploy Services with Docker Compose
+        run: |
+          docker compose -f deployment/docker-compose.yml up -d --build --remove-orphans
+
+      - name: Wait for Services & Health Check
+        run: |
+          echo "Waiting for services to become healthy..."
+          sleep 10
+          
+          # Check Nginx and Backend
+          for i in {1..15}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/health || true)
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ All services healthy! HTTP $STATUS"
+              exit 0
+            fi
+            echo "Waiting for health check... attempt $i/15 (got $STATUS)"
+            sleep 3
+          done
+          echo "❌ Health check timed out"
+          docker compose -f deployment/docker-compose.yml ps
+          docker compose -f deployment/docker-compose.yml logs --tail 50
+          exit 1
+
+      - name: Clean Unused Docker Images
+        if: always()
+        run: |
+          docker image prune -f --filter "until=48h" || true

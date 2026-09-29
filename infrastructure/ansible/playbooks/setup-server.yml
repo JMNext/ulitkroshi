@@ -1,0 +1,11 @@
+---
+- name: Подготовка VDS сервера JMNext и настройка окружения CI/CD
+  hosts: servers
+  become: yes
+  roles:
+    - role: common
+      tags: [common, base]
+    - role: docker
+      tags: [docker]
+    - role: github-runner
+      tags: [runner, ci]

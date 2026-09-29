@@ -1,0 +1,10 @@
+---
+runner_version: "2.321.0"
+runner_user: "actions-runner"
+runner_dir: "/opt/actions-runner"
+github_repo_url: "https://github.com/JMNext/ulitkroshi"
+github_runner_name: "{{ inventory_hostname }}"
+github_runner_labels:
+  - "self-hosted"
+  - "linux"
+  - "x64"

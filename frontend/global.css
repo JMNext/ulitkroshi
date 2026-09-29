@@ -1,0 +1,84 @@
+@layer antd, tailwind, base, utilities;
+
+@layer tailwind {
+  @import "tailwindcss";
+}
+
+@theme {
+  --font-sans: "Arteks-Forced", sans-serif;
+  --keyword-fade-in: fadeIn;
+  --animate-fade-in: fadeIn 0.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  --animate-shake: shake 0.25s ease-in-out;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    20%,
+    60% {
+      transform: translateX(-6px);
+    }
+    40%,
+    80% {
+      transform: translateX(6px);
+    }
+  }
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    width: 100vw;
+    height: 100vh;
+    height: -webkit-fill-available;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #1a1a1a;
+    font-family: var(--font-sans);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@font-face {
+  font-family: "Arteks-Forced";
+  src: url("/fonts/Arteks Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Arteks-Forced";
+  src: url("/fonts/Arteks Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Arteks-Forced";
+  src: url("/fonts/Arteks Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Arteks-Forced";
+  src: url("/fonts/Arteks Black.otf") format("opentype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}

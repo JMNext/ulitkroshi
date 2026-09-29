@@ -1,0 +1,7 @@
+[servers]
+# Замените IP адрес на фактический IP вашего VDS JMNext
+vds-jmnext-dev ansible_host=135.106.228.10 ansible_user=root ansible_port=22
+
+[servers:vars]
+ansible_python_interpreter=/usr/bin/python3
+env_name=development
