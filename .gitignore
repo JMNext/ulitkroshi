@@ -4,6 +4,7 @@ SCANZ.md
 AGENTS.local.md
 config.php
 .env*
+!.env.example
 
 # Исходные и временные документы
 /initial_docs/

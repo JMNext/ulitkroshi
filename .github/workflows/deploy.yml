@@ -35,18 +35,37 @@ jobs:
           cache: 'npm'
 
       - name: Install Frontend Dependencies
+        if: ${{ !inputs.skip_build }}
         run: |
           npm ci
 
       - name: Build Frontend (PWA & Assets)
+        if: ${{ !inputs.skip_build }}
         run: |
           npm run build:front
 
       - name: Prepare Deployment Environment
         run: |
+          mkdir -p deployment
           if [ ! -f deployment/.env ]; then
-            echo "⚠️ deployment/.env not found, creating from deployment/.env.example"
-            cp deployment/.env.example deployment/.env
+            if [ -f deployment/.env.example ]; then
+              echo "Creating deployment/.env from deployment/.env.example"
+              cp deployment/.env.example deployment/.env
+            else
+              echo "Generating default deployment/.env"
+              cat << 'EOF' > deployment/.env
+NODE_ENV=production
+SERVER_PORT=3005
+HTTP_PORT=80
+DB_USER=postgres
+DB_PASSWORD=ChangeMeStrongPassword2026!
+DB_NAME=ulitkroshi_db
+DB_HOST=postgres
+DB_PORT=5432
+JWT_SECRET=super_secret_jwt_key_ulitkroshi_2026_jmnext
+SMS_RU_API_KEY=
+EOF
+            fi
           fi
 
       - name: Deploy Services with Docker Compose
