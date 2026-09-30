@@ -174,6 +174,28 @@ ANSIBLE_CONFIG=./ansible.cfg ansible-playbook -i infrastructure/ansible/inventor
 
 ---
 
+## 9. Приоритеты навыков (Skills) и MCP-серверов
+
+> **Критическое правило:** Навык `ulitkroshi-engineering` обладает **наивысшим приоритетом (P0)**. Все архитектурные решения, изменения БД, схемы авторизации, античит и правила кода обязаны сверяться с ним в первую очередь!
+
+| Приоритет | Компонент | Тип | Назначение в проекте |
+|---|---|---|---|
+| **P0** | `ulitkroshi-engineering` | Собственный Skill | **Наивысший приоритет.** Архитектурные границы, версии, правила JWT/SMS/PIN, античит, PostgreSQL, Nginx, Definition of Done |
+| **P0** | `vercel-react-best-practices` | Skill | Производительность React, контроль ререндеров и bundle size |
+| **P0** | `playwright-best-practices` | Skill | Устойчивые E2E-сценарии, fixtures, mock API и мобильные viewport’ы |
+| **P0** | GitHub MCP | MCP | Репозиторий, issues, pull requests, review и CI-контекст |
+| **P0** | Context7 MCP | MCP | Актуальная документация конкретных версий библиотек |
+| **P0** | Playwright MCP | MCP | Управление браузером и проверка пользовательских сценариев |
+| **P1** | `accessibility` | Skill | WCAG 2.2, touch targets, клавиатура, reduced motion, доступная авторизация |
+| **P1** | Chrome DevTools MCP | MCP | Network/Console, PWA, service worker, memory и performance |
+
+### Правила применения инструментов:
+1. **Соблюдение стандарта `ulitkroshi-engineering`:** Перед внесением правок в бэкенд, фронтенд, структуру БД или развертывание обязательно следовать стандартам проекта, описанным в навыке.
+2. **Документация библиотек через Context7 MCP:** При написании кода с использованием внешних API и библиотек (Phaser, Zustand, Express, pg и др.) обязательно запрашивать актуальную документацию через Context7 без дополнительных напоминаний.
+3. **E2E и тестирование:** Сценарии Playwright и MCP используются для валидации сценариев на стенде и в браузере.
+
+---
+
 ## Техническое задание
 
 Прочитай ТЗ в `initial_docs/technical_specification.md`
