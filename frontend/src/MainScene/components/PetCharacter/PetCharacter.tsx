@@ -5,7 +5,10 @@ import { LOOPING_ANIMATIONS, PET_ANIMATION_URLS } from "./constants/petCharacter
 import { STAGE_SCALE, PetStage } from "@/shared/growth.config";
 import { PetIndicators } from "./PetIndicators";
 
-interface PetCharacterProps { alertText: string | null; onAnimationEnd: (animKey: string) => void; }
+interface PetCharacterProps {
+  alertText: string | null;
+  onAnimationEnd: (animKey: string) => void;
+}
 
 const ALL_KEYS = Object.keys(PET_ANIMATION_URLS);
 
@@ -51,8 +54,12 @@ export const PetCharacter = ({ alertText, onAnimationEnd }: PetCharacterProps) =
 
   return (
     <div
-      className="pointer-events-auto absolute top-1/2 left-1/2 h-[644px] w-[644px] -translate-x-1/2 -translate-y-1/2 [backface-visibility:hidden]"
-      style={{ transform: `translate(-50%, -50%) scale(${scale})`, transformOrigin: 'center bottom', transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+      className="pointer-events-auto relative h-full w-full [backface-visibility:hidden]"
+      style={{
+        transform: `scale(${scale})`,
+        transformOrigin: "center bottom",
+        transition: "transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
+      }}
     >
       <PetIndicators petName={petName} hp={hp} currentAnim={currentAnim} alertText={alertText} />
 
@@ -69,7 +76,9 @@ export const PetCharacter = ({ alertText, onAnimationEnd }: PetCharacterProps) =
           <video
             key={key}
             ref={(el) => registerVideoElement(key, el)}
-            muted playsInline preload="metadata"
+            muted
+            playsInline
+            preload="metadata"
             loop={LOOPING_ANIMATIONS.includes(key)}
             onEnded={() => handleEnded(key)}
             className={clsx(
@@ -79,7 +88,7 @@ export const PetCharacter = ({ alertText, onAnimationEnd }: PetCharacterProps) =
             )}
             style={{ imageRendering: "crisp-edges" }}
           >
-            {/* Для Safari на iOS и macOS: HEVC с альфа-каналом ОБЯЗАН быть первым, иначе Safari выберет WebM без альфа-канала */}
+            {/* Для Safari на iOS и macOS: HEVC с альфа-каналом ОБЯЗАН быть первым */}
             <source src={PET_ANIMATION_URLS[key].mov} type='video/mp4; codecs="hvc1"' />
             <source src={PET_ANIMATION_URLS[key].mov} type='video/quicktime; codecs="hvc1"' />
             {/* Для Chrome, Edge, Firefox, Android: WebM с альфа-каналом (VP9) */}

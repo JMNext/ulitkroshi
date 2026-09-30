@@ -1,126 +1,104 @@
-/**
- * ExperienceBar.tsx — Горизонтальная шкала опыта персонажа.
- *
- * Визуал по макету image2.png:
- * - Три цветовых сектора: оранжевый (Baby), синий (Teen), зелёный (Adult)
- * - Пунктирные разделители стадий
- * - Маркеры уровней (золотые — пройденные, серые — будущие)
- * - Золотисто-жёлтый градиент заливки текущего прогресса
- * - Информационная строка: Уровень N • XP / YYY XP • До следующего: Z XP
- */
-
 import React, { useMemo } from 'react';
 import { usePetStore } from '../PetCharacter/store/usePetStore';
 import {
-  LEVEL_TABLE,
   MAX_LEVEL,
-  getLevelFromXp,
   getXpForNextLevel,
   getXpForCurrentLevel,
+  PetStage,
 } from '@/shared/growth.config';
 import styles from './ExperienceBar.module.css';
 
-// XP, при котором персонаж становится взрослым (level 16)
-const TOTAL_XP_RANGE = 5700 + 300 * 70; // до уровня 100
-
-// Цвета секторов по стадии
-const STAGE_COLORS = {
-  baby:  '#FF9547',
-  teen:  '#47B8FF',
-  adult: '#47E06A',
+const STAGE_LABELS: Record<PetStage, string> = {
+  baby: 'Малыш',
+  teen: 'Подросток',
+  adult: 'Взрослый',
 };
 
-// Позиции начала каждой стадии в процентах от полной шкалы (упрощённо для отображения)
-// Максимум уровня 30 = 5700 XP, показываем только до 30 уровня в пропорции
-const DISPLAY_MAX_XP = 5700; // Всё после Adult 30+ — одна зона
-
-const getPercent = (xp: number) => Math.min((xp / DISPLAY_MAX_XP) * 100, 100);
-
-// Стейджные границы на шкале
-const STAGE_BREAKS = [
-  { xp: 150,  label: 'Стадия 2\nПодросток', color: STAGE_COLORS.teen  },
-  { xp: 1500, label: 'Стадия 3\nВзрослый',  color: STAGE_COLORS.adult },
-];
+const STAGE_COLORS: Record<PetStage, string> = {
+  baby: '#FF8A00',
+  teen: '#0284c7',
+  adult: '#16a34a',
+};
 
 const ExperienceBar: React.FC = () => {
   const experience = usePetStore((s) => s.experience);
-  const level      = usePetStore((s) => s.level);
-  const stage      = usePetStore((s) => s.stage);
+  const level = usePetStore((s) => s.level);
+  const stage = (usePetStore((s) => s.stage) || 'baby') as PetStage;
 
-  const xpForNext    = getXpForNextLevel(experience);
-  const xpForCurrent = getXpForCurrentLevel(experience);
-  const xpInLevel    = experience - xpForCurrent;
-  const xpNeededThisLevel = xpForNext > 0 ? xpInLevel + xpForNext : 0;
+  const xpForNext = getXpForNextLevel(experience);
+  const xpCurrentLevelBase = getXpForCurrentLevel(experience);
+  const xpInCurrentLevel = experience - xpCurrentLevelBase;
+  const xpSpanForLevel = xpInCurrentLevel + xpForNext;
 
-  // Процент заполнения общей шкалы
-  const fillPercent = useMemo(() => getPercent(experience), [experience]);
+  const fillPercent = useMemo(() => {
+    if (level >= MAX_LEVEL) return 100;
+    if (xpSpanForLevel <= 0) return 0;
+    return Math.min(100, Math.max(0, (xpInCurrentLevel / xpSpanForLevel) * 100));
+  }, [level, xpInCurrentLevel, xpSpanForLevel]);
 
-  // Маркеры уровней (1–30 по таблице)
-  const levelMarkers = useMemo(() => {
-    return LEVEL_TABLE.map((entry) => ({
-      level: entry.level,
-      stage: entry.stage,
-      percent: getPercent(entry.cumulativeXp),
-      passed: experience >= entry.cumulativeXp,
-    }));
-  }, [experience]);
+  const stageLabel = STAGE_LABELS[stage] || 'Малыш';
+  const stageColor = STAGE_COLORS[stage] || '#FF8A00';
 
-  const stageColor = STAGE_COLORS[stage as keyof typeof STAGE_COLORS] || STAGE_COLORS.baby;
+  // Сколько осталось до следующей стадии (если еще не взрослая)
+  const nextStageInfo = useMemo(() => {
+    if (stage === 'baby') {
+      const remaining = Math.max(0, 150 - experience);
+      return `До «Подростка»: ${remaining} XP`;
+    }
+    if (stage === 'teen') {
+      const remaining = Math.max(0, 1500 - experience);
+      return `До «Взрослого»: ${remaining} XP`;
+    }
+    return null;
+  }, [stage, experience]);
 
   return (
-    <div className={styles.wrapper}>
-      {/* Шкала */}
+    <div className={styles.container}>
+      {/* Верхняя строка: Уровень, Стадия и XP */}
+      <div className={styles.headerRow}>
+        <div className={styles.badgeGroup}>
+          <span
+            className={styles.stageBadge}
+            style={{ backgroundColor: stageColor }}
+          >
+            {stageLabel}
+          </span>
+          <span className={styles.levelTitle}>
+            Уровень {level}
+          </span>
+        </div>
+
+        <div className={styles.xpCount}>
+          <span className={styles.xpCurrent}>{xpInCurrentLevel}</span>
+          <span className={styles.xpDivider}>/</span>
+          <span className={styles.xpTotal}>
+            {level >= MAX_LEVEL ? 'MAX' : `${xpSpanForLevel} XP`}
+          </span>
+        </div>
+      </div>
+
+      {/* Шкала прогресса */}
       <div className={styles.track}>
-        {/* Градиентная заливка прогресса */}
         <div
           className={styles.fill}
           style={{ width: `${fillPercent}%` }}
-          aria-label={`Прогресс: ${experience} XP`}
         />
-
-        {/* Маркеры уровней */}
-        {levelMarkers.map((m) => (
-          <div
-            key={m.level}
-            className={`${styles.levelMarker} ${m.passed ? styles.passed : styles.future}`}
-            style={{ left: `${m.percent}%` }}
-            title={`Уровень ${m.level}`}
-          />
-        ))}
-
-        {/* Разделители стадий */}
-        {STAGE_BREAKS.map((b) => (
-          <div
-            key={b.xp}
-            className={styles.stageBreak}
-            style={{ left: `${getPercent(b.xp)}%`, borderColor: b.color }}
-            title={b.label}
-          />
-        ))}
       </div>
 
-      {/* Информационная строка */}
-      <div className={styles.info}>
-        <span className={styles.levelText} style={{ color: stageColor }}>
-          Уровень {level}
-        </span>
-        <span className={styles.dot}>•</span>
-        <span className={styles.xpText}>
-          {experience.toLocaleString()} XP
-        </span>
-        {xpForNext > 0 && (
-          <>
-            <span className={styles.dot}>•</span>
-            <span className={styles.nextText}>
-              До след. уровня: {xpForNext.toLocaleString()} XP
-            </span>
-          </>
+      {/* Нижняя строка: До след. уровня и стадии */}
+      <div className={styles.footerRow}>
+        {level < MAX_LEVEL ? (
+          <span className={styles.nextLevelHint}>
+            До след. уровня: <strong>{xpForNext} XP</strong>
+          </span>
+        ) : (
+          <span className={styles.maxLevelHint}>⭐ Максимальный уровень!</span>
         )}
-        {level >= MAX_LEVEL && (
-          <>
-            <span className={styles.dot}>•</span>
-            <span className={styles.maxText}>Максимальный уровень!</span>
-          </>
+
+        {nextStageInfo && (
+          <span className={styles.nextStageHint}>
+            {nextStageInfo}
+          </span>
         )}
       </div>
     </div>

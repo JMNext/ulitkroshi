@@ -78,6 +78,13 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
     }
   }
 
+  const expTop = isVert
+    ? (ratio < 0.42 ? 180 : ratio < 0.46 ? 172 : 164) - exH * exHMult
+    : 90 - exH * exHMult;
+  const expScale = isVert
+    ? Math.min(1.05, Math.max(0.78, (viewW - 24) / 480))
+    : Math.min(1.15, Math.max(0.9, hScale));
+
   uiContainer.style.setProperty("--game-scale", `${scale}`);
   uiContainer.style.setProperty("--layout-s", `${layoutS}`);
 
@@ -88,6 +95,7 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
 
   const stylesToApply = {
     ".ui-header-target": { top: `${90 - exH * exHMult}px`, width: `${hWidth}px`, transform: `translate(-50%, -50%) scale(${hScale})` },
+    ".ui-exp-target": { left: "50%", top: `${expTop}px`, transform: `translate(-50%, -50%) scale(${expScale})` },
     ".ui-left-target": { left: `calc(50% - ${sOff}px)`, top: `${sTop}px`, transform: `translate(-50%, -50%) scale(${sScale})` },
     ".ui-right-target": { left: `calc(50% + ${sOff}px)`, top: `${sTop}px`, transform: `translate(-50%, -50%) scale(${sScale})` },
     ".ui-pet-target": { left: "50%", top: `${petTop}px`, transform: `translate(-50%, -50%) scale(${petScale})` },

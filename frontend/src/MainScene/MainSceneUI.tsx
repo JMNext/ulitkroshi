@@ -1,4 +1,5 @@
 import StageTransitionOverlay from "@/MainScene/components/ExperienceBar/StageTransitionOverlay";
+import ExperienceBar from "@/MainScene/components/ExperienceBar/ExperienceBar";
 import { ErrorBoundary } from "@/eventbus/ErrorBoundary";
 import { BottomMenu } from "@/MainScene/components/BottomMenu/BottomMenu";
 import { Header } from "@/MainScene/components/Header/Header";
@@ -102,9 +103,10 @@ export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
       >
         <div className="ui-canvas-target pointer-events-none absolute top-1/2 left-1/2 box-border flex h-[1080px] w-[1920px] flex-col items-center justify-center [backface-visibility:hidden]">
           <div className="ui-header-target absolute left-1/2"><Header /></div>
+          <div className="ui-exp-target pointer-events-auto absolute left-1/2 z-40 origin-center"><ExperienceBar /></div>
           <div className="ui-left-target pointer-events-auto absolute z-30 origin-left"><SideMenuLeft /></div>
           <div className="ui-right-target pointer-events-auto absolute z-30 origin-right"><SideMenuRight /></div>
-          <div className="ui-pet-target pointer-events-none absolute">
+          <div className="ui-pet-target pointer-events-none absolute h-[644px] w-[644px]">
             {showUi && (
               <PetCharacter key={activePetIndex} alertText={alertText} onAnimationEnd={() => {}} />
             )}
