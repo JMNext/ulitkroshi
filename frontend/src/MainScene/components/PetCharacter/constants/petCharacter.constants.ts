@@ -3,32 +3,34 @@ import playSound from "@/assets/resources/sound/play.mp3";
 import sleepSound from "@/assets/resources/sound/sleep.mp3";
 import washSound from "@/assets/resources/sound/wash.mp3";
 
-import washMov from "@/assets/resources/1stpet-animation/wash-converted.mov";
-import washWebm from "@/assets/resources/1stpet-animation/wash-converted.webm";
+// Анимации текущего персонажа (Стадия Teen)
+// После появления Baby/Adult ассетов — переключение через petAssetLoader.ts
+import washMov       from "@/assets/pets/snail-01/teen/wash.mov";
+import washWebm      from "@/assets/pets/snail-01/teen/wash.webm";
 
-import playMov from "@/assets/resources/1stpet-animation/play_ball.mov";
-import playWebm from "@/assets/resources/1stpet-animation/play_ball.webm";
+import playMov       from "@/assets/pets/snail-01/teen/play.mov";
+import playWebm      from "@/assets/pets/snail-01/teen/play.webm";
 
-import eatMov from "@/assets/resources/1stpet-animation/eat-converted.mov";
-import eatWebm from "@/assets/resources/1stpet-animation/eat-converted.webm";
+import eatMov        from "@/assets/pets/snail-01/teen/eat.mov";
+import eatWebm       from "@/assets/pets/snail-01/teen/eat.webm";
 
-import sadMov from "@/assets/resources/1stpet-animation/sad_state.mov";
-import sadWebm from "@/assets/resources/1stpet-animation/sad_state.webm";
+import sadMov        from "@/assets/pets/snail-01/teen/sad.mov";
+import sadWebm       from "@/assets/pets/snail-01/teen/sad.webm";
 
-import sleepBeginMov from "@/assets/resources/1stpet-animation/sleep_begin.mov";
-import sleepBeginWebm from "@/assets/resources/1stpet-animation/sleep_begin.webm";
+import sleepBeginMov  from "@/assets/pets/snail-01/teen/sleep-begin.mov";
+import sleepBeginWebm from "@/assets/pets/snail-01/teen/sleep-begin.webm";
 
-import sleepCircleMov from "@/assets/resources/1stpet-animation/sleep_circle.mov";
-import sleepCircleWebm from "@/assets/resources/1stpet-animation/sleep_circle.webm";
+import sleepCircleMov  from "@/assets/pets/snail-01/teen/sleep-loop.mov";
+import sleepCircleWebm from "@/assets/pets/snail-01/teen/sleep-loop.webm";
 
-import sleepAwakeMov from "@/assets/resources/1stpet-animation/sleep_awake.mov";
-import sleepAwakeWebm from "@/assets/resources/1stpet-animation/sleep_awake.webm";
+import sleepAwakeMov  from "@/assets/pets/snail-01/teen/sleep-wake.mov";
+import sleepAwakeWebm from "@/assets/pets/snail-01/teen/sleep-wake.webm";
 
-import prostoi2Mov from "@/assets/resources/1stpet-animation/prostoi2.mov";
-import prostoi2Webm from "@/assets/resources/1stpet-animation/prostoi2.webm";
+import prostoi2Mov  from "@/assets/pets/snail-01/teen/idle-alt.mov";
+import prostoi2Webm from "@/assets/pets/snail-01/teen/idle-alt.webm";
 
-import prostoi1Mov from "@/assets/resources/1stpet-animation/prostoi-converted.mov";
-import prostoi1Webm from "@/assets/resources/1stpet-animation/prostoi-converted.webm";
+import prostoi1Mov  from "@/assets/pets/snail-01/teen/idle.mov";
+import prostoi1Webm from "@/assets/pets/snail-01/teen/idle.webm";
 
 export interface VideoSources {
   mov: string;

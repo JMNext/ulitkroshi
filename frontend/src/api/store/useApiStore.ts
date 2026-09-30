@@ -1,3 +1,5 @@
+import { gameApi } from "@/api/services/game.api";
+import { isMock } from "@/api/api";
 import { create } from "zustand";
 import { UserProfile, AuthResponse } from "../types/types";
 import { createAuthSlice } from "./slices/auth.slice";
@@ -44,6 +46,28 @@ export const useApiStore = create<ApiStateCombined>()((set, get, ...a) => ({
 
       const coinsVal = typeof u.coins === "number" ? u.coins : 0;
       set({ user: u, coins: coinsVal, isAuthenticated: true });
+
+      // Начисление бонуса ежедневного входа (daily login XP)
+      if (!isMock) {
+        gameApi.gainXp("daily_login", 0).then((res) => {
+          if (res && res.xpGained > 0) {
+            const currentUser = get().user;
+            if (currentUser) {
+              set({
+                user: {
+                  ...currentUser,
+                  petExperiences: (currentUser.petExperiences || []).map((v, i) => i === 0 ? res.newXp : v),
+                  petLevels: (currentUser.petLevels || []).map((v, i) => i === 0 ? res.newLevel : v),
+                  petStages: (currentUser.petStages || []).map((v, i) => i === 0 ? res.newStage : v),
+                }
+              });
+            }
+            if (res.stageTransition) {
+              window.dispatchEvent(new CustomEvent("stage_transition", { detail: res.stageTransition }));
+            }
+          }
+        }).catch(() => {});
+      }
 
       return u;
     } catch {

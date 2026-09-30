@@ -7,7 +7,10 @@ export interface UserProfile {
   petNames: string[];
   petHealths: number[];
   petExperiences: number[];
+  /** @deprecated Используйте petLevels + petStages */
   petStars: number[];
+  petLevels: number[];
+  petStages: string[];
 }
 
 export interface AuthResponse {
@@ -21,7 +24,16 @@ export interface PetStoreState {
   petName: string;
   hp: number;
   experience: number;
-  stars: number;
+  level: number;
+  stage: string;
   unlockedPetIndexes: number[];
   updateField?: (key: string, value: unknown) => void;
+}
+
+export interface GainXpResponse {
+  newXp: number;
+  newLevel: number;
+  newStage: string;
+  xpGained: number;
+  stageTransition: { from: string; to: string } | null;
 }

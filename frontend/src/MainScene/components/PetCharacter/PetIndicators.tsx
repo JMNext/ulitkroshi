@@ -27,8 +27,8 @@ export const PetIndicators = ({ petName, hp, currentAnim, alertText }: PetIndica
   const isLow = hp <= 25;
   const safeHp = Math.min(Math.max(hp, 0), 100);
 
-  const { mood = "happy", experience = 45, stars = 1, buffUntil = 0 } = usePetStore();
-  const isMaxStars = stars >= 5;
+  const { mood = "happy", experience = 45, level = 1, stage = "baby", buffUntil = 0 } = usePetStore();
+  const isMaxLevel = level >= 100;
 
   const [timeLeft, setTimeLeft] = useState(0);
 
@@ -92,10 +92,10 @@ export const PetIndicators = ({ petName, hp, currentAnim, alertText }: PetIndica
           className={clsx(
             "absolute left-0 right-0 box-border flex flex-col justify-center rounded-[14px] border-[3px] border-solid overflow-hidden bg-[#e8f5e9] z-10 shadow-[0_4px_10px_rgba(0,0,0,0.08)] transition-all duration-150",
             borderColor,
-            isMaxStars ? "h-[29px]" : "h-[52px]"
+            isMaxLevel ? "h-[29px]" : "h-[52px]"
           )}
         >
-          {!isMaxStars && (
+          {!isMaxLevel && (
             <div className={clsx("relative h-[23px] w-full bg-[#e2f1f8] border-b-[3px] border-solid overflow-hidden shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] transition-all duration-150 shrink-0", borderColor)}>
               <div
                 className="h-full bg-gradient-to-r from-[#29b6f6] to-[#0288d1] transition-all duration-150 shadow-[inset_0_-2px_3px_rgba(0,0,0,0.15)]"

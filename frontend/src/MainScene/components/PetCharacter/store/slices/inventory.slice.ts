@@ -18,7 +18,7 @@ export const createInventorySlice: StateCreator<PetStateCombined, [], [], Invent
   inventory: getInitInventory(),
   selectFruitId: (id) => set((s) => ({ inventory: { ...s.inventory, currentId: id } })),
   useFruitId: (id, val, rHp, isStd = false) => {
-    const { inventory, hp, stars, experience, activePetIndex, mood } = get();
+    const { inventory, hp, activePetIndex, mood } = get();
     if (!isStd && hp >= 100 && rHp) return "FULL_HP";
 
     const count = inventory.counts[id] ?? 0;
@@ -31,30 +31,10 @@ export const createInventorySlice: StateCreator<PetStateCombined, [], [], Invent
     const offset = std ? 10000 : rHp ? (val === 100 ? 300000 : val <= 25 ? 95000 : 180000) : 180000;
     const nextMood = nextHp > 25 && mood === "sad" ? (Math.random() < 0.5 ? "happy" : "neutral") : mood;
 
-    let nextXp = experience, nextStars = stars, nextDailyXp = inventory.dailyXpEarned ?? 0;
-
-    if (!std && stars < 5) {
-      const xpBonus = isMock ? 100 : (FRUIT_XP[id] || 1);
-      if (isMock || nextDailyXp < (inventory.dailyXpLimit ?? 15)) {
-        if (!isMock) nextDailyXp += Math.min(xpBonus, 15 - nextDailyXp);
-        nextXp += isMock ? xpBonus : Math.min(xpBonus, 15 - nextDailyXp);
-        if (nextXp >= 100) { nextStars = Math.min(5, stars + 1); nextXp = nextStars === 5 ? 0 : nextXp - 100; }
-
-        const u = useApiStore.getState().user; const idx = activePetIndex || 0;
-        if (u) {
-          useApiStore.setState({ user: { ...u,
-            petExperiences: (u.petExperiences || []).map((v, i) => i === idx ? nextXp : v),
-            petStars: (u.petStars || []).map((v, i) => i === idx ? nextStars : v)
-          } });
-        }
-      } else if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("ui_show_bubble", { detail: { text: PET_LOCK_BUBBLES.fullHpStorePhrase || "" } }));
-      }
-    }
-
-    authApi.syncPetStats(nextHp, nextXp, nextStars, activePetIndex || 0).catch(() => {});
-    set({ hp: nextHp, mood: nextMood, experience: nextXp, stars: nextStars, miniGamesClickCount: 0, currentAnim: "eat",
-      inventory: { ...inventory, dailyXpEarned: nextDailyXp, counts: { ...inventory.counts, [id]: Math.max(0, count - 1) }, cooldowns: { ...inventory.cooldowns, [id]: now + offset }, currentId: "" }
+    // XP за кормление начисляется серверно через gainXp (вызывается в completeCareAction)
+    // Здесь только локальное состояние HP и анимация
+    set({ hp: nextHp, mood: nextMood, miniGamesClickCount: 0, currentAnim: "eat",
+      inventory: { ...inventory, counts: { ...inventory.counts, [id]: Math.max(0, count - 1) }, cooldowns: { ...inventory.cooldowns, [id]: now + offset }, currentId: "" }
     });
     return "SUCCESS";
   },

@@ -1,10 +1,10 @@
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 
 export const PetStarsRating = ({ isUnlocked, isStarterPet }: { isUnlocked: boolean; isStarterPet: boolean }) => {
-  const { stars = 1 } = usePetStore();
+  const { level = 1, stage = 'baby' } = usePetStore();
 
-  const filledStars = "★".repeat(stars);
-  const emptyStars = "☆".repeat(Math.max(0, 5 - stars));
+  const filledStars = "Ур. " + level;
+  const emptyStars = "";
 
   return (
     <div className="pointer-events-none absolute top-[71.5%] left-1/2 z-10 flex h-7 -translate-x-1/2 items-center justify-center select-none">

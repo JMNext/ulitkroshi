@@ -1,3 +1,4 @@
+import { gameApi } from "@/api/services/game.api";
 import { useApiStore } from "@/api/store/useApiStore";
 import { EventBus } from "@/eventbus/EventBus";
 import { StateCreator } from "zustand";
@@ -71,6 +72,35 @@ export const createGameplaySlice: StateCreator<MainGameStateCombined, [], [], Ga
     const prev = get().coins;
     const next = prev + coins;
     set({ coins: next });
+
+    // Начисляем XP за мини-игру (серверная авторитетность)
+    try {
+      const activePetIndex = usePetStore.getState().activePetIndex || 0;
+      const xpResult = await gameApi.gainXp("mini_game", activePetIndex, numScore);
+      if (xpResult) {
+        usePetStore.setState({
+          experience: xpResult.newXp,
+          level: xpResult.newLevel,
+          stage: xpResult.newStage as any,
+        });
+        if (xpResult.stageTransition) {
+          window.dispatchEvent(new CustomEvent("stage_transition", { detail: xpResult.stageTransition }));
+        }
+        const u = useApiStore.getState().user;
+        if (u) {
+          useApiStore.setState({
+            user: {
+              ...u,
+              petExperiences: (u.petExperiences || []).map((v, i) => i === activePetIndex ? xpResult.newXp : v),
+              petLevels: (u.petLevels || []).map((v, i) => i === activePetIndex ? xpResult.newLevel : v),
+              petStages: (u.petStages || []).map((v, i) => i === activePetIndex ? xpResult.newStage : v),
+            }
+          });
+        }
+      }
+    } catch (err: any) {
+      console.error("[ФРОНТЕНД] Ошибка начисления XP за мини-игру:", err?.message || err);
+    }
 
     try {
       const auth = useApiStore.getState();

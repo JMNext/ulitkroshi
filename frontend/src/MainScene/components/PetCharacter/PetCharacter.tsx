@@ -2,6 +2,7 @@ import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetSto
 import { clsx } from "clsx";
 import { useEffect } from "react";
 import { LOOPING_ANIMATIONS, PET_ANIMATION_URLS } from "./constants/petCharacter.constants";
+import { STAGE_SCALE, PetStage } from "@/shared/growth.config";
 import { PetIndicators } from "./PetIndicators";
 
 interface PetCharacterProps { alertText: string | null; onAnimationEnd: (animKey: string) => void; }
@@ -9,7 +10,7 @@ interface PetCharacterProps { alertText: string | null; onAnimationEnd: (animKey
 const ALL_KEYS = Object.keys(PET_ANIMATION_URLS);
 
 export const PetCharacter = ({ alertText, onAnimationEnd }: PetCharacterProps) => {
-  const { hp, petName, currentAnim, registerVideoElement, completeCareAction, getVideoElements } = usePetStore();
+  const { hp, petName, currentAnim, stage, registerVideoElement, completeCareAction, getVideoElements } = usePetStore();
 
   useEffect(() => {
     const videos = getVideoElements();
@@ -46,8 +47,13 @@ export const PetCharacter = ({ alertText, onAnimationEnd }: PetCharacterProps) =
     if (key !== "sleep_begin") onAnimationEnd(key);
   };
 
+  const scale = STAGE_SCALE[(stage as PetStage) ?? 'teen'] ?? 1.0;
+
   return (
-    <div className="pointer-events-auto absolute top-1/2 left-1/2 h-[644px] w-[644px] -translate-x-1/2 -translate-y-1/2 [backface-visibility:hidden]">
+    <div
+      className="pointer-events-auto absolute top-1/2 left-1/2 h-[644px] w-[644px] -translate-x-1/2 -translate-y-1/2 [backface-visibility:hidden]"
+      style={{ transform: `translate(-50%, -50%) scale(${scale})`, transformOrigin: 'center bottom', transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+    >
       <PetIndicators petName={petName} hp={hp} currentAnim={currentAnim} alertText={alertText} />
 
       {alertText && (

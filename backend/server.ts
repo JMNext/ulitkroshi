@@ -6,6 +6,8 @@ import express, { NextFunction, Request, Response } from "express";
 import morgan from "morgan";
 import { dbPool, initDatabase } from "./shared/db";
 import { authRouter } from "./auth-service/auth.router";
+import { gameRouter } from "./game-service/game.router";
+import growthRouter from "./game-service/growth.router";
 
 const app = express();
 const PORT = Number(process.env.SERVER_PORT) || 3005;
@@ -16,6 +18,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/auth", authRouter);
+app.use("/game", gameRouter);
+app.use("/game", growthRouter);
 
 app.get("/", (_req: Request, res: Response) => {
   res.json({ message: "Единый монолитный сервер Улиткрошей успешно запущен! 🐌🔑" });

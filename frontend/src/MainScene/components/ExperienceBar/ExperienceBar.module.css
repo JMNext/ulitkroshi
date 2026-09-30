@@ -1,0 +1,98 @@
+/* ExperienceBar.module.css */
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: 0 12px;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+/* Трек шкалы */
+.track {
+  position: relative;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  overflow: visible;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+/* Заполнение прогресса */
+.fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #FFD54F 0%, #FF8F00 100%);
+  border-radius: 10px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 8px rgba(255, 180, 0, 0.6);
+  pointer-events: none;
+}
+
+/* Маркер уровня */
+.levelMarker {
+  position: absolute;
+  top: -6px;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+}
+
+.levelMarker.passed {
+  border-bottom: 10px solid #FFB300;
+}
+
+.levelMarker.future {
+  border-bottom: 10px solid rgba(255, 255, 255, 0.35);
+}
+
+/* Разделитель стадии */
+.stageBreak {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  border-left: 2px dashed;
+  transform: translateX(-50%);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* Информационная строка */
+.info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  flex-wrap: wrap;
+}
+
+.levelText {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.dot {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.xpText {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.nextText {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+}
+
+.maxText {
+  color: #FFD700;
+  font-weight: 700;
+}

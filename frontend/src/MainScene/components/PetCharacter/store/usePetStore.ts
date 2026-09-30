@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { PetStage, getLevelFromXp } from "@/shared/growth.config";
 import { createInventorySlice, getInitInventory } from "./slices/inventory.slice";
 import { createPetLogicSlice } from "./slices/pet.slice";
 import { useApiStore } from "@/api/store/useApiStore";
@@ -29,7 +30,8 @@ export interface PetLogicState {
   washState: "idle" | "hidden" | "glowing";
   mood: PetMood;
   experience: number;
-  stars: number;
+  level: number;
+  stage: PetStage;
   buffUntil: number;
   canExecuteAction: (type: "feed" | "wash" | "play" | "sleep") => boolean;
   triggerCareAction: (action: "wash" | "play" | "eat" | "sleep_begin" | "sleep_awake") => void;
@@ -100,7 +102,7 @@ export const usePetStore = create<PetStateCombined>()((set, get, ...a) => ({
 
   resetStore: () => {
     set({
-      petName: "Булька", hp: 100, mood: "happy", experience: 0, stars: 1, miniGamesClickCount: 0, activePetIndex: 0,
+      petName: "Булька", hp: 100, mood: "happy", experience: 0, level: 1, stage: 'baby' as PetStage, miniGamesClickCount: 0, activePetIndex: 0,
       unlockedPetIndexes: defaultUnlockedIndexes, currentAnim: "prostoi1", washState: "idle", petTargetX: 960, petTargetY: 518,
       buffUntil: 0, inventory: getInitInventory()
     });
@@ -127,8 +129,11 @@ useApiStore.subscribe((state) => {
   const rawXp = Array.isArray(u.petExperiences) ? u.petExperiences[idx] : undefined;
   const currentXp = rawXp !== undefined && rawXp !== null ? Number(rawXp) : 0;
 
-  const rawStars = Array.isArray(u.petStars) ? u.petStars[idx] : undefined;
-  const currentStars = rawStars !== undefined && rawStars !== null ? Number(rawStars) : 1;
+  const rawLevel = Array.isArray(u.petLevels) ? u.petLevels[idx] : undefined;
+  const currentLevel = rawLevel !== undefined && rawLevel !== null ? Number(rawLevel) : 1;
+
+  const rawStage = Array.isArray(u.petStages) ? u.petStages[idx] : undefined;
+  const currentStage = (rawStage || "baby") as PetStage;
 
   const count = typeof u.unlockedPets === "number" ? u.unlockedPets : 1;
 
@@ -136,7 +141,8 @@ useApiStore.subscribe((state) => {
     petName: currentName,
     hp: isNaN(currentHp) ? 100 : currentHp,
     experience: isNaN(currentXp) ? 0 : currentXp,
-    stars: isNaN(currentStars) ? 1 : currentStars,
+    level: isNaN(currentLevel) ? 1 : currentLevel,
+    stage: currentStage,
     unlockedPetIndexes: Array.from(new Array(count).keys())
   });
 });

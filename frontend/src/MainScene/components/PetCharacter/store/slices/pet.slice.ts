@@ -4,6 +4,8 @@ import { useApiStore } from "@/api/store/useApiStore";
 import { StateCreator } from "zustand";
 import { PetLogicState, PetMood, PetStateCombined } from "../usePetStore";
 import { authApi } from "@/api/services/auth.api";
+import { gameApi } from "@/api/services/game.api";
+import { PetStage } from "@/shared/growth.config";
 
 const SLEEP_ANIMS = ["sleep_circle", "sleep_begin", "sleep_awake"];
 const BASE_ANIMS = ["prostoi1", "prostoi2", "sad_state"];
@@ -31,15 +33,13 @@ const getInitialBuffUntil = () => {
 };
 
 export const createPetLogicSlice: StateCreator<PetStateCombined, [], [], PetLogicState> = (set, get) => {
-  const syncStats = (hp: number, xp: number, stars: number) => {
+  const syncStats = (hp: number) => {
     const u = useApiStore.getState().user; const idx = get().activePetIndex || 0;
     if (!u) return;
     useApiStore.setState({ user: { ...u,
       petHealths: (u.petHealths || []).map((v, i) => i === idx ? hp : v),
-      petExperiences: (u.petExperiences || []).map((v, i) => i === idx ? xp : v),
-      petStars: (u.petStars || []).map((v, i) => i === idx ? stars : v)
     } });
-    authApi.syncPetStats(hp, xp, stars, idx).catch(() => {});
+    // XP и level/stage синхронизируются через gainXp (серверная авторитетность)
   };
 
   if (!moodIntervalId) {
@@ -53,7 +53,7 @@ export const createPetLogicSlice: StateCreator<PetStateCombined, [], [], PetLogi
   const initCount = useApiStore.getState().user?.unlockedPets || 1;
 
   return {
-    hp: 100, miniGamesClickCount: 0, activePetIndex: 0, currentAnim: "prostoi1", washState: "idle", mood: "happy", experience: 0, stars: 1, unlockedPetIndexes: Array.from(new Array(initCount).keys()),
+    hp: 100, miniGamesClickCount: 0, activePetIndex: 0, currentAnim: "prostoi1", washState: "idle", mood: "happy", experience: 0, level: 1, stage: "baby" as PetStage, unlockedPetIndexes: Array.from(new Array(initCount).keys()),
     buffUntil: getInitialBuffUntil(),
     canExecuteAction: (t) => SLEEP_ANIMS.includes(get().currentAnim) ? t === "sleep" : BASE_ANIMS.includes(get().currentAnim),
     triggerCareAction: (action) => {
@@ -64,11 +64,11 @@ export const createPetLogicSlice: StateCreator<PetStateCombined, [], [], PetLogi
       set({ currentAnim: action, washState: "hidden" });
     },
     completeCareAction: () => {
-      const { currentAnim, hp, mood, experience, stars } = get();
+      const { currentAnim, hp, mood } = get();
       if (currentAnim === "sleep_begin") {
         set({ currentAnim: "sleep_circle", washState: "hidden" }); clearTimer();
         timerId = setInterval(() => {
-          const next = Math.min(100, get().hp + 25); set({ hp: next }); syncStats(next, get().experience || 0, get().stars || 1);
+          const next = Math.min(100, get().hp + 25); set({ hp: next }); syncStats(next);
           if (next >= 100) { clearTimer(); get().triggerSleepAction(); }
         }, 60000); return;
       }
@@ -76,22 +76,49 @@ export const createPetLogicSlice: StateCreator<PetStateCombined, [], [], PetLogi
         sendBubbleText(null);
         useMainGameStore.getState().setAlertText(null);
       }
-      let nextMood = mood, nextXp = experience, nextStars = stars, nextBuff = get().buffUntil;
+      let nextMood = mood, nextBuff = get().buffUntil;
 
       if (currentAnim === "wash") {
         nextBuff = Date.now() + 180000;
         localStorage.setItem("pet_buff_until", String(nextBuff));
         nextMood = "happy";
       }
-
       if (currentAnim === "play") {
         nextMood = Math.random() < 0.6 ? "happy" : "neutral";
-        syncStats(hp, nextXp, nextStars);
       }
+
+      // Начисляем XP на сервере (серверная авторитетность, античит)
+      const actionToXpMap: Record<string, "feed" | "wash" | "sleep" | "play"> = {
+        eat: "feed", wash: "wash", play: "play",
+        sleep_begin: "sleep", sleep_circle: "sleep",
+      };
+      const xpAction = actionToXpMap[currentAnim];
+      if (xpAction) {
+        const petIndex = get().activePetIndex || 0;
+        gameApi.gainXp(xpAction, petIndex).then((result) => {
+          if (!result) return;
+          set({ experience: result.newXp, level: result.newLevel, stage: result.newStage as PetStage });
+          // Уведомить об анимации перехода стадии
+          if (result.stageTransition) {
+            window.dispatchEvent(new CustomEvent("stage_transition", { detail: result.stageTransition }));
+          }
+          // Синхронизируем уровень/стадию в useApiStore
+          const u = useApiStore.getState().user;
+          if (u) {
+            const idx = petIndex;
+            useApiStore.setState({ user: { ...u,
+              petExperiences: (u.petExperiences || []).map((v, i) => i === idx ? result.newXp : v),
+              petLevels: (u.petLevels || []).map((v, i) => i === idx ? result.newLevel : v),
+              petStages: (u.petStages || []).map((v, i) => i === idx ? result.newStage : v),
+            }});
+          }
+        }).catch(() => {/* gainXp не критичен — игра продолжается */});
+      }
+
       const nextAnim = hp <= 25 || nextMood === "sad" ? "sad_state" : (["wash", "play", "eat"].includes(currentAnim) && Math.random() < 0.3 ? "prostoi2" : "prostoi1");
 
       setTimeout(() => {
-        set({ currentAnim: nextAnim, washState: nextAnim.startsWith("sleep") ? "hidden" : "idle", mood: nextMood, experience: nextXp, stars: nextStars, buffUntil: nextBuff });
+        set({ currentAnim: nextAnim, washState: nextAnim.startsWith("sleep") ? "hidden" : "idle", mood: nextMood, buffUntil: nextBuff });
       }, 60);
     },
     triggerSleepAction: () => BASE_ANIMS.includes(get().currentAnim) ? get().triggerCareAction("sleep_begin") : (["sleep_circle", "sleep_begin"].includes(get().currentAnim) ? (clearTimer(), get().triggerCareAction("sleep_awake")) : null),
@@ -113,7 +140,7 @@ export const createPetLogicSlice: StateCreator<PetStateCombined, [], [], PetLogi
       const next = Math.max(1, get().hp - 25);
       const nextMood = Date.now() < get().buffUntil ? "happy" : (Math.random() < 0.5 ? "sad" : get().mood);
       set({ hp: next, mood: nextMood, currentAnim: (next <= 25 || nextMood === "sad") && !SLEEP_ANIMS.includes(get().currentAnim) ? "sad_state" : get().currentAnim });
-      syncStats(next, get().experience || 0, get().stars || 1);
+      syncStats(next);
     }
   };
 };

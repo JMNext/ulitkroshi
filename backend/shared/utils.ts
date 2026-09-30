@@ -44,11 +44,27 @@ export const mapUserFields = (u: DbUser): UserProfile => {
     finalXp.push(0);
   }
 
+  // @deprecated: pet_stars — устаревшее поле, оставляем для обратной совместимости
   let finalStars: number[] = [];
   if (Array.isArray(u?.pet_stars) && u.pet_stars.length > 0) {
     finalStars = u.pet_stars.map(Number);
   } else {
     finalStars.push(1);
+  }
+
+  // Новые поля: уровни и стадии
+  let finalLevels: number[] = [];
+  if (Array.isArray(u?.pet_levels) && u.pet_levels.length > 0) {
+    finalLevels = u.pet_levels.map(Number);
+  } else {
+    finalLevels.push(1);
+  }
+
+  let finalStages: string[] = [];
+  if (Array.isArray(u?.pet_stages) && u.pet_stages.length > 0) {
+    finalStages = u.pet_stages.map(String);
+  } else {
+    finalStages.push("baby");
   }
 
   return {
@@ -61,6 +77,8 @@ export const mapUserFields = (u: DbUser): UserProfile => {
     petNames: finalNames,
     petHealths: finalHealths,
     petExperiences: finalXp,
-    petStars: finalStars
+    petStars: finalStars,
+    petLevels: finalLevels,
+    petStages: finalStages,
   } as unknown as UserProfile;
 };

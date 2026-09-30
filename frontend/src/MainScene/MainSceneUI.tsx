@@ -1,3 +1,4 @@
+import StageTransitionOverlay from "@/MainScene/components/ExperienceBar/StageTransitionOverlay";
 import { ErrorBoundary } from "@/eventbus/ErrorBoundary";
 import { BottomMenu } from "@/MainScene/components/BottomMenu/BottomMenu";
 import { Header } from "@/MainScene/components/Header/Header";
@@ -89,6 +90,7 @@ export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
 
   return (
     <ErrorBoundary>
+      <StageTransitionOverlay />
       <div
         ref={containerRef}
         className="pointer-events-none absolute inset-0 z-10 h-full w-full overflow-hidden font-black select-none"

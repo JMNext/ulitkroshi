@@ -10,7 +10,9 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
   petNames: ["Булька"],
   petHealths:[100],
   petExperiences:[0],
-  petStars: [1]
+  petStars: [1],
+  petLevels: [1],
+  petStages: ["baby"]
 };
 
 export const getMockCoins = (): number => {

@@ -1,5 +1,5 @@
 import { isMock, gameApiInstance } from "@/api/api";
-import { UserProfile } from "@/api/types/types";
+import { UserProfile, GainXpResponse } from "@/api/types/types";
 import { DEFAULT_USER_PROFILE, getMockCoins } from "./auth.api";
 
 export const gameApi = {
@@ -39,5 +39,33 @@ export const gameApi = {
   getPetStatus: async (): Promise<UserProfile> => {
     if (isMock) return { ...DEFAULT_USER_PROFILE, coins: getMockCoins() };
     return (await gameApiInstance.get<UserProfile>("/auth/pharmacy/status")).data;
-  }
+  },
+
+  /**
+   * Серверное начисление XP за действие ухода или мини-игру.
+   * Реализует принцип серверной авторитетности (античит).
+   */
+  async gainXp(
+    action: "feed" | "wash" | "sleep" | "play" | "mini_game" | "daily_login",
+    petIndex: number,
+    miniGameScore?: number
+  ): Promise<GainXpResponse> {
+    if (isMock) {
+      // Mock-режим: возвращаем фиктивный ответ без перехода
+      return {
+        newXp: 0,
+        newLevel: 1,
+        newStage: "baby",
+        xpGained: 0,
+        stageTransition: null,
+      };
+    }
+    return (
+      await gameApiInstance.post<GainXpResponse>("/game/xp/gain", {
+        action,
+        petIndex,
+        miniGameScore,
+      })
+    ).data;
+  },
 };

@@ -10,21 +10,28 @@ export interface DbUser extends QueryResultRow {
   pet_names?: string[] | null;
   pet_healths?: number[] | null;
   pet_experiences?: number[] | null;
+  /** @deprecated Устаревшее поле. Используйте pet_levels + pet_stages */
   pet_stars?: number[] | null;
+  pet_levels?: number[] | null;
+  pet_stages?: string[] | null;
+  last_daily_login?: string | null;
   coins?: number | null;
 }
 
 export interface UserProfile {
   id: number;
   phone: string;
-  name: string;
+  player_name: string;
   discriminator: string;
   coins: number;
   unlockedPets: number;
   petNames: string[];
   petHealths: number[];
   petExperiences: number[];
+  /** @deprecated Используйте petLevels + petStages */
   petStars: number[];
+  petLevels: number[];
+  petStages: string[];
 }
 
 export interface AuthenticatedRequest extends Request {
