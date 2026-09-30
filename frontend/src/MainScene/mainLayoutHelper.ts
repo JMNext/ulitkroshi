@@ -20,7 +20,7 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
   const layoutS = screenMode === "fold" ? Math.max(0.65, viewW / 750) : screenMode === "mobile" ? 1.22 : 1;
   const finalScale = screenMode === "mobile" && safeH / safeW > 1.65 ? scale * 1.35 : scale;
 
-  let exHMult = 1.0, bScaleV = 1, bTopOffset = 110, sScale = 1, sOff = 340, sTop = 450, petTop = 460, petScale = 1.0;
+  let exHMult = 1.0, bScaleV = 1, bTopOffset = 110, sScale = 1, sOff = 340, sTop = 450, petTop = 460, petScale = 1.0, expScale = 1.0;
   let hScale = Math.min(1.2, Math.max(0.75, viewW / 1400)), hWidth = (viewW - 120) / hScale;
 
   let alertScale = 1.0;
@@ -29,8 +29,10 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
   if (isVert) {
     exHMult = 0.45;
     hScale = Math.min(1.1, viewW / 480);
-    bScaleV = Math.min(ratio < 0.42 ? 1.1 : ratio < 0.46 ? 1.15 : 1.3, (viewW - 40) / 520);
-    bTopOffset = (ratio < 0.42 ? 112 : 110) * bScaleV;
+    // Кнопки управления на мобильном (icon_care #1521:945) занимают 960px
+    bScaleV = Math.min(1.0, (viewW - 20) / 960);
+    bTopOffset = (ratio < 0.42 ? 145 : ratio < 0.46 ? 138 : 130) * bScaleV;
+    expScale = bScaleV;
     sOff = Math.min(viewW / 2 - 60 * sScale - 24, ratio < 0.42 ? 148 : ratio < 0.46 ? 160 : 180);
     sTop = ratio < 0.42 ? 555 : ratio < 0.46 ? 495 : 475;
 
@@ -58,6 +60,7 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
     bScaleV = Math.min(1.15, Math.max(0.7, (viewW - 60) / 1080));
     bTopOffset = 110 * bScaleV;
     sOff = Math.min(410, Math.max(340, viewW * 0.23 + (viewW - 1440) * 0.1));
+    expScale = isDesktopDevice && !isSafariPro ? 1.0 : Math.min(1.15, Math.max(0.9, hScale));
 
     if (isDesktopDevice && !isSafariPro) {
       sScale = 1; petTop = 460; petScale = 1.0;
@@ -79,21 +82,21 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
   }
 
   // Позиционирование ExperienceBar:
-  // На мобильном — ЧЕТКО под хедером (Coins и Avatar) без перекрытия
-  // На десктопе — по центру строки хедера (top: 90px)
+  // На десктопе — СТРОГО на одном горизонтальном уровне с плашкой монет (top: 90px / центр строки хедера),
+  // ширина 540px (расстояние между кнопками управления от края до края).
+  // На мобильном — под компактным хедером (top: ~165-175px), ширина 960px (от края до края кнопок),
+  // масштаб равен bScaleV для синхронного покрытия ширины кнопок.
   const expTop = isVert
-    ? (ratio < 0.42 ? 195 : ratio < 0.46 ? 190 : 185) - exH * exHMult
+    ? (ratio < 0.42 ? 175 : ratio < 0.46 ? 170 : 165) - exH * exHMult
     : 90 - exH * exHMult;
-  const expScale = isVert
-    ? Math.min(1.0, Math.max(0.75, (viewW - 32) / 440))
-    : Math.min(1.15, Math.max(0.9, hScale));
+
 
   // Позиционирование индикаторов (Имя + Здоровье):
   // ФИКСИРОВАННОЕ место в верхней части экрана, НЕ зависящее от роста питомца!
-  // На мобильном — под ExperienceBar
-  // На десктопе — под Header/ExperienceBar в верхней части
+  // На мобильном — под широким ExperienceBar
+  // На десктопе — под Header/ExperienceBar
   const indTop = isVert
-    ? (ratio < 0.42 ? 315 : ratio < 0.46 ? 305 : 295) - exH * exHMult
+    ? (ratio < 0.42 ? 285 : ratio < 0.46 ? 280 : 275) - exH * exHMult
     : 215 - exH * exHMult;
   const indScale = isVert
     ? Math.min(1.0, Math.max(0.78, (viewW - 40) / 420))

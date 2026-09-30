@@ -1,34 +1,37 @@
-import React, { useMemo } from 'react';
-import { clsx } from 'clsx';
-import { usePetStore } from '../PetCharacter/store/usePetStore';
-import { ACTION_ANIMATIONS } from '../PetCharacter/constants/petCharacter.constants';
+import React, { useMemo } from "react";
+import { clsx } from "clsx";
+import { usePetStore } from "../PetCharacter/store/usePetStore";
+import { ACTION_ANIMATIONS } from "../PetCharacter/constants/petCharacter.constants";
 import {
   MAX_LEVEL,
   getXpForNextLevel,
   getXpForCurrentLevel,
   PetStage,
-} from '@/shared/growth.config';
-import styles from './ExperienceBar.module.css';
+} from "@/shared/growth.config";
+import styles from "./ExperienceBar.module.css";
 
 const STAGE_LABELS: Record<PetStage, string> = {
-  baby: 'Малыш',
-  teen: 'Подросток',
-  adult: 'Взрослый',
+  baby: "Малыш",
+  teen: "Подросток",
+  adult: "Взрослый",
 };
 
 const STAGE_COLORS: Record<PetStage, string> = {
-  baby: '#FF8A00',
-  teen: '#0284c7',
-  adult: '#16a34a',
+  baby: "#FF8A00",
+  teen: "#0284c7",
+  adult: "#16a34a",
 };
 
-const ExperienceBar: React.FC = () => {
+interface ExperienceBarProps {
+  isVert?: boolean;
+}
+
+const ExperienceBar: React.FC<ExperienceBarProps> = ({ isVert }) => {
   const experience = usePetStore((s) => s.experience);
   const level = usePetStore((s) => s.level);
-  const stage = (usePetStore((s) => s.stage) || 'baby') as PetStage;
+  const stage = (usePetStore((s) => s.stage) || "baby") as PetStage;
   const currentAnim = usePetStore((s) => s.currentAnim);
 
-  // Во время действий ухода (мытье, еда, игра) шкала опыта скрывается идентично шкале здоровья
   const shouldHide = ACTION_ANIMATIONS.includes(currentAnim);
 
   const xpForNext = getXpForNextLevel(experience);
@@ -42,16 +45,15 @@ const ExperienceBar: React.FC = () => {
     return Math.min(100, Math.max(0, (xpInCurrentLevel / xpSpanForLevel) * 100));
   }, [level, xpInCurrentLevel, xpSpanForLevel]);
 
-  const stageLabel = STAGE_LABELS[stage] || 'Малыш';
-  const stageColor = STAGE_COLORS[stage] || '#FF8A00';
+  const stageLabel = STAGE_LABELS[stage] || "Малыш";
+  const stageColor = STAGE_COLORS[stage] || "#FF8A00";
 
-  // Сколько осталось до следующей стадии (если еще не взрослая)
   const nextStageInfo = useMemo(() => {
-    if (stage === 'baby') {
+    if (stage === "baby") {
       const remaining = Math.max(0, 150 - experience);
       return `До «Подростка»: ${remaining} XP`;
     }
-    if (stage === 'teen') {
+    if (stage === "teen") {
       const remaining = Math.max(0, 1500 - experience);
       return `До «Взрослого»: ${remaining} XP`;
     }
@@ -62,6 +64,7 @@ const ExperienceBar: React.FC = () => {
     <div
       className={clsx(
         styles.container,
+        isVert ? styles.containerMobile : styles.containerDesktop,
         shouldHide ? "invisible opacity-0 pointer-events-none" : "visible opacity-100"
       )}
     >
@@ -69,35 +72,39 @@ const ExperienceBar: React.FC = () => {
       <div className={styles.headerRow}>
         <div className={styles.badgeGroup}>
           <span
-            className={styles.stageBadge}
+            className={clsx(styles.stageBadge, isVert ? styles.stageBadgeMobile : styles.stageBadgeDesktop)}
             style={{ backgroundColor: stageColor }}
           >
             {stageLabel}
           </span>
-          <span className={styles.levelTitle}>
+          <span className={clsx(styles.levelTitle, isVert ? styles.levelTitleMobile : styles.levelTitleDesktop)}>
             Уровень {level}
           </span>
         </div>
 
         <div className={styles.xpCount}>
-          <span className={styles.xpCurrent}>{xpInCurrentLevel}</span>
-          <span className={styles.xpDivider}>/</span>
-          <span className={styles.xpTotal}>
-            {level >= MAX_LEVEL ? 'MAX' : `${xpSpanForLevel} XP`}
+          <span className={clsx(styles.xpCurrent, isVert ? styles.xpCurrentMobile : styles.xpCurrentDesktop)}>
+            {xpInCurrentLevel}
+          </span>
+          <span className={clsx(styles.xpDivider, isVert ? styles.xpDividerMobile : styles.xpDividerDesktop)}>
+            /
+          </span>
+          <span className={clsx(styles.xpTotal, isVert ? styles.xpTotalMobile : styles.xpTotalDesktop)}>
+            {level >= MAX_LEVEL ? "MAX" : `${xpSpanForLevel} XP`}
           </span>
         </div>
       </div>
 
       {/* Шкала прогресса */}
-      <div className={styles.track}>
+      <div className={clsx(styles.track, isVert ? styles.trackMobile : styles.trackDesktop)}>
         <div
           className={styles.fill}
           style={{ width: `${fillPercent}%` }}
         />
       </div>
 
-      {/* Нижняя строка: До след. уровня и стадии (СТРОГО в одну строку без переносов) */}
-      <div className={styles.footerRow}>
+      {/* Нижняя строка: До след. уровня и стадии (СТРОГО в одну строку) */}
+      <div className={clsx(styles.footerRow, isVert ? styles.footerRowMobile : styles.footerRowDesktop)}>
         {level < MAX_LEVEL ? (
           <span className={styles.nextLevelHint}>
             До след. уровня: <strong>{xpForNext} XP</strong>

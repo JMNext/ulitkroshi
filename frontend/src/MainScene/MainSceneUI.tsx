@@ -33,6 +33,10 @@ export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
 
   const [isLayoutReady, setIsLayoutReady] = useState(false);
   const [isUiMounted, setIsUiReady] = useState(false);
+  const [isVert, setIsVert] = useState(() => {
+    const initData = phaserScene.getLatestResizeData();
+    return initData ? initData.isVert : (typeof window !== "undefined" && window.innerHeight > window.innerWidth);
+  });
 
   const containerRef = useRef<HTMLDivElement>(null);
   const alertTimeoutRef = useRef<any>(null);
@@ -50,6 +54,11 @@ export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
 
   useEffect(() => {
     const handleResize = (data: any) => {
+      if (data?.isVert !== undefined) {
+        setIsVert(data.isVert);
+      } else if (data?.height && data?.width) {
+        setIsVert(data.height > data.width);
+      }
       const uiRoot = containerRef.current?.closest(".phaser-ui-root-container") as HTMLDivElement;
       if (uiRoot) {
         executeMainResize(data.width, data.height, uiRoot);
@@ -106,8 +115,8 @@ export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
         }}
       >
         <div className="ui-canvas-target pointer-events-none absolute top-1/2 left-1/2 box-border flex h-[1080px] w-[1920px] flex-col items-center justify-center [backface-visibility:hidden]">
-          <div className="ui-header-target absolute left-1/2"><Header /></div>
-          <div className="ui-exp-target pointer-events-auto absolute left-1/2 z-40 origin-center"><ExperienceBar /></div>
+          <div className="ui-header-target absolute left-1/2"><Header isVert={isVert} /></div>
+          <div className="ui-exp-target pointer-events-auto absolute left-1/2 z-40 origin-center"><ExperienceBar isVert={isVert} /></div>
           <div className="ui-indicators-target pointer-events-none absolute left-1/2 z-30 origin-center">
             {showUi && (
               <PetIndicators petName={petName} hp={hp} currentAnim={currentAnim} alertText={alertText} />
@@ -129,7 +138,7 @@ export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
               <PetCharacter key={activePetIndex} onAnimationEnd={() => {}} />
             )}
           </div>
-          <div className="ui-bottom-target pointer-events-none absolute"><BottomMenu className="pointer-events-auto" /></div>
+          <div className="ui-bottom-target pointer-events-none absolute"><BottomMenu isVert={isVert} className="pointer-events-auto" /></div>
         </div>
       </div>
     </ErrorBoundary>

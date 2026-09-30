@@ -5,10 +5,26 @@ import { clsx } from "clsx";
 import React from "react";
 
 interface MenuButtonProps {
-  name: string; type: CareActionType; icon: string; color: string; animPrefix: string; activeFruitIcon: string; activeClickRef: React.MutableRefObject<boolean>;
+  name: string;
+  type: CareActionType;
+  icon: string;
+  color: string;
+  animPrefix: string;
+  activeFruitIcon: string;
+  activeClickRef: React.MutableRefObject<boolean>;
+  isVert?: boolean;
 }
 
-export const MenuButton = ({ name, type, icon, color, animPrefix, activeFruitIcon, activeClickRef }: MenuButtonProps) => {
+export const MenuButton = ({
+  name,
+  type,
+  icon,
+  color,
+  animPrefix,
+  activeFruitIcon,
+  activeClickRef,
+  isVert
+}: MenuButtonProps) => {
   const currentAnim = usePetStore((s) => s.currentAnim);
   const canExecute = usePetStore((s) => s.canExecuteAction);
 
@@ -27,15 +43,54 @@ export const MenuButton = ({ name, type, icon, color, animPrefix, activeFruitIco
 
   return (
     <div
-      onPointerDown={(e) => { if (isSelectable) { e.preventDefault(); e.stopPropagation(); handleAction(e); } }}
-      className={clsx("flex w-[110px] flex-col items-center select-none", isSelectable ? "cursor-pointer touch-none opacity-100" : "pointer-events-none opacity-40")}
+      onPointerDown={(e) => {
+        if (isSelectable) {
+          e.preventDefault();
+          e.stopPropagation();
+          handleAction(e);
+        }
+      }}
+      className={clsx(
+        "flex flex-col items-center select-none transition-transform duration-100 active:scale-95",
+        isVert ? "w-[216px]" : "w-[124px]",
+        isSelectable ? "cursor-pointer touch-none opacity-100" : "pointer-events-none opacity-40"
+      )}
     >
-      <div className="relative flex h-[95px] w-[95px] items-center justify-center">
-        <div className="pointer-events-none absolute inset-0 scale-[1.55] rounded-full transition-opacity duration-150" style={{ background: isAct ? `radial-gradient(circle, ${color} 0%, transparent 70%)` : "none", opacity: isAct ? 0.8 : 0 }} />
-        <img src={btnBg} className="pointer-events-none absolute inset-0 z-10 h-full w-full object-contain" alt="" />
-        <img src={type === "feed" ? activeFruitIcon : icon} className="pointer-events-none relative z-20 h-[57px] w-[57px] object-contain" alt="" />
+      <div
+        className={clsx(
+          "relative flex items-center justify-center",
+          isVert ? "h-[205px] w-[208px]" : "h-[115px] w-[117px]"
+        )}
+      >
+        <div
+          className="pointer-events-none absolute inset-0 scale-[1.3] rounded-full transition-opacity duration-150"
+          style={{
+            background: isAct ? `radial-gradient(circle, ${color} 0%, transparent 70%)` : "none",
+            opacity: isAct ? 0.85 : 0
+          }}
+        />
+        <img
+          src={btnBg}
+          className="pointer-events-none absolute inset-0 z-10 h-full w-full object-contain drop-shadow-md"
+          alt=""
+        />
+        <img
+          src={type === "feed" ? activeFruitIcon : icon}
+          className={clsx(
+            "pointer-events-none relative z-20 object-contain drop-shadow-sm",
+            isVert ? "h-[150px] w-[150px]" : "h-[84px] w-[84px]"
+          )}
+          alt={name}
+        />
       </div>
-      <span className="pointer-events-none mt-2.5 text-[18px] font-black whitespace-nowrap text-[#525252]">{name}</span>
+      <span
+        className={clsx(
+          "pointer-events-none font-black text-[#4C5247] whitespace-nowrap tracking-wide",
+          isVert ? "mt-3 text-[36px]" : "mt-2 text-[17px]"
+        )}
+      >
+        {name}
+      </span>
     </div>
   );
 };

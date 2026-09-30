@@ -1,4 +1,5 @@
-import menuBg from "@/assets/background/bottom-menu-desktop.svg";
+import menuBgDesktop from "@/assets/background/bottom-menu-desktop.svg";
+import menuBgMobile from "@/assets/background/bottom-menu-mobile.svg";
 import eatIcon from "@/assets/buttom_menu-icons/eat.svg";
 import playIcon from "@/assets/buttom_menu-icons/play.svg";
 import sleepIcon from "@/assets/buttom_menu-icons/sleep.svg";
@@ -18,7 +19,12 @@ const ITEMS = [
   { type: "sleep", name: "Спать", icon: sleepIcon, color: "#a855f7", animPrefix: "sleep" }
 ] as const;
 
-export const BottomMenu = ({ className }: { className?: string }) => {
+interface BottomMenuProps {
+  className?: string;
+  isVert?: boolean;
+}
+
+export const BottomMenu = ({ className, isVert }: BottomMenuProps) => {
   const { currentId: cId, counts, activeIds } = usePetStore((s) => s.inventory);
   const { isFoodOpen, setIsFoodOpen } = useMainGameStore();
   const activeClickRef = useRef(false);
@@ -26,10 +32,25 @@ export const BottomMenu = ({ className }: { className?: string }) => {
   const activeIcon = cId && counts[cId] && activeIds[cId] ? getFruitUrlByStoreId(activeIds[cId]) : eatIcon;
 
   return (
-    <div className={clsx("relative flex h-[240px] w-[1080px] items-center justify-center select-none", className)}>
+    <div
+      className={clsx(
+        "relative flex items-center justify-center select-none",
+        isVert ? "h-[390px] w-[1080px]" : "h-[240px] w-[1080px]",
+        className
+      )}
+    >
       <FoodPanel isOpen={isFoodOpen} onClose={() => setIsFoodOpen(false)} />
-      <img src={menuBg} className="pointer-events-none absolute inset-0 h-full w-full object-contain" alt="" />
-      <div className="relative z-10 flex w-[520px] justify-between pt-[45px]">
+      <img
+        src={isVert ? menuBgMobile : menuBgDesktop}
+        className="pointer-events-none absolute inset-0 h-full w-full object-contain"
+        alt=""
+      />
+      <div
+        className={clsx(
+          "relative z-10 flex justify-between",
+          isVert ? "w-[960px] pt-[95px]" : "w-[540px] pt-[45px]"
+        )}
+      >
         {ITEMS.map((item) => (
           <MenuButton
             key={item.type}
@@ -40,6 +61,7 @@ export const BottomMenu = ({ className }: { className?: string }) => {
             animPrefix={item.animPrefix}
             activeFruitIcon={activeIcon}
             activeClickRef={activeClickRef}
+            isVert={isVert}
           />
         ))}
       </div>

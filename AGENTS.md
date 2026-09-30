@@ -188,6 +188,7 @@ ANSIBLE_CONFIG=./ansible.cfg ansible-playbook -i infrastructure/ansible/inventor
 | **P0** | Playwright MCP | MCP | Управление браузером и проверка пользовательских сценариев |
 | **P1** | `accessibility` | Skill | WCAG 2.2, touch targets, клавиатура, reduced motion, доступная авторизация |
 | **P1** | Chrome DevTools MCP | MCP | Network/Console, PWA, service worker, memory и performance |
+| **P1** |  `figma-developer-mcp`  | MCP |    Получение структуры макета, layout, координат, текста, типографики и токенов. Экспорт и загрузка SVG и PNG ассетов из макета прямо в кодовую базу.    |
 
 ### Правила применения инструментов:
 1. **Соблюдение стандарта `ulitkroshi-engineering`:** Перед внесением правок в бэкенд, фронтенд, структуру БД или развертывание обязательно следовать стандартам проекта, описанным в навыке.
