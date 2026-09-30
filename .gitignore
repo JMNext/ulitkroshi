@@ -49,3 +49,10 @@ deploy.bat
 /backups/
 db-clean.bat
 server-reconstruct-uiltka.bat
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
