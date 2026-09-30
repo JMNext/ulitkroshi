@@ -1,5 +1,6 @@
 import { EventBus } from "@/eventbus/EventBus";
 import { useRegistrationStep1Store } from "@/Registration/Step_1/store/useRegistrationStep1Store";
+import { BackButton } from "@/shared/components/BackButton";
 import Phaser from "phaser";
 import { useEffect } from "react";
 import { BubbleBlock } from "./components/BubbleBlock";
@@ -20,6 +21,7 @@ export function Step1UiManager({ phaserScene }: { phaserScene: Step1Scene }) {
     finalScale,
     setLayout,
     setStage,
+    resetStore,
   } = useRegistrationStep1Store();
 
   useEffect(() => {
@@ -67,6 +69,19 @@ export function Step1UiManager({ phaserScene }: { phaserScene: Step1Scene }) {
     });
   };
 
+  const handleBackToLogin = () => {
+    if (!phaserScene.sys.isActive()) return;
+    phaserScene.cameras.main.fadeOut(200, 0, 0, 0);
+    phaserScene.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      if (!phaserScene.sys.isActive()) return;
+      EventBus.emit("step1_scene_stop");
+      EventBus.emit("login_scene_start");
+      resetStore();
+      phaserScene.scene.stop("Step1Scene");
+      phaserScene.scene.start("LoginScene");
+    });
+  };
+
   const hasName = input.trim().length > 0;
   const handleProceed = () => {
     const val = input.trim();
@@ -77,6 +92,17 @@ export function Step1UiManager({ phaserScene }: { phaserScene: Step1Scene }) {
 
   return (
     <div className="pointer-events-none absolute inset-0 h-full w-full overflow-hidden select-none">
+      {/* Кнопка возврата в верхнем левом углу экрана */}
+      <div
+        className="pointer-events-auto absolute z-50"
+        style={{
+          top: "max(16px, env(safe-area-inset-top, 16px))",
+          left: "max(16px, env(safe-area-inset-left, 16px))",
+        }}
+      >
+        <BackButton onClick={handleBackToLogin} label="В начало" />
+      </div>
+
       <div
         className="pointer-events-none absolute top-1/2 left-1/2 z-10 box-border flex h-[1080px] w-[1920px] flex-col items-center justify-center [backface-visibility:hidden]"
         style={{ transform: `translate(-50%, -50%) scale(${finalScale})` }}

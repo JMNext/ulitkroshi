@@ -67,6 +67,7 @@
 
 
 ### Исправление UI позиционирования и читаемости
+- [x] Кнопки возврата («В начало» / «Назад») на шагах ввода имени, телефона и фруктового пароля (`BackButton`, `Step1UiManager`, `Step2UiManager`, `Step3UiManager`)
 - [x] Исключение WebM для устройств Apple (`isApplePlatform`) во избежание черного фона в Safari на iPhone 16/17
 - [x] Кнопка «Продолжить» на экране регистрации после ввода имени (`SpeechInputField`, `Step1UiManager`, `SpeechMicButton`)
 - [x] Запрет переноса статусной строки подсказок в `ExperienceBar` (`flex-wrap: nowrap`, `white-space: nowrap`)

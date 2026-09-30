@@ -1,5 +1,6 @@
 import { EventBus } from "@/eventbus/EventBus";
 import { useRegistrationStep3Store } from "@/Registration/Step_3/store/useRegistrationStep3Store";
+import { BackButton } from "@/shared/components/BackButton";
 import Phaser from "phaser";
 import { useEffect, useState } from "react";
 import { CaptchaBlockModal } from "./components/CaptchaBlockModal";
@@ -129,10 +130,36 @@ export function Step3UiManager({ phaserScene, sessionId }: Step3UiManagerProps) 
     });
   };
 
+  const handleBack = () => {
+    if (!phaserScene.sys.isActive()) return;
+
+    phaserScene.cameras.main.fadeOut(200, 0, 0, 0);
+    phaserScene.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      if (!phaserScene.sys.isActive()) return;
+      const currentIsLogin = isLogin;
+      resetStore(true, true);
+      EventBus.emit("step3_scene_stop");
+      EventBus.emit("step2_scene_start");
+      phaserScene.scene.stop("Step3Scene");
+      phaserScene.scene.start("Step2Scene", { isLoginFlow: currentIsLogin });
+    });
+  };
+
   if (!layoutContext) return null;
 
   return (
     <div className="pointer-events-none absolute inset-0 flex h-full w-full items-center justify-center overflow-hidden select-none">
+      {/* Кнопка возврата в верхнем левом углу экрана */}
+      <div
+        className="pointer-events-auto absolute z-50"
+        style={{
+          top: "max(16px, env(safe-area-inset-top, 16px))",
+          left: "max(16px, env(safe-area-inset-left, 16px))",
+        }}
+      >
+        <BackButton onClick={handleBack} label="Назад" />
+      </div>
+
       <div
         className="pointer-events-none relative z-10 box-border flex h-[780px] w-[460px] origin-center flex-col items-center justify-center gap-[30px] opacity-100 transition-opacity [backface-visibility:hidden]"
         style={{ transform: `scale(${dynamicScale})` }}
