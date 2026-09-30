@@ -27,8 +27,7 @@ export const PetIndicators = ({ petName, hp, currentAnim, alertText }: PetIndica
   const isLow = hp <= 25;
   const safeHp = Math.min(Math.max(hp, 0), 100);
 
-  const { mood = "happy", experience = 45, level = 1, stage = "baby", buffUntil = 0 } = usePetStore();
-  const isMaxLevel = level >= 100;
+  const { mood = "happy", buffUntil = 0 } = usePetStore();
 
   const [timeLeft, setTimeLeft] = useState(0);
 
@@ -43,24 +42,25 @@ export const PetIndicators = ({ petName, hp, currentAnim, alertText }: PetIndica
   const currentEmoji = EMOJI_MAP[mood] || "😊";
 
   const borderColor = isLow ? "border-red-500" : "border-[#ffca28]";
-  const circleClass = clsx("absolute z-20 flex items-center justify-center h-[42px] w-[42px] rounded-full border-[3px] border-solid bg-white/95 transition-all duration-150", borderColor);
+  const circleClass = clsx("absolute z-20 flex items-center justify-center h-[38px] w-[38px] rounded-full border-[3px] border-solid bg-white/95 transition-all duration-150 shadow-sm", borderColor);
 
   const nameLength = petName?.length || 0;
-  const fontSizeClass = nameLength > 15 ? "text-[20px]" : nameLength > 10 ? "text-[24px]" : "text-[32px]";
+  const fontSizeClass = nameLength > 15 ? "text-[20px]" : nameLength > 10 ? "text-[24px]" : "text-[30px]";
 
   const shouldHide = ACTION_ANIMATIONS.includes(currentAnim) || !!alertText;
 
   return (
     <div
       className={clsx(
-        "pointer-events-none absolute top-[-20px] left-1/2 flex w-[440px] -translate-x-1/2 flex-col items-center justify-center transition-all duration-150 select-none",
+        "pointer-events-none flex w-[380px] max-w-[90vw] flex-col items-center justify-center transition-opacity duration-200 select-none",
         shouldHide ? "invisible opacity-0" : "visible opacity-100"
       )}
     >
-      <div className="mb-2 flex min-h-[48px] w-full flex-wrap items-center justify-center gap-4 px-2">
+      {/* Имя питомца и активный бафф */}
+      <div className="mb-1.5 flex min-h-[42px] w-full flex-wrap items-center justify-center gap-3 px-2">
         <span
           className={clsx(
-            "max-w-[65%] text-center font-black text-[#1a3d1c] drop-shadow-[0_2px_0_rgba(255,255,255,1)] leading-tight break-words",
+            "max-w-[75%] text-center font-black text-[#1a3d1c] drop-shadow-[0_2px_0_rgba(255,255,255,1)] leading-tight break-words",
             fontSizeClass
           )}
         >
@@ -68,49 +68,37 @@ export const PetIndicators = ({ petName, hp, currentAnim, alertText }: PetIndica
         </span>
 
         {hasBuff && (
-          <div className="flex items-center gap-2 shrink-0 animate-fade-in bg-emerald-50/95 border border-emerald-500/40 rounded-full pl-1.5 pr-3 py-1 shadow-md -mt-0.5 -ml-1 origin-center">
-            <div className="flex h-[30px] w-[30px] items-center justify-center rounded-full border-[2px] border-solid border-emerald-500 bg-white shadow-sm">
-              <span className="text-[16px] leading-none">💪</span>
+          <div className="flex items-center gap-1.5 shrink-0 animate-fade-in bg-emerald-50/95 border border-emerald-500/40 rounded-full pl-1.5 pr-2.5 py-0.5 shadow-md origin-center">
+            <div className="flex h-[26px] w-[26px] items-center justify-center rounded-full border-[2px] border-solid border-emerald-500 bg-white shadow-sm">
+              <span className="text-[14px] leading-none">💪</span>
             </div>
-            <span className="text-[15px] font-black text-emerald-800 drop-shadow-[0_1px_0_rgba(255,255,255,1)] tabular-nums tracking-wide leading-none">
+            <span className="text-[14px] font-black text-emerald-800 drop-shadow-[0_1px_0_rgba(255,255,255,1)] tabular-nums tracking-wide leading-none">
               {formatTime(timeLeft)}
             </span>
           </div>
         )}
       </div>
 
-      <div className="relative flex items-center justify-center h-[52px] w-[300px]">
-        <div className={clsx(circleClass, "left-[-16px]", isLow && "bg-red-50")}>
+      {/* Статус здоровья: сердечко + шкала HP + смайлик настроения */}
+      <div className="relative flex items-center justify-center h-[42px] w-[280px]">
+        <div className={clsx(circleClass, "left-[-14px]", isLow && "bg-red-50")}>
           <img
             src={lifeImgUrl}
-            className={clsx("pointer-events-none block h-[24px] w-[24px] object-contain", isLow && "animate-pulse")}
+            className={clsx("pointer-events-none block h-[22px] w-[22px] object-contain", isLow && "animate-pulse")}
             alt="HP"
           />
         </div>
 
         <div
           className={clsx(
-            "absolute left-0 right-0 box-border flex flex-col justify-center rounded-[14px] border-[3px] border-solid overflow-hidden bg-[#e8f5e9] z-10 shadow-[0_4px_10px_rgba(0,0,0,0.08)] transition-all duration-150",
-            borderColor,
-            isMaxLevel ? "h-[29px]" : "h-[52px]"
+            "absolute left-0 right-0 box-border flex flex-col justify-center rounded-[14px] border-[3px] border-solid overflow-hidden bg-[#e8f5e9] z-10 shadow-[0_4px_10px_rgba(0,0,0,0.08)] transition-all duration-150 h-[34px]",
+            borderColor
           )}
         >
-          {!isMaxLevel && (
-            <div className={clsx("relative h-[23px] w-full bg-[#e2f1f8] border-b-[3px] border-solid overflow-hidden shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] transition-all duration-150 shrink-0", borderColor)}>
-              <div
-                className="h-full bg-gradient-to-r from-[#29b6f6] to-[#0288d1] transition-all duration-150 shadow-[inset_0_-2px_3px_rgba(0,0,0,0.15)]"
-                style={{ width: `${experience}%` }}
-              />
-              <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-[#1a3d1c] drop-shadow-[0_1.5px_0_rgba(255,255,255,1)] tracking-wider leading-none z-10 mt-[1px]">
-                XP {experience}/100
-              </span>
-            </div>
-          )}
-
-          <div className="relative h-[23px] w-full overflow-hidden shrink-0">
+          <div className="relative h-full w-full overflow-hidden">
             <div
               className={clsx(
-                "h-full transition-all duration-150 shadow-[inset_0_-2px_3px_rgba(0,0,0,0.15)] bg-gradient-to-r",
+                "h-full transition-all duration-300 shadow-[inset_0_-2px_3px_rgba(0,0,0,0.15)] bg-gradient-to-r",
                 isLow ? "from-red-500 to-red-400" : "from-[#4caf50] to-[#81c784]"
               )}
               style={{ width: `${safeHp}%` }}
@@ -118,15 +106,16 @@ export const PetIndicators = ({ petName, hp, currentAnim, alertText }: PetIndica
           </div>
         </div>
 
-        <div className={clsx(circleClass, "right-[-16px]")}>
-          <span className="text-[24px] leading-none flex items-center justify-center h-full w-full">
+        <div className={clsx(circleClass, "right-[-14px]")}>
+          <span className="text-[22px] leading-none flex items-center justify-center h-full w-full">
             {currentEmoji}
           </span>
         </div>
       </div>
 
+      {/* Процент HP */}
       <span className={clsx(
-        "mt-2 text-center text-[26px] font-black drop-shadow-[0_2px_0_rgba(255,255,255,1)]",
+        "mt-1 text-center text-[22px] font-black drop-shadow-[0_2px_0_rgba(255,255,255,1)]",
         isLow ? "animate-bounce text-red-600" : "text-[#1a3d1c]"
       )}>
         {hp}%

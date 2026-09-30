@@ -78,12 +78,26 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
     }
   }
 
+  // Позиционирование ExperienceBar:
+  // На мобильном — ЧЕТКО под хедером (Coins и Avatar) без перекрытия
+  // На десктопе — по центру строки хедера (top: 90px)
   const expTop = isVert
-    ? (ratio < 0.42 ? 180 : ratio < 0.46 ? 172 : 164) - exH * exHMult
+    ? (ratio < 0.42 ? 195 : ratio < 0.46 ? 190 : 185) - exH * exHMult
     : 90 - exH * exHMult;
   const expScale = isVert
-    ? Math.min(1.05, Math.max(0.78, (viewW - 24) / 480))
+    ? Math.min(1.0, Math.max(0.75, (viewW - 32) / 440))
     : Math.min(1.15, Math.max(0.9, hScale));
+
+  // Позиционирование индикаторов (Имя + Здоровье):
+  // ФИКСИРОВАННОЕ место в верхней части экрана, НЕ зависящее от роста питомца!
+  // На мобильном — под ExperienceBar
+  // На десктопе — под Header/ExperienceBar в верхней части
+  const indTop = isVert
+    ? (ratio < 0.42 ? 315 : ratio < 0.46 ? 305 : 295) - exH * exHMult
+    : 215 - exH * exHMult;
+  const indScale = isVert
+    ? Math.min(1.0, Math.max(0.78, (viewW - 40) / 420))
+    : 1.0;
 
   uiContainer.style.setProperty("--game-scale", `${scale}`);
   uiContainer.style.setProperty("--layout-s", `${layoutS}`);
@@ -96,6 +110,7 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
   const stylesToApply = {
     ".ui-header-target": { top: `${90 - exH * exHMult}px`, width: `${hWidth}px`, transform: `translate(-50%, -50%) scale(${hScale})` },
     ".ui-exp-target": { left: "50%", top: `${expTop}px`, transform: `translate(-50%, -50%) scale(${expScale})` },
+    ".ui-indicators-target": { left: "50%", top: `${indTop}px`, transform: `translate(-50%, -50%) scale(${indScale})` },
     ".ui-left-target": { left: `calc(50% - ${sOff}px)`, top: `${sTop}px`, transform: `translate(-50%, -50%) scale(${sScale})` },
     ".ui-right-target": { left: `calc(50% + ${sOff}px)`, top: `${sTop}px`, transform: `translate(-50%, -50%) scale(${sScale})` },
     ".ui-pet-target": { left: "50%", top: `${petTop}px`, transform: `translate(-50%, -50%) scale(${petScale})` },
