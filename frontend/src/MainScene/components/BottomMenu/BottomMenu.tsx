@@ -34,21 +34,21 @@ export const BottomMenu = ({ className, isVert }: BottomMenuProps) => {
   return (
     <div
       className={clsx(
-        "relative flex items-center justify-center select-none",
-        isVert ? "h-[390px] w-[1080px]" : "h-[240px] w-[1080px]",
+        "relative flex flex-col items-center justify-end select-none",
+        isVert ? "h-[320px] w-[1080px] pb-5" : "h-[240px] w-[1080px] pb-4",
         className
       )}
     >
-      <FoodPanel isOpen={isFoodOpen} onClose={() => setIsFoodOpen(false)} />
+      <FoodPanel isOpen={isFoodOpen} onClose={() => setIsFoodOpen(false)} isVert={isVert} />
       <img
         src={isVert ? menuBgMobile : menuBgDesktop}
-        className="pointer-events-none absolute inset-0 h-full w-full object-contain"
+        className="pointer-events-none absolute inset-0 h-full w-full object-fill"
         alt=""
       />
       <div
         className={clsx(
-          "relative z-10 flex justify-between",
-          isVert ? "w-[960px] pt-[95px]" : "w-[540px] pt-[45px]"
+          "relative z-10 flex justify-between items-end",
+          isVert ? "w-[960px]" : "w-[540px]"
         )}
       >
         {ITEMS.map((item) => (

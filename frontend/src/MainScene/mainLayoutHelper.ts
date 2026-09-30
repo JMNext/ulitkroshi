@@ -31,7 +31,7 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
     hScale = Math.min(1.1, viewW / 480);
     // Кнопки управления на мобильном (icon_care #1521:945) занимают 960px
     bScaleV = Math.min(1.0, (viewW - 20) / 960);
-    bTopOffset = (ratio < 0.42 ? 145 : ratio < 0.46 ? 138 : 130) * bScaleV;
+    bTopOffset = (ratio < 0.42 ? 185 : ratio < 0.46 ? 175 : 165) * bScaleV;
     expScale = bScaleV;
     sOff = Math.min(viewW / 2 - 60 * sScale - 24, ratio < 0.42 ? 148 : ratio < 0.46 ? 160 : 180);
     sTop = ratio < 0.42 ? 555 : ratio < 0.46 ? 495 : 475;

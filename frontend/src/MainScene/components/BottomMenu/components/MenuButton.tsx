@@ -59,7 +59,7 @@ export const MenuButton = ({
       <div
         className={clsx(
           "relative flex items-center justify-center",
-          isVert ? "h-[205px] w-[208px]" : "h-[115px] w-[117px]"
+          isVert ? "h-[195px] w-[200px]" : "h-[115px] w-[117px]"
         )}
       >
         <div
@@ -78,15 +78,15 @@ export const MenuButton = ({
           src={type === "feed" ? activeFruitIcon : icon}
           className={clsx(
             "pointer-events-none relative z-20 object-contain drop-shadow-sm",
-            isVert ? "h-[150px] w-[150px]" : "h-[84px] w-[84px]"
+            isVert ? "h-[142px] w-[142px]" : "h-[84px] w-[84px]"
           )}
           alt={name}
         />
       </div>
       <span
         className={clsx(
-          "pointer-events-none font-black text-[#4C5247] whitespace-nowrap tracking-wide",
-          isVert ? "mt-3 text-[36px]" : "mt-2 text-[17px]"
+          "pointer-events-none font-black text-[#4C5247] whitespace-nowrap tracking-wide leading-none",
+          isVert ? "mt-2.5 text-[34px]" : "mt-2 text-[17px]"
         )}
       >
         {name}
