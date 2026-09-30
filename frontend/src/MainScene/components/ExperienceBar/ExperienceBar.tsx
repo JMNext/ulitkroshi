@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
+import { clsx } from 'clsx';
 import { usePetStore } from '../PetCharacter/store/usePetStore';
+import { ACTION_ANIMATIONS } from '../PetCharacter/constants/petCharacter.constants';
 import {
   MAX_LEVEL,
   getXpForNextLevel,
@@ -24,6 +26,10 @@ const ExperienceBar: React.FC = () => {
   const experience = usePetStore((s) => s.experience);
   const level = usePetStore((s) => s.level);
   const stage = (usePetStore((s) => s.stage) || 'baby') as PetStage;
+  const currentAnim = usePetStore((s) => s.currentAnim);
+
+  // Во время действий ухода (мытье, еда, игра) шкала опыта скрывается идентично шкале здоровья
+  const shouldHide = ACTION_ANIMATIONS.includes(currentAnim);
 
   const xpForNext = getXpForNextLevel(experience);
   const xpCurrentLevelBase = getXpForCurrentLevel(experience);
@@ -53,7 +59,12 @@ const ExperienceBar: React.FC = () => {
   }, [stage, experience]);
 
   return (
-    <div className={styles.container}>
+    <div
+      className={clsx(
+        styles.container,
+        shouldHide ? "invisible opacity-0 pointer-events-none" : "visible opacity-100"
+      )}
+    >
       {/* Верхняя строка: Уровень, Стадия и XP */}
       <div className={styles.headerRow}>
         <div className={styles.badgeGroup}>
@@ -85,7 +96,7 @@ const ExperienceBar: React.FC = () => {
         />
       </div>
 
-      {/* Нижняя строка: До след. уровня и стадии */}
+      {/* Нижняя строка: До след. уровня и стадии (СТРОГО в одну строку без переносов) */}
       <div className={styles.footerRow}>
         {level < MAX_LEVEL ? (
           <span className={styles.nextLevelHint}>

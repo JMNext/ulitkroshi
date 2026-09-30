@@ -67,6 +67,9 @@
 
 
 ### Исправление UI позиционирования и читаемости
+- [x] Кнопка «Продолжить» на экране регистрации после ввода имени (`SpeechInputField`, `Step1UiManager`, `SpeechMicButton`)
+- [x] Запрет переноса статусной строки подсказок в `ExperienceBar` (`flex-wrap: nowrap`, `white-space: nowrap`)
+- [x] Скрытие `ExperienceBar` во время действий ухода (кормление, мытьё, игра) по аналогии с `PetIndicators`
 - [x] Центрирование PetCharacter: устранение конфликта CSS translate Tailwind 4 и style.transform
 - [x] Читаемость ExperienceBar: вынос из сжатого Header, контрастный бежевый фон-плашка, крупный шрифт 18px
 - [x] Адаптивное позиционирование в mainLayoutHelper (.ui-exp-target под хедером на мобильных и по центру на десктопе)
