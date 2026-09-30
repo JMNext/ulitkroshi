@@ -35,7 +35,7 @@ export const BottomMenu = ({ className, isVert }: BottomMenuProps) => {
     <div
       className={clsx(
         "relative flex flex-col items-center justify-end select-none",
-        isVert ? "h-[320px] w-[1080px] pb-5" : "h-[240px] w-[1080px] pb-4",
+        isVert ? "h-[460px] w-[1080px] pb-8" : "h-[240px] w-[1080px] pb-4",
         className
       )}
     >

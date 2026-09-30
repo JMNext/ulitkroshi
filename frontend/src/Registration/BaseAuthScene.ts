@@ -81,7 +81,14 @@ export abstract class BaseAuthScene extends Phaser.Scene {
         this.backgroundIm.setAlpha(1).setTexture(t);
       }
     }
-    if (this.backgroundIm?.active) this.backgroundIm.setPosition(w / 2, h / 2).setDisplaySize(w, h);
+    if (this.backgroundIm?.active) {
+      const bgTex = this.backgroundIm.texture;
+      const sourceImg = bgTex?.getSourceImage() as HTMLImageElement | undefined;
+      const origW = (sourceImg && sourceImg.width) || (isVert ? 1080 : 1920);
+      const origH = (sourceImg && sourceImg.height) || (isVert ? 1920 : 1080);
+      const coverScale = Math.max(w / origW, h / origH);
+      this.backgroundIm.setScale(coverScale).setPosition(w / 2, h / 2);
+    }
 
     const aspect = w / h;
     let scale = 1;
