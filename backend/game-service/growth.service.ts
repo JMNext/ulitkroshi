@@ -5,7 +5,7 @@
  * Сервер самостоятельно рассчитывает награду и новое состояние.
  */
 
-import { pool } from '../shared/db';
+import { dbPool as pool } from '../shared/db';
 import {
   getLevelFromXp,
   checkStageTransition,

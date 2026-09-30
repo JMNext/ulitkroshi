@@ -17,6 +17,8 @@ export const dbPool = new pg.Pool({
   client_encoding: "UTF8"
 });
 
+export const pool = dbPool;
+
 export async function initDatabase(): Promise<void> {
   try {
     await dbPool.query(`
@@ -35,6 +37,11 @@ export async function initDatabase(): Promise<void> {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+
+      
+      ALTER TABLE public.users ADD COLUMN IF NOT EXISTS pet_levels INTEGER[] DEFAULT ARRAY[1]::INTEGER[];
+      ALTER TABLE public.users ADD COLUMN IF NOT EXISTS pet_stages TEXT[] DEFAULT ARRAY['baby']::TEXT[];
+      ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_daily_login DATE;
 
       CREATE TABLE IF NOT EXISTS public.token_blacklist (
         token TEXT PRIMARY KEY,
