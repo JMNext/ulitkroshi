@@ -1,8 +1,9 @@
 import { usePetStore } from "@/MainScene/components/PetCharacter/store/usePetStore";
 import { clsx } from "clsx";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { LOOPING_ANIMATIONS, PET_ANIMATION_URLS } from "./constants/petCharacter.constants";
 import { STAGE_SCALE, PetStage } from "@/shared/growth.config";
+import { isApplePlatform } from "@/shared/device";
 
 interface PetCharacterProps {
   onAnimationEnd?: (animKey: string) => void;
@@ -12,6 +13,8 @@ const ALL_KEYS = Object.keys(PET_ANIMATION_URLS);
 
 export const PetCharacter = ({ onAnimationEnd = () => {} }: PetCharacterProps) => {
   const { currentAnim, stage, registerVideoElement, completeCareAction, getVideoElements } = usePetStore();
+
+  const isApple = useMemo(() => isApplePlatform(), []);
 
   useEffect(() => {
     const videos = getVideoElements();
@@ -52,8 +55,6 @@ export const PetCharacter = ({ onAnimationEnd = () => {} }: PetCharacterProps) =
 
   return (
     <div className="pointer-events-auto relative h-full w-full [backface-visibility:hidden]">
-
-
       {/* Только видео-спрайт питомца масштабируется в зависимости от стадии взросления */}
       <div
         id="phaser-native-html-pet"
@@ -80,11 +81,23 @@ export const PetCharacter = ({ onAnimationEnd = () => {} }: PetCharacterProps) =
             )}
             style={{ imageRendering: "crisp-edges" }}
           >
-            {/* Для Safari на iOS и macOS: HEVC с альфа-каналом ОБЯЗАН быть первым */}
-            <source src={PET_ANIMATION_URLS[key].mov} type='video/mp4; codecs="hvc1"' />
-            <source src={PET_ANIMATION_URLS[key].mov} type='video/quicktime; codecs="hvc1"' />
-            {/* Для Chrome, Edge, Firefox, Android: WebM с альфа-каналом (VP9) */}
-            <source src={PET_ANIMATION_URLS[key].webm} type="video/webm; codecs=vp9,vorbis" />
+            {/* Для Apple (iOS, iPadOS, Safari, WKWebView в Telegram):
+                КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО отдавать WebM, так как WebKit отбрасывает альфа-канал и рисует черный фон!
+                Отдаем строго HEVC .mov */}
+            {isApple ? (
+              <>
+                <source src={PET_ANIMATION_URLS[key].mov} type='video/mp4; codecs="hvc1"' />
+                <source src={PET_ANIMATION_URLS[key].mov} type="video/quicktime" />
+                <source src={PET_ANIMATION_URLS[key].mov} />
+              </>
+            ) : (
+              <>
+                {/* Для Chrome, Edge, Firefox, Android: WebM с альфа-каналом (VP9) */}
+                <source src={PET_ANIMATION_URLS[key].webm} type="video/webm; codecs=vp9,vorbis" />
+                <source src={PET_ANIMATION_URLS[key].mov} type='video/mp4; codecs="hvc1"' />
+                <source src={PET_ANIMATION_URLS[key].mov} type="video/quicktime" />
+              </>
+            )}
           </video>
         ))}
       </div>
