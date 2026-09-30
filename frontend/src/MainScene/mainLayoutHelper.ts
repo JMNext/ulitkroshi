@@ -115,7 +115,7 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
     ".ui-right-target": { left: `calc(50% + ${sOff}px)`, top: `${sTop}px`, transform: `translate(-50%, -50%) scale(${sScale})` },
     ".ui-pet-target": { left: "50%", top: `${petTop}px`, transform: `translate(-50%, -50%) scale(${petScale})` },
     ".ui-bottom-target": { left: "50%", top: `${1080 + exH - bTopOffset}px`, transform: `translate(-50%, -50%) scale(${bScaleV})` },
-    ".ui-alert-target": { left: "50%", top: `${petTop + alertTop * petScale}px`, transform: `translate(-50%, -50%) scale(${petScale * alertScale})` }
+    ".ui-alert-target": { left: "50%", top: `${indTop}px`, transform: `translate(-50%, -50%) scale(${indScale})` }
   };
 
   const applyStyles = () => {

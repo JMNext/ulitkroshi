@@ -43,6 +43,11 @@ export async function initDatabase(): Promise<void> {
       ALTER TABLE public.users ADD COLUMN IF NOT EXISTS pet_stages TEXT[] DEFAULT ARRAY['baby']::TEXT[];
       ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_daily_login DATE;
 
+      UPDATE public.users 
+      SET player_name = pet_names[1] || '#' || split_part(player_name, '#', 2) 
+      WHERE player_name LIKE 'Player#%' AND array_length(pet_names, 1) > 0;
+
+
       CREATE TABLE IF NOT EXISTS public.token_blacklist (
         token TEXT PRIMARY KEY,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

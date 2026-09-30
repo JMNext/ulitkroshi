@@ -131,7 +131,7 @@ export const processFruitRegister = async (sessionId: string, code: string, phon
     const rIns = await dbPool.query<DbUser>(
       `INSERT INTO users (phone, password, player_name, unlocked_pets, pet_names, pet_healths, pet_experiences, pet_stars, pet_levels, pet_stages, coins)
        VALUES ($1, $2, $3, 1, ARRAY[$4]::TEXT[], '{100}'::INTEGER[], '{0}'::INTEGER[], '{1}'::INTEGER[], '{1}'::INTEGER[], '{"baby"}'::TEXT[], 0) RETURNING *`,
-      [cp, hashPassword(code), `Player#${Math.floor(1000 + Math.random() * 9000)}`, realPetName]
+      [cp, hashPassword(code), `${realPetName}#${Math.floor(1000 + Math.random() * 9000)}`, realPetName]
     );
 
     verifiedPhoneSessions.delete(sessionId);

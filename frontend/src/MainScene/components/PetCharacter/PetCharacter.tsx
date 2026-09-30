@@ -5,13 +5,12 @@ import { LOOPING_ANIMATIONS, PET_ANIMATION_URLS } from "./constants/petCharacter
 import { STAGE_SCALE, PetStage } from "@/shared/growth.config";
 
 interface PetCharacterProps {
-  alertText: string | null;
-  onAnimationEnd: (animKey: string) => void;
+  onAnimationEnd?: (animKey: string) => void;
 }
 
 const ALL_KEYS = Object.keys(PET_ANIMATION_URLS);
 
-export const PetCharacter = ({ alertText, onAnimationEnd }: PetCharacterProps) => {
+export const PetCharacter = ({ onAnimationEnd = () => {} }: PetCharacterProps) => {
   const { currentAnim, stage, registerVideoElement, completeCareAction, getVideoElements } = usePetStore();
 
   useEffect(() => {
@@ -53,13 +52,7 @@ export const PetCharacter = ({ alertText, onAnimationEnd }: PetCharacterProps) =
 
   return (
     <div className="pointer-events-auto relative h-full w-full [backface-visibility:hidden]">
-      {alertText && (
-        <div className="animate-fade-in pointer-events-none absolute top-[38px] left-1/2 z-50 w-[460px] max-w-[90vw] -translate-x-1/2 -ml-[2px] rounded-xl border border-solid border-orange-400 bg-black/85 px-5 py-3 text-center backdrop-blur-sm shadow-xl">
-          <span className="text-[16px] sm:text-[18px] leading-snug font-black tracking-wide text-orange-400 uppercase block break-words">
-            {alertText}
-          </span>
-        </div>
-      )}
+
 
       {/* Только видео-спрайт питомца масштабируется в зависимости от стадии взросления */}
       <div

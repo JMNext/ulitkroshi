@@ -113,11 +113,20 @@ export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
               <PetIndicators petName={petName} hp={hp} currentAnim={currentAnim} alertText={alertText} />
             )}
           </div>
+          <div className="ui-alert-target pointer-events-none absolute left-1/2 z-50 origin-center">
+            {alertText && (
+              <div className="animate-fade-in pointer-events-none flex w-[440px] max-w-[90vw] items-center justify-center rounded-2xl border-2 border-solid border-orange-400 bg-black/90 px-5 py-3.5 text-center backdrop-blur-sm shadow-2xl">
+                <span className="text-[16px] sm:text-[18px] leading-snug font-black tracking-wide text-orange-400 uppercase block break-words w-full">
+                  {alertText}
+                </span>
+              </div>
+            )}
+          </div>
           <div className="ui-left-target pointer-events-auto absolute z-30 origin-left"><SideMenuLeft /></div>
           <div className="ui-right-target pointer-events-auto absolute z-30 origin-right"><SideMenuRight /></div>
           <div className="ui-pet-target pointer-events-none absolute h-[644px] w-[644px]">
             {showUi && (
-              <PetCharacter key={activePetIndex} alertText={alertText} onAnimationEnd={() => {}} />
+              <PetCharacter key={activePetIndex} onAnimationEnd={() => {}} />
             )}
           </div>
           <div className="ui-bottom-target pointer-events-none absolute"><BottomMenu className="pointer-events-auto" /></div>
