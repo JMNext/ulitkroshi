@@ -36,10 +36,10 @@ export const HelpModal = NiceModal.create(() => {
 
   return (
     <Dialog.Root defaultOpen={true} open={modal.visible} onOpenChange={(open) => { if (!open) handleClose(); }}>
-      <Dialog.Portal container={typeof document !== "undefined" ? (document.getElementById("game-container") || document.body) : undefined}>
-        <Dialog.Overlay className="pointer-events-auto fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px]" />
+      <Dialog.Portal>
+        <Dialog.Overlay className="pointer-events-auto fixed inset-0 z-[70] bg-black/50 backdrop-blur-[2px]" />
         <Dialog.Content
-          className="pointer-events-auto fixed top-1/2 left-1/2 z-50 box-border flex h-auto max-h-[85vh] w-[520px] origin-center flex-col items-center rounded-[32px] border-[4px] border-[#ffca28] bg-white px-5 pt-12 pb-5 shadow-2xl outline-none select-none"
+          className="pointer-events-auto fixed top-1/2 left-1/2 z-[70] box-border flex h-auto max-h-[85vh] w-[520px] origin-center flex-col items-center rounded-[32px] border-[4px] border-[#ffca28] bg-white px-5 pt-12 pb-5 shadow-2xl outline-none select-none"
           style={{ transform: `translate(-50%, -50%) scale(${scale})` }}
         >
           <Dialog.Close asChild>
