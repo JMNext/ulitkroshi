@@ -17,6 +17,12 @@ export const createFruitLoginSlice: StateCreator<Step3CombinedState, [], [], Log
     set({ loginSel: loginSel.slice(0, -1), loginError: "" });
   },
 
+  removeLoginFruitAtIndex: (index: number) => {
+    const { loginSel, isLoginSubmitting, loginMode } = get();
+    if (isLoginSubmitting || loginMode === "error" || index < 0 || index >= loginSel.length) return;
+    set({ loginSel: loginSel.slice(0, index), loginError: "" });
+  },
+
   toggleLoginSelect: async (id: number, sessionId: string, onComplete: () => void) => {
     const { loginMode, loginSel, isLoginSubmitting, loginAttempts } = get();
 

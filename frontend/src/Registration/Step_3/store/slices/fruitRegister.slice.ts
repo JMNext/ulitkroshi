@@ -29,6 +29,12 @@ export const createFruitRegisterSlice: StateCreator<Step3CombinedState, [], [], 
       set({ registerSel: registerSel.slice(0, -1), step3Error: "" });
     },
 
+    removeRegisterFruitAtIndex: (index: number) => {
+      const { registerSel, isRegisterSubmitting, step3Mode } = get();
+      if (isRegisterSubmitting || step3Mode === "error" || index < 0 || index >= registerSel.length) return;
+      set({ registerSel: registerSel.slice(0, index), step3Error: "" });
+    },
+
     saveFirstStep: () => {
       set({ registerSel: new Array<number>(), step3Mode: "verify", step3Error: "", isRegisterSubmitting: false });
     },
