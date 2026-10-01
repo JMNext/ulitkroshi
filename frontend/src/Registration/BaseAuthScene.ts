@@ -82,12 +82,20 @@ export abstract class BaseAuthScene extends Phaser.Scene {
       }
     }
     if (this.backgroundIm?.active) {
-      const bgTex = this.backgroundIm.texture;
-      const sourceImg = bgTex?.getSourceImage() as HTMLImageElement | undefined;
-      const origW = (sourceImg && sourceImg.width) || (isVert ? 1080 : 1920);
-      const origH = (sourceImg && sourceImg.height) || (isVert ? 1920 : 1080);
-      const coverScale = Math.max(w / origW, h / origH);
-      this.backgroundIm.setScale(coverScale).setPosition(w / 2, h / 2);
+      if (isVert) {
+        // На мобильных устройствах картинка обязана полностью вписываться по ширине экрана,
+        // чтобы логотип игры «Улиткроши» не срезался по краям на узких экранах смартфонов (iPhone 16, Galaxy и др.)
+        this.backgroundIm.setPosition(w / 2, h / 2).setDisplaySize(w, h);
+      } else {
+        // На ПК (горизонтальная ориентация): пропорциональное масштабирование (cover)
+        // с сохранением исходного соотношения сторон 16:9 без горизонтального сжатия персонажей
+        const bgTex = this.backgroundIm.texture;
+        const sourceImg = bgTex?.getSourceImage() as HTMLImageElement | undefined;
+        const origW = (sourceImg && sourceImg.width) || 1920;
+        const origH = (sourceImg && sourceImg.height) || 1080;
+        const coverScale = Math.max(w / origW, h / origH);
+        this.backgroundIm.setScale(coverScale).setPosition(w / 2, h / 2);
+      }
     }
 
     const aspect = w / h;
