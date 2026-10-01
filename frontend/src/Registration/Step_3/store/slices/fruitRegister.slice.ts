@@ -23,6 +23,12 @@ export const createFruitRegisterSlice: StateCreator<Step3CombinedState, [], [], 
     step3Error: "",
     isRegisterSubmitting: false,
 
+    removeLastRegisterFruit: () => {
+      const { registerSel, isRegisterSubmitting, step3Mode } = get();
+      if (isRegisterSubmitting || step3Mode === "error" || registerSel.length === 0) return;
+      set({ registerSel: registerSel.slice(0, -1), step3Error: "" });
+    },
+
     saveFirstStep: () => {
       set({ registerSel: new Array<number>(), step3Mode: "verify", step3Error: "", isRegisterSubmitting: false });
     },

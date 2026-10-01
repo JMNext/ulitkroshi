@@ -8,16 +8,18 @@ export interface LayoutContext { screenMode: "fold" | "mobile" | "tablet" | "des
 export interface LoginState {
   loginSel: number[]; loginMode: CaptchaMode; loginShake: boolean; loginAttempts: number; loginError: "wrong_fruit" | "system_error" | ""; isLoginSubmitting: boolean;
   toggleLoginSelect: (id: number, sessionId: string, onComplete: () => void) => Promise<void>;
+  removeLastLoginFruit: () => void;
 }
 
 export interface RegisterState {
   registerSel: number[]; registerCorr: number[]; step3Mode: CaptchaMode; registerShake: boolean; registerAttempts: number; step3Error: "wrong_fruit" | "server_error" | ""; isRegisterSubmitting: boolean;
   saveFirstStep: () => void; toggleRegisterSelect: (id: number, sessionId: string, onComplete: () => void) => Promise<void>;
+  removeLastRegisterFruit: () => void;
 }
 
 export interface Step3CombinedState extends LoginState, RegisterState {
   isLogin: boolean; fruitOrder: number[]; layoutContext: LayoutContext | null; computedScale: number;
-  generateNewOrder: () => void; setIsLogin: (isLogin: boolean) => void; setLayout: (ctx: LayoutContext, cs: number) => void; resetStore: (keep?: boolean, success?: boolean) => void;
+  generateNewOrder: () => void; setIsLogin: (isLogin: boolean) => void; setLayout: (ctx: LayoutContext, cs: number) => void; resetStore: (keep?: boolean, success?: boolean) => void; removeLastFruit: () => void;
 }
 
 const genOrder = (): number[] => Array.from({ length: 16 }, (_, i) => i + 1).sort(() => Math.random() - 0.5);
@@ -42,6 +44,14 @@ export const useRegistrationStep3Store = create<Step3CombinedState>()((set, get,
     set((s) => ({ ...s, isLogin, loginMode: "select", step3Mode: "select", loginSel: [], registerSel: [], loginAttempts: 0, registerAttempts: 0, loginError: "", step3Error: "" }));
   },
   generateNewOrder: () => set({ fruitOrder: genOrder() }),
+
+  removeLastFruit: () => {
+    if (get().isLogin) {
+      get().removeLastLoginFruit();
+    } else {
+      get().removeLastRegisterFruit();
+    }
+  },
 
   resetStore: (keep = false, success = false) => {
     clearTimers();

@@ -270,3 +270,28 @@
    - `expTop` на мобильном скорректирован до 195-205px (с `indTop` до 305-315px), устранив наложение шкалы опыта на хедер.
    - Вся плашка монет `HeaderCoins` стала полноценной интерактивной кнопкой для открытия магазина, а аватарка вызывает `NiceModal.show(ProfileEdit)` напрямую.
 3. **Верификация:** `npm run build:front` успешно завершен (0 ошибок).
+
+
+# Задача: Исправление маппинга груши и реализация удаления последнего фрукта в пароле
+
+**Статус:** ✅ Выполнено
+
+## Чек-лист задач
+- [x] Ошибка маппинга: в `CaptchaHeaderPanel.tsx` исправить импорт `f9` с ошибочного `fruits_10.png` на правильный `fruits_09.png` (Золотая груша)
+- [x] В сторе `useRegistrationStep3Store` добавить экшены `removeLastFruit` (для login и register режимов)
+- [x] В `CaptchaHeaderPanel.tsx` сделать последний набранный фрукт кликабельным (`cursor-pointer`, `active:scale-95`), по клику вызывающим `removeLastFruit()`
+- [x] Проверить сборку фронтенда (`npm run build:front`)
+- [x] Обновить `CHANGELOG.md`, `tasks/lessons.md` и `tasks/todo.md`
+- [x] Сделать коммит и пуш в ветку `develop`
+
+
+### Результаты и Обзор Реализации (2026-10-01)
+1. **Исправлен маппинг груши (id 9):**
+   - В `frontend/src/Registration/Step_3/components/CaptchaHeaderPanel.tsx` устранен некорректный импорт `import f9 from "@/assets/fruits/fruits_10.png"` и заменен на правильный `fruits_09.png`. Теперь при выборе груши в сетке в поле пароля отображается Золотая Груша, а не Вишня.
+2. **Интерактивное удаление последнего фрукта (Backspace):**
+   - В `fruitLogin.slice.ts` и `fruitRegister.slice.ts` добавлены безопасные экшены `removeLastLoginFruit` и `removeLastRegisterFruit`.
+   - В `useRegistrationStep3Store.ts` добавлен общий экшен `removeLastFruit`.
+   - В `CaptchaHeaderPanel.tsx` на последний заполненный слот повешен обработчик `onClick={isLast ? removeLastFruit : undefined}` с визуальным feedback (подсветка рамки янтарным цветом, hover/active анимация масштабирования, touch-manipulation).
+   - При клике на последний введенный фрукт он удаляется из последовательности, а в сетке фруктов моментально снимается зеленая рамка выбора.
+3. **Валидация:**
+   - Сборка `npm run build:front` успешно завершена (TypeScript 0 errors, Vite production bundle 14s).

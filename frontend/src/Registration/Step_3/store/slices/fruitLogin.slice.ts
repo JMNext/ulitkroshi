@@ -11,6 +11,12 @@ export const createFruitLoginSlice: StateCreator<Step3CombinedState, [], [], Log
   loginError: "",
   isLoginSubmitting: false,
 
+  removeLastLoginFruit: () => {
+    const { loginSel, isLoginSubmitting, loginMode } = get();
+    if (isLoginSubmitting || loginMode === "error" || loginSel.length === 0) return;
+    set({ loginSel: loginSel.slice(0, -1), loginError: "" });
+  },
+
   toggleLoginSelect: async (id: number, sessionId: string, onComplete: () => void) => {
     const { loginMode, loginSel, isLoginSubmitting, loginAttempts } = get();
 
