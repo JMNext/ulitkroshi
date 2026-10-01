@@ -1,4 +1,5 @@
 import { AVAILABLE_AVATARS } from "@/MainScene/components/ProfileEdit/components/Avatars";
+import { ProfileEdit } from "@/MainScene/components/ProfileEdit/ProfileEdit";
 import { useMainGameStore } from "@/MainScene/store/useMainGameStore";
 import NiceModal from "@ebay/nice-modal-react";
 import { clsx } from "clsx";
@@ -15,7 +16,7 @@ export const HeaderAvatar = ({ isVert }: HeaderAvatarProps) => {
     <button
       type="button"
       data-ui-action="profile"
-      onClick={() => NiceModal.show("profile-modal")}
+      onClick={() => NiceModal.show(ProfileEdit)}
       className={clsx(
         "pointer-events-auto flex shrink-0 cursor-pointer touch-manipulation items-center justify-center overflow-hidden rounded-full border-0 bg-transparent p-0 transition-transform duration-150 outline-none active:scale-95",
         isVert ? "h-[64px] w-[64px]" : "h-[94px] w-[94px]",

@@ -87,7 +87,7 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
   // На мобильном — под компактным хедером (top: ~165-175px), ширина 960px (от края до края кнопок),
   // масштаб равен bScaleV для синхронного покрытия ширины кнопок.
   const expTop = isVert
-    ? (ratio < 0.42 ? 175 : ratio < 0.46 ? 170 : 165) - exH * exHMult
+    ? (ratio < 0.42 ? 205 : ratio < 0.46 ? 200 : 195) - exH * exHMult
     : 90 - exH * exHMult;
 
 
@@ -96,7 +96,7 @@ export function executeMainResize(width: number, height: number, uiContainer: HT
   // На мобильном — под широким ExperienceBar
   // На десктопе — под Header/ExperienceBar
   const indTop = isVert
-    ? (ratio < 0.42 ? 285 : ratio < 0.46 ? 280 : 275) - exH * exHMult
+    ? (ratio < 0.42 ? 315 : ratio < 0.46 ? 310 : 305) - exH * exHMult
     : 215 - exH * exHMult;
   const indScale = isVert
     ? Math.min(1.0, Math.max(0.78, (viewW - 40) / 420))

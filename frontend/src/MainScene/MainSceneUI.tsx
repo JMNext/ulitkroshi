@@ -115,7 +115,7 @@ export const MainSceneUI = ({ phaserScene }: { phaserScene: MainScene }) => {
         }}
       >
         <div className="ui-canvas-target pointer-events-none absolute top-1/2 left-1/2 box-border flex h-[1080px] w-[1920px] flex-col items-center justify-center [backface-visibility:hidden]">
-          <div className="ui-header-target absolute left-1/2"><Header isVert={isVert} /></div>
+          <div className="ui-header-target pointer-events-none absolute left-1/2 z-50"><Header isVert={isVert} /></div>
           <div className="ui-exp-target pointer-events-auto absolute left-1/2 z-40 origin-center"><ExperienceBar isVert={isVert} /></div>
           <div className="ui-indicators-target pointer-events-none absolute left-1/2 z-30 origin-center">
             {showUi && (
